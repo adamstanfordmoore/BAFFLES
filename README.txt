@@ -29,7 +29,7 @@ README.txt : this file
 hd984.py : simple example utilizing baffles to make posteriors
 baffles.py : core of the BAFFLES implementation.  includes age_estimator class and 
 probability.py : functions for computing posterior confidence interval, gaussians, normalizing, and chi-squared
-piecewise.py :  functions for fitting to logR'HK vs B-V data (likewise logEW vs b-v).  maximizing log likelihood
+fitting.py :  functions for fitting to logR'HK vs B-V data (likewise logEW vs b-v).  maximizing log likelihood
 plotting.py :  functions to plot posteriors, posterior products, and intermediate graphs
 ca_constants.py : constants relating to calcium
 li_constants.py : constants relating to lithium
