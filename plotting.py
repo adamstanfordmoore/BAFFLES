@@ -107,8 +107,8 @@ def plot_fits(bv_li,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,title
 def metal_vs_bv(bv_li,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,shadeScatter=False,title=None):
     const = init_constants(metal)
     plt.xlabel(r'$(B-V)_0$',size=18)
-    plt.ylabel(r'EW Li (m$\AA$)',size=18)
-    #set_ylabel(metal)
+    #plt.ylabel(r'EW Li (m$\AA$)',size=18)
+    set_ylabel(metal)
     #plt.axis(const.BV_RANGE + np.power(10,const.METAL_RANGE).tolist())
     plt.axis([const.BV_RANGE[0],1, 0,400])
     for c in range(len(bv_li)):
@@ -172,8 +172,16 @@ def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,shad
     elif (metal[0].lower() == 'l'):
         #fit = interpolate.interp1d(np.log10(CLUSTER_AGES),rhk, fill_value='extrapolate')
         #plt.plot(const.AGE,fit(np.log10(const.AGE)),label='Interpolation')
-        fit = my_fits.constrained_poly_fit(np.log10(CLUSTER_AGES),rhk,0)
-        plt.plot(const.AGE,fit(np.log10(const.AGE)),label='Polynomial fit')
+        lbl = "interpolate"
+        if (bv <=1.35):
+            fit = interpolate.interp1d(np.log10(CLUSTER_AGES),rhk, fill_value='extrapolate')
+        elif (bv <= 1.55):    
+            fit = my_fits.constrained_poly_fit(np.log10(CLUSTER_AGES),rhk,0)
+            lbl = 'constrained poly' 
+        else:
+            fit = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,1)
+            lbl = 'linear' 
+        plt.plot(const.AGE,fit(np.log10(const.AGE)),label=lbl)
     if (shadeScatter):
         plt.fill_between(const.AGE,fit(np.log10(const.AGE)) - sig,fit(np.log10(const.AGE)) + sig,alpha=.2,color='C0')
         for i in range(len(rhk)):
