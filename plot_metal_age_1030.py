@@ -22,9 +22,9 @@ def main():
     #bv_rhk,rhk_fits = readData.read_calcium()
 
     
-    pp = PdfPages('li_age_constrained_polynomial.pdf')
-    for bv in np.arange(1,2,.1):
-        my_plot.metal_vs_age(li_fits,'lithium',bv,pp,showPlots=True,title='Constrained Polynomial at B-V= %s' % bv)
+    pp = PdfPages('li_age_fits.pdf')
+    for bv in np.arange(1,2,.05):
+        my_plot.metal_vs_age(li_fits,'lithium',bv,pp,showPlots=False,title='B-V= %s' % bv)
     pp.close() 
     
     """

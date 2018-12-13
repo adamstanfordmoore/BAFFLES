@@ -28,8 +28,8 @@ def in_bounds(bv,l,const,log=False):
         return False
 
 def main():
-    #bv_li, upper_lim, li_fits = readData.read_lithium()
-    bv_rhk,rhk_fits = readData.read_calcium(fromFile=False, saveToFile=False)
+    bv_li, upper_lim, li_fits = readData.read_lithium()
+    #bv_rhk,rhk_fits = readData.read_calcium(fromFile=False, saveToFile=False)
     
     #pp = PdfPages('mamajek_calcium.pdf')
     #my_plot.metal_vs_bv(bv_rhk,rhk_fits,'calcium',pp,showPlots=True)
@@ -52,6 +52,11 @@ def main():
     #plt.plot(bp_c,my_fits.poly_fit(bp_c,bp_l)(bp_c))
     #plt.show()
 
+    pp = PdfPages('beta_pic_posterior_product_v2.pdf')
+    baf = baffles.age_estimator('li')
+    baf.make_grids(li_fits)
+    baf.posterior_product(bp_c,bp_l,pp,showPlot=True,showStars=True,givenAge=24,title=' ')
+    pp.close()
     
 
 

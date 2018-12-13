@@ -164,7 +164,7 @@ class age_estimator:
             #info added from depletion boundary
             if (self.metal == 'lithium'):
                 rhk.append(self.const.ZERO_LI)
-                CLUSTER_AGES.append(my_fits.ldb_fit(fits)(bv))
+                CLUSTER_AGES.append(my_fits.ldb_fit(fits)(bv)) #could separate out to make faster
            
             f = None
             if (len(rhk) == 1):
@@ -172,7 +172,12 @@ class age_estimator:
             elif (self.metal == 'calcium'):
                 f = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,2) #like mamajek polynomial is non-linear
             elif (self.metal == 'lithium'):   
-                f = interpolate.interp1d(np.log10(CLUSTER_AGES),rhk, fill_value='extrapolate')
+                if (bv <=1.35):
+                    f = interpolate.interp1d(np.log10(CLUSTER_AGES),rhk, fill_value='extrapolate')
+                elif (bv <= 1.55):
+                    f = my_fits.constrained_poly_fit(np.log10(CLUSTER_AGES),rhk,0)
+                else:
+                    f = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,1)
             median_rhk.append(f(np.log10(self.const.AGE))) #uses determined function 
 
             #3 different methods for handling scatter -- mean, best-fit, linear interp
