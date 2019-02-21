@@ -1,11 +1,11 @@
 import numpy as np
-CLUSTER_AGES = [5.5,43.7,130,240,625,4000]
-CLUSTER_NAMES = ['NGC2264','IC2602','Pleiades','M34','Hyades','M67']
+CLUSTER_AGES = [5.5,43.7,130,240,625,4000,85,600,200,24]
+CLUSTER_NAMES = ['NGC2264','IC2602','Pleiades','M34','Hyades','M67',r'$\alpha$ Per','Coma','M35',r'$\beta$ Pic']
 MARKERS = ['^','>','p','+','s','d','o','x']
 
 BV_RANGE = [.24,2.3]
 METAL_RANGE = [0.5,3.2]
-COLORS = ['C0','C1','C2','C4','C5','C6','C7','C8']
+COLORS = ['C0','C1','C2','C3','C4','C5','C6','C7','C8','C9', '#1f77b4','#ff7f0e']
 GALAXY_AGE = 13001 #Myr with 1 for range purposes
 BIN_SIZE = 10
 DOWN_ARROW = u'$\u2193$'

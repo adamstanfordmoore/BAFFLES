@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 
 """
-8/10/18
+11/28/18
 Imports the lithium data to three lists:
 bv_li has an array for each cluster of [np.arra([B-V]),np.arrya([LogEW])]
 bv_li = [[[cluster 1 B-V],[cluster1 LogEW]],[[cluster 1 B-V],[cluster1 LogEW]],....]
@@ -48,17 +48,24 @@ def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
     return bv_rhk,fits
 
 def get_li_fits(bv_li,upper_lim_all):
+    import li_constants as const
     fits = []
     for i in range(len(bv_li)):
-        fit = my_fits.poly_fit(bv_li[i][0],bv_li[i][1],2,upper_lim_all[i])
+        poly_order = 2
+        if (const.CLUSTER_NAMES[i] in ['UMa','NGC3680']): #these cluster need linear fits
+            poly_order = 1
+        fit = my_fits.poly_fit(bv_li[i][0],bv_li[i][1],poly_order,upper_lim_all[i])
         #fit = my_fits.my_fits_fit(bv_li[i][0],bv_li[i][1],upper_lim=upper_lim_all[i],x_method='bin')
         fits.append(fit)
     return fits
 
-#simple logic to check in (bv,l) is in bounds
-def in_bounds(bv,l,const):
+#simple logic to check if (bv,l) is in bounds
+#log represents if l is log(EW)
+def in_bounds(bv,l,const,log=False):
     if (bv > const.BV_RANGE[0] and bv < const.BV_RANGE[1]):
-        if (l > np.power(10,const.METAL_RANGE[0]) and l < np.power(10,const.METAL_RANGE[1])):
+        if (not log and (l > np.power(10,const.METAL_RANGE[0]) and l < np.power(10,const.METAL_RANGE[1]))):
+            return True
+        elif (log and (l > const.METAL_RANGE[0] and l < const.METAL_RANGE[1])):
             return True
     return False
 
@@ -172,6 +179,94 @@ def read_lithium(fromFile=True,saveToFile=False):
     m67_c,m67_l = np.array(m67_c),np.log10(np.array(m67_l))
     bv_li.append([m67_c,m67_l])
     upper_lim.append(lim_m67)
+
+    aper_c = []
+    aper_l = []
+    lim_aper = []
+    t = ascii.read('data/alpha_per.txt', delimiter='\t')
+    for line in t:
+        if in_bounds(float(line[2]),float(line[4]),const):
+            aper_c.append(float(line[2]))
+            aper_l.append(float(line[4])) 
+            lim_aper.append(False)
+    aper_c,aper_l = np.array(aper_c),np.log10(np.array(aper_l))
+    bv_li.append([aper_c,aper_l])
+    upper_lim.append(lim_aper)
+
+    coma_c = []
+    coma_l = []
+    lim_coma = []
+    t = ascii.read('data/coma_berenices.txt', delimiter=',')
+    for line in t:
+        if in_bounds(float(line[2]),float(line[4]),const):
+            coma_c.append(float(line[2]))
+            coma_l.append(float(line[4]))
+            lim_coma.append(line[-1]==1)
+    coma_c,coma_l = np.array(coma_c),np.log10(np.array(coma_l))
+    bv_li.append([coma_c,coma_l])
+    upper_lim.append(lim_coma)
+
+    m35_c = []
+    m35_l = []
+    lim_m35 = []
+    t = ascii.read('data/M35_data.txt')
+    for line in t:
+        if in_bounds(float(line[1]),float(line[2]),const):
+            m35_c.append(float(line[1]))
+            m35_l.append(float(line[2]))
+            lim_m35.append(line[-1]!=0)
+    m35_c,m35_l = np.array(m35_c),np.log10(np.array(m35_l))
+    bv_li.append([m35_c,m35_l])
+    upper_lim.append(lim_m35)
+    
+    """
+    uma_c = []
+    uma_l = []
+    lim_uma = []
+    t = ascii.read('data/UMa.csv', delimiter=',')
+    for line in t:
+        if in_bounds(float(line[2]),float(line[3]),const):
+            uma_c.append(float(line[2]))
+            uma_l.append(float(line[3]))
+            lim_uma.append(line[-1]==1)
+    uma_c,uma_l = np.array(uma_c),np.log10(np.array(uma_l))
+    bv_li.append([uma_c,uma_l])
+    upper_lim.append(lim_uma)
+
+    ngc3680_c = []
+    ngc3680_l = []
+    lim_ngc3680 = []
+    t = ascii.read('data/ngc_3680.csv',delimiter=',')
+    for line in t[1:]:
+        Te = float(line[2])
+        c = 8575 - Te
+        BV = (5384.091 - np.sqrt(5384.091*5384.091 - 4*1380.92*c)) / (2*1380.92)
+        if (float(line[0]) == 0 and in_bounds(BV,float(line[4]),const)):
+            ngc3680_c.append(BV)
+            ngc3680_l.append(float(line[4]))
+            lim_ngc3680.append(False)
+        elif (float(line[0]) == 1 and in_bounds(BV,float(line[3]),const)):
+            ngc3680_c.append(BV)
+            ngc3680_l.append(float(line[3]))
+            lim_ngc3680.append(True)
+    
+    ngc3680_c,ngc3680_l = np.array(ngc3680_c),np.log10(np.array(ngc3680_l))
+    bv_li.append([ngc3680_c,ngc3680_l])
+    upper_lim.append(lim_ngc3680)
+    """
+
+    bp_c = []
+    bp_l = []
+    lim_bp = []
+    t = ascii.read('data/beta_pic.txt', delimiter='\t')
+    for line in t:
+        if in_bounds(float(line[4]),float(line[5]),const):
+            bp_c.append(float(line[4]))
+            bp_l.append(float(line[5]))
+            lim_bp.append(False)
+    bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
+    bv_li.append([bp_c,bp_l])
+    upper_lim.append(lim_bp)
 
     fits = get_li_fits(bv_li,upper_lim)
 
