@@ -10,13 +10,14 @@ import ca_constants as const
 BV_UNCERTAINTY = .002
 from scipy import interpolate
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pyplot as plt
 import probability as prob
 import fitting as my_fits
 import numpy as np
 import plotting as my_plot
 import bisect
 import sys
-
+import copy
 # shortcut to quickly computing using default grids the posteriors for calcium and/or lithium
 def baffles_age(bv,rhk=None,li=None,bv_err=BV_UNCERTAINTY,fileName='baffles',pdfPage=None,showPlots=True,noPlots=False,savePostAsText=False):
     if (not rhk and not li):
@@ -145,30 +146,51 @@ class age_estimator:
         return prob.gaussian(mu,sig,rhk)
 
     #calculates and returns a 2D array of sigma b-v and age
-    def make_grids(self,fits,medianSavefile=None,sigmaSavefile=None,setAsDefaults=False):
+    #omit_cluster specifies a cluster index to remove from the fits to make the grids without a cluster
+    def make_grids(self,fits,medianSavefile=None,sigmaSavefile=None,setAsDefaults=False, omit_cluster=None):
         if (medianSavefile and medianSavefile[-4:] == '.npy'):
             medianSavefile = medianSavefile[:-4]
         if (sigmaSavefile and sigmaSavefile[-4:] == '.npy'):
             sigmaSavefile = sigmaSavefile[:-4]
+      
         
+        #fits = copy.deepcopy(ofits)
+        #oCLUSTER_AGES = copy.deepcopy(self.const.CLUSTER_AGES)
+        #print self.const.CLUSTER_AGES
+        #print len(fits),'\n\n\n'
+        """
+        if (omit_cluster):
+            fits.pop(omit_cluster)
+            #self.const.CLUSTER_NAMES.pop(omit_cluster)
+            oCLUSTER_AGES.pop(omit_cluster)
+"""
+
+
         median_rhk, sigma = [],[]
         for bv in self.const.BV:
             rhk,scatter,CLUSTER_AGES = [],[],[]
             for i in range(len(fits)):
-                    r = fits[i][0](bv)
-                    if (self.const.METAL_RANGE[0] <  r < self.const.METAL_RANGE[1]):
-                        rhk.append(r)
-                        scatter.append(fits[i][1](bv))
-                        CLUSTER_AGES.append(self.const.CLUSTER_AGES[i])
-            
+                if (omit_cluster and i == omit_cluster):
+                    continue
+                r = fits[i][0](bv)
+                if (self.const.METAL_RANGE[0] <  r < self.const.METAL_RANGE[1]):
+                    rhk.append(r)
+                    scatter.append(fits[i][1](bv))
+                    CLUSTER_AGES.append(self.const.CLUSTER_AGES[i])
+                    #plt.scatter(self.const.CLUSTER_AGES[i],r,label=self.const.CLUSTER_NAMES[i])
+            #plt.legend()        
+            #plt.show()
             #info added from depletion boundary
             if (self.metal == 'lithium'):
                 rhk.append(self.const.ZERO_LI)
                 CLUSTER_AGES.append(my_fits.ldb_fit(fits)(bv)) #could separate out to make faster
            
+
             f = None
             if (len(rhk) == 1):
                 f = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,0)
+            if (len(rhk) == 2):
+                f = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,1)
             elif (self.metal == 'calcium'):
                 f = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,2) #like mamajek polynomial is non-linear
             elif (self.metal == 'lithium'):   
@@ -176,6 +198,10 @@ class age_estimator:
                     f = interpolate.interp1d(np.log10(CLUSTER_AGES),rhk, fill_value='extrapolate')
                 elif (bv <= 1.55):
                     f = my_fits.constrained_poly_fit(np.log10(CLUSTER_AGES),rhk,0)
+                    #plt.semilogx(CLUSTER_AGES,rhk)
+                    #plt.semilogx(self.const.AGE,f(np.log10(self.const.AGE)))
+                    #plt.legend()        
+                    #plt.show()
                 else:
                     f = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,1)
             median_rhk.append(f(np.log10(self.const.AGE))) #uses determined function 

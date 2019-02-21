@@ -1,7 +1,7 @@
 import numpy as np
 CLUSTER_INDEX = [[0,9],[15,25],[9,15],[33,46],[46,95],[181,198],[95,181],[198,274]]
 CLUSTER_AGES = [10,16,24,85,130,500,625,4000]
-CLUSTER_NAMES = ['Upper Scorpius','UCL+LCC','Beta Pic', 'alpha Per','Pleiades','UMa', 'Hyades','M67']
+CLUSTER_NAMES = ['Upper Scorpius','UCL+LCC',r'$\Beta$ Pic', r'$\alpha$ Per','Pleiades','UMa', 'Hyades','M67']
 MARKERS = ['^','>','p','+','s','d','o','x']
 
 #just main 4 clusters

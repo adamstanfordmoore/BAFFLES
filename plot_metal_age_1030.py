@@ -22,11 +22,16 @@ def main():
     #bv_rhk,rhk_fits = readData.read_calcium()
 
     
-    pp = PdfPages('li_age_fits.pdf')
-    for bv in np.arange(1,2,.05):
-        my_plot.metal_vs_age(li_fits,'lithium',bv,pp,showPlots=False,title='B-V= %s' % bv)
+    pp = PdfPages('li_scatter_v_age.pdf')
+    for bv in np.arange(.5,2,.5):
+        my_plot.scatter_vs_age(li_fits,'lithium',bv,pp,showPlots=False,title='B-V= %s' % bv)
     pp.close() 
-    
+    """
+    pp = PdfPages('li_age_fits_errorbars.pdf')
+    for bv in np.arange(1,2,.05):
+        my_plot.metal_vs_age(li_fits,'lithium',bv,pp,showPlots=False,title='B-V= %s' % bv,errorbars=True)
+    pp.close() 
+    """
     """
     pp = PdfPages('postBLDB_posteriors')
     for bv in [1.5,1.75,2,2.25]:

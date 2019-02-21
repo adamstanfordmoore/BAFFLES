@@ -1,7 +1,6 @@
 """
 Adam Stanford-Moore
-8/28/18
-This file provides an example program for how to use the baffles module
+2/11/19
 """
 import warnings
 from astropy.table import Table
@@ -28,12 +27,24 @@ def in_bounds(bv,l,const,log=False):
         return False
 
 def main():
-    #bv_li, upper_lim, li_fits = readData.read_lithium()
-    bv_rhk,rhk_fits = readData.read_calcium()#fromFile=False, saveToFile=False)
+    #bv_li, upper_lim, li_fits = readData.read_lithium(fromFile=True)
+    bv_rhk,rhk_fits = readData.read_calcium(fromFile=False, saveToFile=False,fit_degree=0)
     
-    pp=PdfPages('poster_metal_v_age.pdf')
-    my_plot.metal_vs_age(rhk_fits,'ca',.65,pp,showPlots=True,shadeScatter=True,errorbars=True)
+    #Scatter vs B-V
+    #pp=PdfPages('scatter_vs_bv_with_offset.pdf')
+    #my_plot.scatter_vs_bv(li_fits,'li',pp,showPlots=True)
+    #pp.close()
+
+
+    #Fit histogram
+    pp=PdfPages('ca_constant_hist.pdf')
+    my_plot.fit_histogram(bv_rhk,rhk_fits,'ca',pp,showPlots=True)
     pp.close()
+
+
+    #pp=PdfPages('poster_metal_v_age.pdf')
+    #my_plot.metal_vs_age(rhk_fits,'ca',.65,pp,showPlots=True,shadeScatter=True,errorbars=True)
+    #pp.close()
 
 
     #pp = PdfPages('mamajek_calcium.pdf')
@@ -61,6 +72,16 @@ def main():
     baf = baffles.age_estimator('li')
     baf.make_grids(li_fits)
     baf.posterior_product(bp_c,bp_l,pp,showPlot=True,showStars=True,givenAge=24,title=' ')
+    pp.close()
+    """
+    """ 
+    #Omitting each cluster
+    pp = PdfPages('clusters_5clusters.pdf')
+    for i in range(1,len(bv_li) - 1):
+        print "Omitting " + const.CLUSTER_NAMES[i]
+        baf = baffles.age_estimator('li',default_grids=False)
+        baf.make_grids(li_fits,omit_cluster=-1)
+        baf.posterior_product(bv_li[i][0],bv_li[i][1],pp,showPlot=True,showStars=False,givenAge=const.CLUSTER_AGES[i],title= const.CLUSTER_NAMES[i] + ' Posterior Product')
     pp.close()
     """
 

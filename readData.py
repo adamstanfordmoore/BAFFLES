@@ -17,7 +17,7 @@ import pickle
 import fitting as my_fits
 
 #reads in data and generates fits
-def read_calcium(fromFile=True,saveToFile=False):
+def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
     if (fromFile):
         bv_rhk = pickle.load(open('data/bv_rhk.p','rb'))
         fits = pickle.load(open('data/ca_fits.p','rb'))
@@ -40,7 +40,8 @@ def read_calcium(fromFile=True,saveToFile=False):
             c = np.array(t["__B-V_0"][cluster_index[i][0]:cluster_index[i][1]]).astype(np.float)
             r = np.array(t["logR_HK"][cluster_index[i][0]:cluster_index[i][1]]).astype(np.float)
         bv_rhk.append([c,r])
-        fits.append(my_fits.constant_fit(r))
+        #fits.append(my_fits.constant_fit(r))
+        fits.append(my_fits.poly_fit(c,r,n=fit_degree,scatter=True))
     if (saveToFile):
         pickle.dump(bv_rhk,open('data/bv_rhk.p','wb'))
         pickle.dump(fits,open('data/ca_fits.p','wb'))

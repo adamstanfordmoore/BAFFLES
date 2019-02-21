@@ -16,6 +16,7 @@ BIN_SIZE = 10
 MIN_PER_BIN = 4
 MIN_LENGTH = .15 #minimum B-V length of piecewise segment
 DOWN_ARROW = u'$\u2193$'
+MEASUREMENT_LI_SCATTER = 10 #mA in linear space from measurement error
 
 #limits vertex from moving to the right of lim
 def constrained_poly_fit(x,y,lim=0):
@@ -84,10 +85,26 @@ def ldb_fit(fits):
     """
     return ldb_age
 
+def ldb_scatter(fits):
+    bv_at_zero_li,ages,cluster_names = [],[],[]
+    import li_constants as const
+    for c in range(len(fits)):
+        li = fits[c][0](const.BV)
+        i = bisect.bisect_left(const.BV,.65) #only interested in zero crossing at bv > .65
+        while (i < len(li) and li[i] > const.ZERO_LI):
+            i += 1 #can change to 5 for slightly more speed
+        if (i != len(li)):
+            bv_at_zero_li.append(const.BV[i])
+            ages.append(const.CLUSTER_AGES[c])
+            cluster_names.append(const.CLUSTER_NAMES[c])
+    fit = poly_fit(bv_at_zero_li,np.log10(ages),1)
+    def ldb_age(x):
+        return np.power(10,fit(x))
+    return np.std(residuals(bv_at_zero_li,np.log10(ages),ldb_age))
 
 #returns the 1d polynomial
 def linear_fit(x,y,scatter=False):
-    return poly_fit(x,y,1,scatter)
+    return poly_fit(x,y,1,scatter=scatter)
 
 # finds and returns n dimensional polynomial fit.  If scatter=True than it returns [median fit,scatter fit]
 def poly_fit(x,y,n=2,upper_lim=None,scatter=False):
@@ -121,13 +138,32 @@ def poly_minimizer(params,c,r,upper_lim):
     if (prob.negative_sig(sig)):
         return np.inf
     r_model = np.poly1d(params[0:-1])(c)
-    sig_model = constant_fit(sig)[0](c)
+    sig_model = log_scatter_with_linear_offset(sig,np.poly1d(params[0:-1]))(c)
+    #sig_model = constant_fit(sig)[0](c)
        
     return inverse_log_likelihood(r_model,sig_model,r,upper_lim)
 
 def constant_fit(y):
     m,s = np.mean(y),np.std(y)
     return [np.poly1d([m]),np.poly1d([s])]
+
+# finds total scatter in log space combining astrophysical scatter and constant measurement uncertainty
+# sig is the constant astrophysical scatter in log space, li_fit is the log lithium mean functional fit
+# returns a function of log total scatter as a function of B-V
+def log_scatter_with_linear_offset(sig,li_fit):
+    import li_constants as const
+    logEW = li_fit(const.BV)
+    linEW = np.power(10,li_fit(const.BV))
+    sig_a_lin = (np.power(10,logEW + sig) - np.power(10,logEW - sig))/2
+    sig_tot_lin = np.sqrt(sig_a_lin**2 + MEASUREMENT_LI_SCATTER**2) 
+    upper_log = np.log10(linEW + sig_tot_lin)
+    lower = linEW - sig_tot_lin
+    lower[lower <=0] = 1
+
+    
+    sig_tot_log = (np.log10(linEW + sig_tot_lin) - np.log10(lower))/2
+    return interpolate.interp1d(const.BV,sig_tot_log, fill_value='extrapolate')
+
 
 #x_method: determines how x_coordinates are selected.
 #   'even' means evenly spaced in the x dimension from min(x) to max(x)
@@ -378,8 +414,8 @@ def get_x_y_sig(params,x_coords):
 
 #modifies x,y input parameters by subtracting off a linear trend
 def detrend(x,y,trend):
-        for i in range(len(x)):
-                y[i] -= trend(x[i])
+    for i in range(len(x)):
+            y[i] -= trend(x[i])
 
 def residuals(x,y,trend):
         b = copy.deepcopy(y)

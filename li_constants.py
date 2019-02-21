@@ -1,6 +1,6 @@
 import numpy as np
 CLUSTER_AGES = [5.5,43.7,130,240,625,4000]
-CLUSTER_NAMES = ['ngc2264','ic2602','Pleiades','M34','Hyades','M67']
+CLUSTER_NAMES = ['NGC2264','IC2602','Pleiades','M34','Hyades','M67']
 MARKERS = ['^','>','p','+','s','d','o','x']
 
 BV_RANGE = [.24,2.3]
