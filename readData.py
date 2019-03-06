@@ -52,10 +52,10 @@ def get_li_fits(bv_li,upper_lim_all):
     fits = []
     for i in range(len(bv_li)):
         poly_order = 2
-        if (const.CLUSTER_NAMES[i] in ['UMa','NGC3680']): #these cluster need linear fits
-            poly_order = 1
+        #if (const.CLUSTER_NAMES[i] in ['UMa','NGC3680']): #these cluster need linear fits
+        #    poly_order = 1
         fit = my_fits.poly_fit(bv_li[i][0],bv_li[i][1],poly_order,upper_lim_all[i])
-        #fit = my_fits.my_fits_fit(bv_li[i][0],bv_li[i][1],upper_lim=upper_lim_all[i],x_method='bin')
+        #fit = my_fits.pwise_fit(bv_li[i][0],bv_li[i][1],upper_lim=upper_lim_all[i],guess_fit=my_fits.poly_fit(bv_li[i][0],bv_li[i][1]),x_method='bin')
         fits.append(fit)
     return fits
 

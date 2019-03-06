@@ -8,15 +8,20 @@ from matplotlib.backends.backend_pdf import PdfPages
 from scipy import interpolate
 import copy
 import bisect
+import pickle
 from scipy import integrate
 from scipy.optimize import minimize
 import probability as prob
+from astropy.io import ascii
+from astropy.table import Table
+from numpy import genfromtxt
 
 BIN_SIZE = 10
 MIN_PER_BIN = 4
 MIN_LENGTH = .15 #minimum B-V length of piecewise segment
 DOWN_ARROW = u'$\u2193$'
 MEASUREMENT_LI_SCATTER = 10 #mA in linear space from measurement error
+PRIMORDIAL_NLI = 3.2
 
 #limits vertex from moving to the right of lim
 def constrained_poly_fit(x,y,lim=0):
@@ -51,7 +56,7 @@ def constrained_poly_minimizer(params,x,y,lim):
 
 #computes fit of age and lithium depletion boundary (well bv at which lithium goes to zero)
 # returns function such that giving it a b-v value returns oldest age it could be.  
-def ldb_fit(fits):
+def bldb_fit(fits): 
     bv_at_zero_li,ages,cluster_names = [],[],[]
     import li_constants as const
     for c in range(len(fits)):
@@ -130,7 +135,8 @@ def minimize_polynomial(x,y,n,upper_lim):
     sig = res.x[-1]
     poly = res.x[0:-1]
     fit = np.poly1d(poly)
-    return [fit, constant_fit(sig)[0]]
+    #return [fit, constant_fit(sig)[0]]
+    return [fit, log_scatter_with_linear_offset(sig,np.poly1d(res.x[0:-1]))]
 
 
 def poly_minimizer(params,c,r,upper_lim):
@@ -156,13 +162,39 @@ def log_scatter_with_linear_offset(sig,li_fit):
     linEW = np.power(10,li_fit(const.BV))
     sig_a_lin = (np.power(10,logEW + sig) - np.power(10,logEW - sig))/2
     sig_tot_lin = np.sqrt(sig_a_lin**2 + MEASUREMENT_LI_SCATTER**2) 
-    upper_log = np.log10(linEW + sig_tot_lin)
-    lower = linEW - sig_tot_lin
-    lower[lower <=0] = 1
-
-    
-    sig_tot_log = (np.log10(linEW + sig_tot_lin) - np.log10(lower))/2
+    #upper_log = np.log10(linEW + sig_tot_lin)
+    #lower = linEW - sig_tot_lin
+    #lower[lower <=0] = 1
+    sig_tot_log = np.log10(linEW + sig_tot_lin)
     return interpolate.interp1d(const.BV,sig_tot_log, fill_value='extrapolate')
+
+#returns a single number for the average scatter across all the clusters
+def total_scatter(bv_li,fits,omit_cluster,upper_limits=None,li_range=None):
+    allClusters = []
+    for c in range(len(fits)):
+        if (omit_cluster and c==omit_cluster):        
+            continue    
+        arr = []
+        resid = residuals(bv_li[c][0],bv_li[c][1],fits[c][0])
+        for i in range(len(resid)):
+            if (upper_limits and upper_limits[c][i]):
+                continue
+            if (li_range and (bv_li[c][1][i] < li_range[0] or li_range[1] < bv_li[c][1][i])):
+                continue
+            arr.append(resid[i])
+        allClusters.append(arr)
+
+    totalStars = np.concatenate(allClusters)
+    return np.std(totalStars)
+
+def two_scatter(sigs,EW):
+    return np.
+
+def fit_two_scatters(bv_m,fits
+    return
+
+def scatter_minimizer(params):
+    return
 
 
 #x_method: determines how x_coordinates are selected.
@@ -332,18 +364,17 @@ def piecewise(x,x_locs,y_locs):
 #x_locs defines the discontinuities,y_locs defines heights of step function
 # length of x_locs is 1 fewer than y_locs
 def step(x,x_locs,y_locs):
-        if (type(x) != list):
-                if (type(x) == float or type(x) == int):
-                        x = [x]
-                x = x.tolist()
-        res = []
-        for val in x:
-                i = bisect.bisect_left(x_locs,val)
-                res.append(y_locs[i])
-        if (len(res) == 1):
-                return res[0]
-        return np.array(res)
-
+    if (type(x) != list):
+        if (type(x) == float or type(x) == int):
+            x = [x]
+        x = x.tolist()
+    res = []
+    for val in x:
+        i = bisect.bisect_left(x_locs,val)
+        res.append(y_locs[i])
+    if (len(res) == 1):
+        return res[0]
+    return np.array(res)
 
 def x_coords_from_binning(c,bin_size):
     a = copy.deepcopy(c)
@@ -421,4 +452,73 @@ def residuals(x,y,trend):
         b = copy.deepcopy(y)
         detrend(x,b,trend)
         return b
+
+#takes in a numpy array input_data and converts these from input to output.  
+#returns an array of the same length
+def magic_table_convert(input_data,in_column,out_column):
+    t = ascii.read('data/mamajek_magic_table.txt')
+    x,y = [],[] #x is input and y is output like a function
+    for row in t:
+        try:
+            a = float(row[in_column])
+            b = float(row[out_column])
+            x.append(a)
+            y.append(b)
+        except:
+            continue
+    
+    interp = interpolate.interp1d(x,y, fill_value='extrapolate')
+    return interp(input_data) 
+
+#teff is a matrix
+def teff_to_primli(teff):
+    t = genfromtxt('data/NLi_to_LiEW.csv', delimiter=',')
+    logEW = [row[0] for row in t[1:]]
+    #print logEW
+    arr = []
+    for temp in teff:
+        #make my own column via interp
+        col = []
+        for row in t[1:]:
+            #print row[1:]
+            #print t[0][1:]
+            col.append(interpolate.interp1d(t[0][1:], row[1:],fill_value='extrapolate')(temp))
+        arr.append(interpolate.interp1d(col,logEW, fill_value='extrapolate')(PRIMORDIAL_NLI).tolist())
+            
+    return arr
+
+#return array of primordial Li for each B-V value in li_constants.BV
+def primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
+    assert (ngc2264_fit or fromFile),"primordial_li must take in ngc2264 fit if not reading from a file"
+    import li_constants as const
+    if (fromFile):
+       prim_li = pickle.load(open('data/primordial_li.p','rb'))
+       return interpolate.interp1d(const.BV,prim_li, fill_value='extrapolate')
+    
+    
+    teff = magic_table_convert(const.BV,6,1) #convert B-V to Teff
+    prim_li = teff_to_primli(teff)
+    
+    SODERBLOM_4000K_BOUNDARY = 1.356 #B-V
+    BTNEXTGEN_BOUNDARY = 1.522 # No lithium as decreased by 5 Myr
+    loc1 = bisect.bisect_left(const.BV,SODERBLOM_4000K_BOUNDARY)
+    loc2 = bisect.bisect_left(const.BV,BTNEXTGEN_BOUNDARY)
+    print [prim_li[loc1],ngc2264_fit(BTNEXTGEN_BOUNDARY)]
+    middle = interpolate.interp1d([SODERBLOM_4000K_BOUNDARY,BTNEXTGEN_BOUNDARY],[prim_li[loc1],ngc2264_fit(BTNEXTGEN_BOUNDARY)], fill_value='extrapolate')(const.BV[loc1:loc2])
+
+    final_li = prim_li[0:loc1] + middle.tolist() + ngc2264_fit(const.BV[loc2:]).tolist()
+
+    #print final_li
+    if (saveToFile):
+        pickle.dump(final_li,open('data/primordial_li.p','wb'))
+    return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
+
+
+
+
+
+
+
+
+
 

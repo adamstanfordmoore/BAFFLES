@@ -105,25 +105,36 @@ def plot_fits(bv_li,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,title
         plt.close()
         """
 
-def metal_vs_bv(bv_li,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,shadeScatter=False,title=None):
+def metal_vs_bv(bv_li,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,shadeScatter=False,title=None,primordial_li = False,fits_only=False):
     const = init_constants(metal)
     plt.xlabel(r'$(B-V)_0$',size=18)
     #plt.ylabel(r'EW Li (m$\AA$)',size=18)
     set_ylabel(metal)
+    
+    plt.axis(const.BV_RANGE + const.METAL_RANGE)
     #plt.axis(const.BV_RANGE + np.power(10,const.METAL_RANGE).tolist())
-    plt.axis([const.BV_RANGE[0],1, 0,400])
+    #plt.axis([const.BV_RANGE[0],1, 0,400])
     for c in range(len(bv_li)):
             ax = plt.gca()
             color = const.COLORS[c] #next(ax._get_lines.prop_cycler)['color']
-            for i in range(len(bv_li[c][0])):
+            if (not fits_only):
+                for i in range(len(bv_li[c][0])):
                     if (upper_lim and upper_lim[c][i]):
-                            plt.scatter(bv_li[c][0][i],bv_li[c][1][i],color=color,marker=const.DOWN_ARROW)
+                        plt.scatter(bv_li[c][0][i],bv_li[c][1][i],color=color,marker=const.DOWN_ARROW)
                     else:
-                            plt.scatter(bv_li[c][0][i],bv_li[c][1][i],color=color)
+                        plt.scatter(bv_li[c][0][i],bv_li[c][1][i],color=color)
             plt.plot(const.BV,fits[c][0](const.BV),dashes=[2,2],label=const.CLUSTER_NAMES[c], color=color)
     if (shadeScatter):
         shade_scatter(fits[c],const.BV.tolist())
-    #plt.legend(loc=4)
+    
+    if (primordial_li and metal.lower()[0]=='l'):
+        ngc2264_fit = fits[const.CLUSTER_NAMES.index("NGC2264")][0]
+        primordial_li_fit = my_fits.primordial_li(ngc2264_fit,fromFile=False,saveToFile=True) 
+        plt.plot(const.BV,primordial_li_fit(const.BV),label="Primordial LiEW")
+        #bldb_fit = my_fits.bldb_fit(fits)
+        #plt.plot(const.BV,bldb_fit(const.BV),label="BLDB Fit")
+        
+
     if (title):
         plt.title(title,size=18)
         #else:
@@ -131,6 +142,9 @@ def metal_vs_bv(bv_li,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,sha
     leg = plt.legend()
     for i in range(len(leg.get_texts())):
         plt.setp(leg.get_texts()[i],color=const.COLORS[i])
+    if (primordial_li):
+        plt.setp(leg.get_texts()[-1],color='C0')
+
     if (pdfPage):
         pdfPage.savefig()
     if (showPlots):
@@ -158,7 +172,10 @@ def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,shad
         rhk.append(const.ZERO_LI)
         CLUSTER_AGES.append(my_fits.ldb_fit(fits)(bv))
         CLUSTER_NAMES.append('BLDB point')
-
+        rhk.append(my_fits.primordial_li()(bv))
+        CLUSTER_AGES.append(const.PRIMORDIAL_LI_AGE)
+        CLUSTER_NAMES.append("Primordial LiEW")
+        
 
     ax = plt.gca()
     ax.set_xscale('log')
@@ -335,18 +352,27 @@ def plot_mamajek(bv_rhk,fits):
         plt.text(.61,-4.77,"M67",size=13,color=const.COLORS[3])
 
 
-def fit_histogram(bv_li,fits,metal,pdfPage=None,showPlots=False,title=None):
+def fit_histogram(bv_li,fits,metal,pdfPage=None,showPlots=False,title=None,upper_limits=None,li_range=None):
     const = init_constants(metal)
     allClusters = []
-    
+    #totalStars = []
+
     for c in range(len(fits)):
-        allClusters.append(my_fits.residuals(bv_li[c][0],bv_li[c][1],fits[c][0]))
+        arr = []
+        residuals = my_fits.residuals(bv_li[c][0],bv_li[c][1],fits[c][0])
+        for i in range(len(residuals)):
+            if (upper_limits and upper_limits[c][i]):
+                continue
+            if (li_range and (bv_li[c][1][i] < li_range[0] or li_range[1] < bv_li[c][1][i])):
+                continue
+            arr.append(residuals[i])
+        allClusters.append(arr)
 
     totalStars = np.concatenate(allClusters)
     mu = np.mean(totalStars)
     sigma = np.std(totalStars)
     
-    max_val = np.max(np.max(totalStars),np.abs(np.min(totalStars))) + .1
+    max_val = np.max([np.max(totalStars),np.abs(np.min(totalStars))]) + .1
     
     plt.rcParams["figure.figsize"] = (8,6)
     plt.hist(allClusters,bins=20,stacked=True,density=True)

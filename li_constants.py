@@ -26,3 +26,4 @@ DEFAULT_SIGMA_GRID = "grids/sigma_li_103018.npy"
 #DEFAULT_SIGMA_GRID = "grids/sigma_li.npy"
 
 ZERO_LI = 0.5 #in log scale
+PRIMORDIAL_LI_AGE = 1 #Myr

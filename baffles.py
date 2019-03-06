@@ -147,24 +147,18 @@ class age_estimator:
 
     #calculates and returns a 2D array of sigma b-v and age
     #omit_cluster specifies a cluster index to remove from the fits to make the grids without a cluster
-    def make_grids(self,fits,medianSavefile=None,sigmaSavefile=None,setAsDefaults=False, omit_cluster=None):
+    def make_grids(self,bv_li,fits,medianSavefile=None,sigmaSavefile=None,setAsDefaults=False, omit_cluster=None,upper_lim=None):
         if (medianSavefile and medianSavefile[-4:] == '.npy'):
             medianSavefile = medianSavefile[:-4]
         if (sigmaSavefile and sigmaSavefile[-4:] == '.npy'):
             sigmaSavefile = sigmaSavefile[:-4]
-      
-        
-        #fits = copy.deepcopy(ofits)
-        #oCLUSTER_AGES = copy.deepcopy(self.const.CLUSTER_AGES)
-        #print self.const.CLUSTER_AGES
-        #print len(fits),'\n\n\n'
-        """
-        if (omit_cluster):
-            fits.pop(omit_cluster)
-            #self.const.CLUSTER_NAMES.pop(omit_cluster)
-            oCLUSTER_AGES.pop(omit_cluster)
-"""
 
+        primordial_li_fit = None
+        ldb_fit = None
+        if (self.metal == 'lithium'):
+            #ngc2264_fit = fits[const.CLUSTER_NAMES.index("NGC2264")][0]
+            primordial_li_fit = my_fits.primordial_li()
+            bldb_fit = my_fits.bldb_fit(fits)
 
         median_rhk, sigma = [],[]
         for bv in self.const.BV:
@@ -180,11 +174,12 @@ class age_estimator:
                     #plt.scatter(self.const.CLUSTER_AGES[i],r,label=self.const.CLUSTER_NAMES[i])
             #plt.legend()        
             #plt.show()
-            #info added from depletion boundary
+            #info added from depletion boundary and primordial lithium
             if (self.metal == 'lithium'):
+                CLUSTER_AGES.append(bldb_fit(bv)) 
                 rhk.append(self.const.ZERO_LI)
-                CLUSTER_AGES.append(my_fits.ldb_fit(fits)(bv)) #could separate out to make faster
-           
+                CLUSTER_AGES.append(self.const.PRIMORDIAL_LI_AGE)
+                rhk.append(primordial_li_fit(bv))
 
             f = None
             if (len(rhk) == 1):
@@ -206,9 +201,13 @@ class age_estimator:
                     f = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,1)
             median_rhk.append(f(np.log10(self.const.AGE))) #uses determined function 
 
-            #3 different methods for handling scatter -- mean, best-fit, linear interp
-            m = np.mean(scatter)
-            sigma.append([m for i in range(len(self.const.AGE))])
+            #4 different methods for handling scatter -- total detrended mean, mean clusters, best-fit, linear interp
+            if (self.metal == 'calcium'):
+                m = my_fits.total_scatter(bv_li,fits,omit_cluster)
+                sigma.append([m for i in range(len(self.const.AGE))])
+            else:
+                m = np.mean(scatter)
+                sigma.append([m for i in range(len(self.const.AGE))])
             #sigma.append(np.poly1d(np.polyfit(np.log10(self.const.CLUSTER_AGES), scatter, 1))(np.log10(self.const.AGE)))
             #g = interpolate.interp1d(np.log10(self.const.CLUSTER_AGES),scatter, fill_value='extrapolate')
             #sigma.append(g(np.log10(self.const.AGE))) #linear extrapolate

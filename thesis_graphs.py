@@ -27,53 +27,40 @@ def in_bounds(bv,l,const,log=False):
         return False
 
 def main():
-    #bv_li, upper_lim, li_fits = readData.read_lithium(fromFile=True)
-    bv_rhk,rhk_fits = readData.read_calcium(fromFile=False, saveToFile=False,fit_degree=0)
+    #print my_fits.magic_table_convert([4000,3500],1,6)
+    #print my_fits.teff_to_primli([4000,4100,5000])
+    
+    bv_li, upper_lim, li_fits = readData.read_lithium(fromFile=True)
+    print my_fits.primordial_li(li_fits[const.CLUSTER_NAMES.index("NGC2264")][0],False,True)
+    #print li_fits[0][0](my_fits.magic_table_convert(4000,1,6))
+    #bv_rhk,rhk_fits = readData.read_calcium(fromFile=True)#, saveToFile=False,fit_degree=0)
     
     #Scatter vs B-V
     #pp=PdfPages('scatter_vs_bv_with_offset.pdf')
     #my_plot.scatter_vs_bv(li_fits,'li',pp,showPlots=True)
     #pp.close()
 
+    #my_plot.plot_fits(bv_li,li_fits,'li',showPlots=True,upper_lim=upper_lim)
 
     #Fit histogram
-    pp=PdfPages('ca_constant_hist.pdf')
-    my_plot.fit_histogram(bv_rhk,rhk_fits,'ca',pp,showPlots=True)
-    pp.close()
-
-
+    #pp=PdfPages('ca_constant_hist.pdf')
+    #my_plot.fit_histogram(bv_rhk,rhk_fits,'ca',pp,showPlots=True)
+    #pp.close()
+    #pp=PdfPages('li_piecewise.pdf')
+    #my_plot.fit_histogram(bv_li,li_fits,'li',pp,showPlots=True)
+    #pp.close()
+    
     #pp=PdfPages('poster_metal_v_age.pdf')
     #my_plot.metal_vs_age(rhk_fits,'ca',.65,pp,showPlots=True,shadeScatter=True,errorbars=True)
     #pp.close()
+    
 
 
     #pp = PdfPages('mamajek_calcium.pdf')
     #my_plot.metal_vs_bv(bv_rhk,rhk_fits,'calcium',pp,showPlots=True)
-    #pp.close() 
-    """
-    bp_c = []
-    bp_l = []
-    lim_bp = []
-    t = ascii.read('data/beta_pic_noM.txt', delimiter='\t')
-    for line in t:
-        if in_bounds(float(line[4]),float(line[5]),const):
-            bp_c.append(float(line[4]))
-            bp_l.append(float(line[5]))
-            lim_bp.append(False)
-    bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
-    #bv_li.append([bp_c,bp_l])
-    #upper_lim.append(lim_bp)
-   
-    #plt.scatter(bp_c,bp_l)
-    #plt.plot(bp_c,my_fits.poly_fit(bp_c,bp_l)(bp_c))
-    #plt.show()
+    #pp.close()  
 
-    pp = PdfPages('beta_pic_posterior_product_v2.pdf')
-    baf = baffles.age_estimator('li')
-    baf.make_grids(li_fits)
-    baf.posterior_product(bp_c,bp_l,pp,showPlot=True,showStars=True,givenAge=24,title=' ')
-    pp.close()
-    """
+
     """ 
     #Omitting each cluster
     pp = PdfPages('clusters_5clusters.pdf')
