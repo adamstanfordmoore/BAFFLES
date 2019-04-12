@@ -1,9 +1,11 @@
 import numpy as np
-CLUSTER_AGES = [5.5,43.7,130,240,625,4000,85,600,200,24]
-CLUSTER_NAMES = ['NGC2264','IC2602','Pleiades','M34','Hyades','M67',r'$\alpha$ Per','Coma','M35',r'$\beta$ Pic']
-MARKERS = ['^','>','p','+','s','d','o','x']
+CLUSTER_AGES = [5.5,24,43.7,85,130,200,240,600,625,4000]
+CLUSTER_NAMES = ['NGC2264',r'$\beta$ Pic','IC2602',r'$\alpha$ Per','Pleiades','M35','M34','Coma','Hyades','M67']
+#CLUSTER_NAMES = ['NGC2264','IC2602','Pleiades','M34','Hyades','M67',r'$\alpha$ Per','Coma','M35',r'$\beta$ Pic']
+MARKERS = ['^','>','p','+','s','d','o','x','<','P','*','D','H','o']
 
-BV_RANGE = [.24,2.3]
+#BV_RANGE = [.24,2.3]
+BV_RANGE = [.35,1.9]
 METAL_RANGE = [0.5,3.2]
 COLORS = ['C0','C1','C2','C3','C4','C5','C6','C7','C8','C9', '#1f77b4','#ff7f0e']
 GALAXY_AGE = 13001 #Myr with 1 for range purposes
@@ -17,9 +19,13 @@ BV = np.linspace(BV_RANGE[0],BV_RANGE[1],1000) #the axis of the 2D arrays
 AGE = np.arange(1,GALAXY_AGE,1)#np.logspace(0,4,1000) #in units of Myr
 METAL = np.linspace(METAL_RANGE[0],METAL_RANGE[1],1000)
 
+#including prim_li, all clusters, new sigma scatter + measurement, constrained polynomial plus patch from bv .75 to .95
+DEFAULT_MEDIAN_GRID = "grids/median_li_030719.npy"
+DEFAULT_SIGMA_GRID = "grids/sigma_li_030719.npy"
+
 #including BLDB. polnomial fits to li vs bv. interpolation at given B-V
-DEFAULT_MEDIAN_GRID = "grids/median_li_103018.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_li_103018.npy"
+#DEFAULT_MEDIAN_GRID = "grids/median_li_103018.npy"
+#DEFAULT_SIGMA_GRID = "grids/sigma_li_103018.npy"
 
 #polnomial fits to li vs bv. interpolation at given B-V
 #DEFAULT_MEDIAN_GRID = "grids/median_li.npy"

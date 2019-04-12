@@ -30,7 +30,7 @@ def constrained_poly_fit(x,y,lim=0):
     if (not res.success):
         print "Unsuccessful minimizing of constrained polynomial function, check initial guess"
         print res.x
-
+    #print res.x
     return np.poly1d(res.x)
 
 def right_cubic_root(params):
@@ -56,7 +56,7 @@ def constrained_poly_minimizer(params,x,y,lim):
 
 #computes fit of age and lithium depletion boundary (well bv at which lithium goes to zero)
 # returns function such that giving it a b-v value returns oldest age it could be.  
-def bldb_fit(fits): 
+def bldb_fit(fits,plot=False): 
     bv_at_zero_li,ages,cluster_names = [],[],[]
     import li_constants as const
     for c in range(len(fits)):
@@ -69,25 +69,25 @@ def bldb_fit(fits):
             ages.append(const.CLUSTER_AGES[c])
             cluster_names.append(const.CLUSTER_NAMES[c])
    
-    """
-    pp = PdfPages('ldb_vs_age.pdf')
-    plt.title('Lithium depletion boundary over time')
-    plt.xlabel('B-V',size=18)
-    plt.ylabel('Age (Myr)',size=18)
-    plt.yscale('log')
-    """
     fit = poly_fit(bv_at_zero_li,np.log10(ages),1)
     def ldb_age(x):
         return np.power(10,fit(x))
-    """ 
-    for c in range(len(ages)):
-        plt.scatter(bv_at_zero_li[c],ages[c],label=cluster_names[c])
-    plt.plot(const.BV,ldb_age(const.BV))
-    plt.legend()
-    pp.savefig()
-    plt.show()
-    pp.close()
-    """
+    
+    if (plot):
+        pp = PdfPages('bldb_vs_age.pdf')
+        #plt.title('Lithium depletion boundary over time')
+        plt.xlabel('B-V',size=18)
+        plt.ylabel('Age (Myr)',size=18)
+        plt.yscale('log')
+        for c in range(len(ages)):
+            plt.scatter(bv_at_zero_li[c],ages[c],label=cluster_names[c])
+        plt.plot(const.BV,ldb_age(const.BV))
+        plt.fill_between(const.BV,ldb_age(const.BV),color='C0',alpha=.2,label="valid ages")
+        plt.legend()
+        pp.savefig()
+        plt.show()
+        pp.close()
+    
     return ldb_age
 
 def ldb_scatter(fits):
@@ -135,8 +135,8 @@ def minimize_polynomial(x,y,n,upper_lim):
     sig = res.x[-1]
     poly = res.x[0:-1]
     fit = np.poly1d(poly)
-    #return [fit, constant_fit(sig)[0]]
-    return [fit, log_scatter_with_linear_offset(sig,np.poly1d(res.x[0:-1]))]
+    return [fit, constant_fit(sig)[0]]
+    #return [fit, log_scatter_with_linear_offset(sig,np.poly1d(res.x[0:-1]))]
 
 
 def poly_minimizer(params,c,r,upper_lim):
@@ -144,8 +144,8 @@ def poly_minimizer(params,c,r,upper_lim):
     if (prob.negative_sig(sig)):
         return np.inf
     r_model = np.poly1d(params[0:-1])(c)
-    sig_model = log_scatter_with_linear_offset(sig,np.poly1d(params[0:-1]))(c)
-    #sig_model = constant_fit(sig)[0](c)
+    #sig_model = log_scatter_with_linear_offset(sig,np.poly1d(params[0:-1]))(c)
+    sig_model = constant_fit(sig)[0](c)
        
     return inverse_log_likelihood(r_model,sig_model,r,upper_lim)
 
@@ -169,33 +169,53 @@ def log_scatter_with_linear_offset(sig,li_fit):
     return interpolate.interp1d(const.BV,sig_tot_log, fill_value='extrapolate')
 
 #returns a single number for the average scatter across all the clusters
-def total_scatter(bv_li,fits,omit_cluster,upper_limits=None,li_range=None):
+def total_scatter(bv_m,fits,omit_cluster=None,upper_limits=None,li_range=None,scale_by_scatter=None):
     allClusters = []
     for c in range(len(fits)):
         if (omit_cluster and c==omit_cluster):        
             continue    
         arr = []
-        resid = residuals(bv_li[c][0],bv_li[c][1],fits[c][0])
+        resid = residuals(bv_m[c][0],bv_m[c][1],fits[c][0])
         for i in range(len(resid)):
             if (upper_limits and upper_limits[c][i]):
                 continue
-            if (li_range and (bv_li[c][1][i] < li_range[0] or li_range[1] < bv_li[c][1][i])):
+            if (li_range and (bv_m[c][1][i] < li_range[0] or li_range[1] < bv_m[c][1][i])):
                 continue
-            arr.append(resid[i])
+            if (scale_by_scatter):
+                arr.append(resid[i]/scale_by_scatter(bv_m[c][1][i]))
+            else:
+                arr.append(resid[i])
         allClusters.append(arr)
 
     totalStars = np.concatenate(allClusters)
     return np.std(totalStars)
 
+#takes in sigs containing two constants: constant log astrophysical scatter and constant linear measurement error
+#sigs = [astrophysical scatter in logEW, measuement error in EW] ~ [.15,15]
+# EW is an np array of EW values or a single number
 def two_scatter(sigs,EW):
-    return np.
+    sigma_measurement_err = np.log10(np.power(10,EW)+sigs[1]) - EW
+    return np.sqrt(sigs[0]**2 + sigma_measurement_err**2)
 
-def fit_two_scatters(bv_m,fits
-    return
+# returns a fit to scatter as a function of equivalent width
+def fit_two_scatters(bv_m,fits,upper_lim=None,omit_cluster=None):
+    params = [.15,15]
+    argv = (bv_m,fits,upper_lim,omit_cluster)
+    res = minimize(scatter_minimizer,params,args=argv, method='Nelder-Mead')
+    if (not res.success):
+        print "Unsuccessful minimizing scatter."
+        print "Guess: ",guess, " Result: ", res.x
+    else:
+        print "Successful Scatter: ", res.x
+    def fit(EW):
+        return two_scatter([.15,15],EW)
+    return fit
 
-def scatter_minimizer(params):
-    return
-
+def scatter_minimizer(params,bv_m,fits,upper_lim,omit_cluster):
+    def fit(EW):
+        return two_scatter(params,EW)
+    return np.abs(total_scatter(bv_m,fits,omit_cluster,upper_lim,scale_by_scatter=fit) - 1)
+   
 
 #x_method: determines how x_coordinates are selected.
 #   'even' means evenly spaced in the x dimension from min(x) to max(x)
@@ -244,11 +264,11 @@ def combined_fit(params,argv):
     #plot_comp(comp,argv[3],res.success)
 
     x_val,y_val,sig = get_x_y_sig(res.x,argv[0])
-    def fit(x): #returns inner function
-            return piecewise(x,x_val,y_val)
+    #def fit(x): #returns inner function
+    #        return piecewise(x,x_val,y_val)
     def scatter_fit(x):
             return step(x,x_val[1:-1],sig)
-    return [fit, scatter_fit] #,res.success
+    return [piecewise(x_val,y_val), scatter_fit] #,res.success
 
 def plot_comp(comp,upper_lim, converged):
     #plt.title("Convergence comparison")
@@ -269,7 +289,7 @@ def plot_comp(comp,upper_lim, converged):
 def compare_fits(params,argv): #c,r,upper_lim):
     x_coords,c,r,upper_lim = argv[0],argv[1],argv[2],argv[3]
     x,y,sig = get_x_y_sig(params,x_coords)
-    r_model = piecewise(c,x,y)
+    r_model = piecewise(x,y)(c)
     sig_model = step(c,x[1:-1],sig)
     l = []
     for i in range(len(r)):
@@ -289,7 +309,7 @@ def piecewise_minimizer(params,x_coords,c,r,upper_lim):
                 print params
                 print x,y,sig
                 raise RuntimeError("Error in inverse_log_likelihood")
-        r_model = piecewise(c,x,y)
+        r_model = piecewise(x,y)(c)
         sig_model = step(c,x[1:-1],sig)
         return inverse_log_likelihood(r_model,sig_model,r,upper_lim)
 
@@ -358,8 +378,8 @@ def getScatterGuess(c,r,x_coords,fit):
 #defines piecewise function that takes in an array of values x and fixed parameters of fit line
 #returns an array for the y_values at the locations specified by x
 #x_locs is increasing
-def piecewise(x,x_locs,y_locs):
-        return interpolate.interp1d(x_locs,y_locs, fill_value='extrapolate')(x)
+def piecewise(x_locs,y_locs):
+        return interpolate.interp1d(x_locs,y_locs, fill_value='extrapolate')
 
 #x_locs defines the discontinuities,y_locs defines heights of step function
 # length of x_locs is 1 fewer than y_locs
@@ -453,9 +473,20 @@ def residuals(x,y,trend):
         detrend(x,b,trend)
         return b
 
-#takes in a numpy array input_data and converts these from input to output.  
-#returns an array of the same length
-def magic_table_convert(input_data,in_column,out_column):
+#creates a function that interpolates between input and output.  
+#returns a function
+def magic_table_convert(in_column,out_column):
+    if (type(in_column) == str):
+        if (in_column.lower() == "teff"):
+            in_column = 1
+        elif (in_column.lower() == "bv" or in_column.lower() == "b-v"):
+            in_column = 6
+    if (type(out_column) == str):
+        if (out_column.lower() == "teff"):
+            out_column = 1
+        elif (out_column.lower() == "bv" or out_column.lower() == "b-v"):
+            out_column = 6
+    
     t = ascii.read('data/mamajek_magic_table.txt')
     x,y = [],[] #x is input and y is output like a function
     for row in t:
@@ -467,8 +498,7 @@ def magic_table_convert(input_data,in_column,out_column):
         except:
             continue
     
-    interp = interpolate.interp1d(x,y, fill_value='extrapolate')
-    return interp(input_data) 
+    return interpolate.interp1d(x,y, fill_value='extrapolate') 
 
 #teff is a matrix
 def teff_to_primli(teff):
@@ -495,15 +525,14 @@ def primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
        prim_li = pickle.load(open('data/primordial_li.p','rb'))
        return interpolate.interp1d(const.BV,prim_li, fill_value='extrapolate')
     
-    
-    teff = magic_table_convert(const.BV,6,1) #convert B-V to Teff
+    teff = magic_table_convert(6,1)(const.BV) #convert B-V to Teff
     prim_li = teff_to_primli(teff)
     
     SODERBLOM_4000K_BOUNDARY = 1.356 #B-V
-    BTNEXTGEN_BOUNDARY = 1.522 # No lithium as decreased by 5 Myr
+    BTNEXTGEN_BOUNDARY = 1.522 # No lithium has decreased by 5 Myr
     loc1 = bisect.bisect_left(const.BV,SODERBLOM_4000K_BOUNDARY)
     loc2 = bisect.bisect_left(const.BV,BTNEXTGEN_BOUNDARY)
-    print [prim_li[loc1],ngc2264_fit(BTNEXTGEN_BOUNDARY)]
+    #print [prim_li[loc1],ngc2264_fit(BTNEXTGEN_BOUNDARY)]
     middle = interpolate.interp1d([SODERBLOM_4000K_BOUNDARY,BTNEXTGEN_BOUNDARY],[prim_li[loc1],ngc2264_fit(BTNEXTGEN_BOUNDARY)], fill_value='extrapolate')(const.BV[loc1:loc2])
 
     final_li = prim_li[0:loc1] + middle.tolist() + ngc2264_fit(const.BV[loc2:]).tolist()
@@ -513,7 +542,14 @@ def primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
         pickle.dump(final_li,open('data/primordial_li.p','wb'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
 
+# takes in the logR'HK value and returns the age in units Myr
+def getMamaAge(r):
+    return np.power(10,-38.053 - 17.912*r - 1.6675*r*r)/1e6
 
+# Takes in age in units Myr and converts to logR'HK
+def getMamaRHK(age):
+    log_age = np.log10(np.array(age)*1e6)
+    return 8.94 - 4.849*log_age + .624*log_age**2 - .028 * log_age**3
 
 
 

@@ -71,14 +71,22 @@ def in_bounds(bv,l,const,log=False):
 
 def read_lithium(fromFile=True,saveToFile=False):
     if (fromFile):
-        bv_li = pickle.load(open('data/bv_li.p','rb'))
-        upper_lim = pickle.load(open('data/upper_lim.p','rb'))
-        fits = pickle.load(open('data/li_fits.p','rb'))
+        bv_li = pickle.load(open('data/bv_li_all.p','rb'))
+        upper_lim = pickle.load(open('data/upper_lim_all.p','rb'))
+        fits = pickle.load(open('data/li_fits_all.p','rb'))
         return bv_li,upper_lim,fits
 
     import li_constants as const
     bv_li = []
     upper_lim = []
+    
+    """
+    t = ascii.read('data/NGC2264_bouvier.txt',delimiter=';')
+    ngc2264_c = []
+    ngc2264_l = []
+    print t
+    print t[0]
+    """
     t = ascii.read('data/ngc2264_lithium_bv.csv',delimiter=';')
     ngc2264_c = []
     ngc2264_l = []
@@ -99,7 +107,21 @@ def read_lithium(fromFile=True,saveToFile=False):
     ngc2264_l = np.delete(ngc2264_l,ind)
     bv_li.append([ngc2264_c,ngc2264_l])
     upper_lim.append([False]*len(ngc2264_c))
-    
+ 
+    bp_c = []
+    bp_l = []
+    lim_bp = []
+    t = ascii.read('data/beta_pic.txt', delimiter='\t')
+    for line in t:
+        if in_bounds(float(line[4]),float(line[5]),const):
+            bp_c.append(float(line[4]))
+            bp_l.append(float(line[5]))
+            lim_bp.append(False)
+    bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
+    bv_li.append([bp_c,bp_l])
+    upper_lim.append(lim_bp)
+
+   
     ic2602_c = []
     ic2602_l = []
     t = ascii.read('data/ic2602_lithium.txt', delimiter=',')
@@ -111,6 +133,20 @@ def read_lithium(fromFile=True,saveToFile=False):
     bv_li.append([ic2602_c,ic2602_l])
     upper_lim.append([False]*len(ic2602_c))
     
+    aper_c = []
+    aper_l = []
+    lim_aper = []
+    t = ascii.read('data/alpha_per.txt', delimiter='\t')
+    for line in t:
+        if in_bounds(float(line[2]),float(line[4]),const):
+            aper_c.append(float(line[2]))
+            aper_l.append(float(line[4])) 
+            lim_aper.append(False)
+    aper_c,aper_l = np.array(aper_c),np.log10(np.array(aper_l))
+    bv_li.append([aper_c,aper_l])
+    upper_lim.append(lim_aper)
+
+   
     pleiades_c = []
     pleiades_l = []
     lim_p = []
@@ -126,6 +162,19 @@ def read_lithium(fromFile=True,saveToFile=False):
     pleiades_c,pleiades_l = np.array(pleiades_c),np.log10(np.array(pleiades_l))
     bv_li.append([pleiades_c,pleiades_l])
     upper_lim.append(lim_p)
+    
+    m35_c = []
+    m35_l = []
+    lim_m35 = []
+    t = ascii.read('data/M35_data.txt')
+    for line in t:
+        if in_bounds(float(line[1]),float(line[2]),const):
+            m35_c.append(float(line[1]))
+            m35_l.append(float(line[2]))
+            lim_m35.append(line[-1]!=0)
+    m35_c,m35_l = np.array(m35_c),np.log10(np.array(m35_l))
+    bv_li.append([m35_c,m35_l])
+    upper_lim.append(lim_m35)
     
     m34_c = []
     m34_l = []
@@ -144,6 +193,20 @@ def read_lithium(fromFile=True,saveToFile=False):
     m34_c,m34_l = np.array(m34_c),np.log10(np.array(m34_l))
     bv_li.append([m34_c,m34_l])
     upper_lim.append(lim_m34) 
+
+    coma_c = []
+    coma_l = []
+    lim_coma = []
+    t = ascii.read('data/coma_berenices.txt', delimiter=',')
+    for line in t:
+        if in_bounds(float(line[2]),float(line[4]),const):
+            coma_c.append(float(line[2]))
+            coma_l.append(float(line[4]))
+            lim_coma.append(line[-1]==1)
+    coma_c,coma_l = np.array(coma_c),np.log10(np.array(coma_l))
+    bv_li.append([coma_c,coma_l])
+    upper_lim.append(lim_coma)
+
 
     hyades_c = []
     hyades_l = []
@@ -179,46 +242,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     m67_c,m67_l = np.array(m67_c),np.log10(np.array(m67_l))
     bv_li.append([m67_c,m67_l])
     upper_lim.append(lim_m67)
-
-    aper_c = []
-    aper_l = []
-    lim_aper = []
-    t = ascii.read('data/alpha_per.txt', delimiter='\t')
-    for line in t:
-        if in_bounds(float(line[2]),float(line[4]),const):
-            aper_c.append(float(line[2]))
-            aper_l.append(float(line[4])) 
-            lim_aper.append(False)
-    aper_c,aper_l = np.array(aper_c),np.log10(np.array(aper_l))
-    bv_li.append([aper_c,aper_l])
-    upper_lim.append(lim_aper)
-
-    coma_c = []
-    coma_l = []
-    lim_coma = []
-    t = ascii.read('data/coma_berenices.txt', delimiter=',')
-    for line in t:
-        if in_bounds(float(line[2]),float(line[4]),const):
-            coma_c.append(float(line[2]))
-            coma_l.append(float(line[4]))
-            lim_coma.append(line[-1]==1)
-    coma_c,coma_l = np.array(coma_c),np.log10(np.array(coma_l))
-    bv_li.append([coma_c,coma_l])
-    upper_lim.append(lim_coma)
-
-    m35_c = []
-    m35_l = []
-    lim_m35 = []
-    t = ascii.read('data/M35_data.txt')
-    for line in t:
-        if in_bounds(float(line[1]),float(line[2]),const):
-            m35_c.append(float(line[1]))
-            m35_l.append(float(line[2]))
-            lim_m35.append(line[-1]!=0)
-    m35_c,m35_l = np.array(m35_c),np.log10(np.array(m35_l))
-    bv_li.append([m35_c,m35_l])
-    upper_lim.append(lim_m35)
-    
+   
     """
     uma_c = []
     uma_l = []
@@ -254,26 +278,12 @@ def read_lithium(fromFile=True,saveToFile=False):
     bv_li.append([ngc3680_c,ngc3680_l])
     upper_lim.append(lim_ngc3680)
     """
-
-    bp_c = []
-    bp_l = []
-    lim_bp = []
-    t = ascii.read('data/beta_pic.txt', delimiter='\t')
-    for line in t:
-        if in_bounds(float(line[4]),float(line[5]),const):
-            bp_c.append(float(line[4]))
-            bp_l.append(float(line[5]))
-            lim_bp.append(False)
-    bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
-    bv_li.append([bp_c,bp_l])
-    upper_lim.append(lim_bp)
-
     fits = get_li_fits(bv_li,upper_lim)
 
     if (saveToFile):
-        pickle.dump(bv_li,open('data/bv_li.p','wb'))
-        pickle.dump(upper_lim,open('data/upper_lim.p','wb'))
-        pickle.dump(fits,open('data/li_fits.p','wb'))
+        pickle.dump(bv_li,open('data/bv_li_all.p','wb'))
+        pickle.dump(upper_lim,open('data/upper_lim_all.p','wb'))
+        pickle.dump(fits,open('data/li_fits_all.p','wb'))
 
     return bv_li, upper_lim, fits
 

@@ -30,9 +30,8 @@ def in_bounds(bv,l,const,log=False):
 def main():
     #bv_li, upper_lim, li_fits = readData.read_lithium()
     bv_rhk,rhk_fits = readData.read_calcium()#fromFile=False, saveToFile=False)
-    
     pp=PdfPages('poster_metal_v_age.pdf')
-    my_plot.metal_vs_age(rhk_fits,'ca',.65,pp,showPlots=True,shadeScatter=True,errorbars=True)
+    my_plot.metal_vs_age(rhk_fits,'ca',.65,pp,showPlots=True,shadeScatter=True,errorbars=True,bv_m=bv_rhk,mamajek_poly=True)
     pp.close()
 
 

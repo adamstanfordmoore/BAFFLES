@@ -80,7 +80,7 @@ class age_estimator:
 
     #Takes in bv the (B-V)o corrected color and the metallicity to return a posterior object.
     #Metallicity: log(R'HK) if refering to calcium. log equivalent width per mA if lithium.
-    def get_posterior(self,bv,metallicity,pdfPage=None,showPlot=False,givenAge=None,bv_uncertainty=BV_UNCERTAINTY,mamajekAge=None):
+    def get_posterior(self,bv,metallicity,pdfPage=None,showPlot=False,givenAge=None,givenErr = None,bv_uncertainty=BV_UNCERTAINTY,mamajekAge=None,title=None):
         array = self.age_dist_uncertainty(bv,bv_uncertainty,metallicity)
         prob.normalize(self.const.AGE,array)
         p_struct = posterior()
@@ -88,11 +88,12 @@ class age_estimator:
         p_struct.stats = prob.stats(self.const.AGE,array)
 
         if (showPlot or pdfPage):
-            title = 'Posterior Age Probabilty for (B-V)o = '+'%.2f' % bv +', ' + self.metal + ' = %.2f' % metallicity
-            my_plot.posterior(self.const.AGE, p_struct.array, p_struct.stats,title,pdfPage,showPlot,givenAge=givenAge,mamajekAge=mamajekAge) 
+            if (title == None):
+                title = 'Posterior Age Probabilty for (B-V)o = '+'%.2f' % bv +', ' + self.metal + ' = %.2f' % metallicity
+            my_plot.posterior(self.const.AGE, p_struct.array, p_struct.stats,title,pdfPage,showPlot,givenAge=givenAge,givenErr=givenErr, mamajekAge=mamajekAge) 
         return p_struct
     
-    def posterior_product(self,bv_arr,metallicity_arr,pdfPage=None,showPlot=False,showStars=False,title=None,givenAge=None,bv_errs=None):
+    def posterior_product(self,bv_arr,metallicity_arr,pdfPage=None,showPlot=False,showStars=False,title=None,givenAge=None,givenErr = None,bv_errs=None):
         if (not bv_errs):
             bv_errs = [BV_UNCERTAINTY]*len(bv_arr)
         ln_prob = np.zeros(len(self.const.AGE))
@@ -111,7 +112,7 @@ class age_estimator:
 
         if (showPlot or pdfPage):
                 title = title if title else 'Posterior Product Age Distribution'
-                my_plot.posterior(self.const.AGE, p_struct.array, p_struct.stats,title,pdfPage,showPlot,star_post,givenAge)
+                my_plot.posterior(self.const.AGE, p_struct.array, p_struct.stats,title,pdfPage,showPlot,star_post,givenAge,givenErr=givenErr)
 
         return p_struct
     
@@ -155,11 +156,16 @@ class age_estimator:
 
         primordial_li_fit = None
         ldb_fit = None
+        li_scatter_fit = None #fit as function of LiEW
+        ca_scatter = None
         if (self.metal == 'lithium'):
             #ngc2264_fit = fits[const.CLUSTER_NAMES.index("NGC2264")][0]
             primordial_li_fit = my_fits.primordial_li()
             bldb_fit = my_fits.bldb_fit(fits)
-
+            li_scatter_fit = my_fits.fit_two_scatters(bv_li,fits,upper_lim=upper_lim,omit_cluster=omit_cluster)
+        elif (self.metal == 'calcium'):
+            ca_scatter = my_fits.total_scatter(bv_li,fits,omit_cluster)
+        
         median_rhk, sigma = [],[]
         for bv in self.const.BV:
             rhk,scatter,CLUSTER_AGES = [],[],[]
@@ -181,7 +187,15 @@ class age_estimator:
                 CLUSTER_AGES.append(self.const.PRIMORDIAL_LI_AGE)
                 rhk.append(primordial_li_fit(bv))
 
-            f = None
+            fit = None
+            if (self.metal == 'calcium'):
+                fit = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,2)
+            elif (self.metal == 'lithium'):
+                if (.76 <= bv <= .94): #Patch to fix bad region. NEED TO FIX BETTER
+                    fit = my_fits.piecewise([0,2.2,3],[2.5,2.1,.5])
+                else:
+                    fit = my_fits.constrained_poly_fit(np.log10(CLUSTER_AGES),rhk,0)
+            """
             if (len(rhk) == 1):
                 f = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,0)
             if (len(rhk) == 2):
@@ -199,15 +213,18 @@ class age_estimator:
                     #plt.show()
                 else:
                     f = my_fits.poly_fit(np.log10(CLUSTER_AGES),rhk,1)
-            median_rhk.append(f(np.log10(self.const.AGE))) #uses determined function 
+            """
+            median_rhk.append(fit(np.log10(self.const.AGE))) #uses determined function 
 
             #4 different methods for handling scatter -- total detrended mean, mean clusters, best-fit, linear interp
             if (self.metal == 'calcium'):
-                m = my_fits.total_scatter(bv_li,fits,omit_cluster)
-                sigma.append([m for i in range(len(self.const.AGE))])
-            else:
-                m = np.mean(scatter)
-                sigma.append([m for i in range(len(self.const.AGE))])
+                sigma.append([ca_scatter for i in range(len(self.const.AGE))])
+            elif (self.metal == 'lithium'):
+                sig = li_scatter_fit(fit(np.log10(self.const.AGE)))
+                sigma.append(sig)
+            
+            #m = np.mean(scatter)
+            #sigma.append([m for i in range(len(self.const.AGE))])
             #sigma.append(np.poly1d(np.polyfit(np.log10(self.const.CLUSTER_AGES), scatter, 1))(np.log10(self.const.AGE)))
             #g = interpolate.interp1d(np.log10(self.const.CLUSTER_AGES),scatter, fill_value='extrapolate')
             #sigma.append(g(np.log10(self.const.AGE))) #linear extrapolate

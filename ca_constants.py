@@ -1,8 +1,10 @@
 import numpy as np
 CLUSTER_INDEX = [[0,9],[15,25],[9,15],[33,46],[46,95],[181,198],[95,181],[198,274]]
 CLUSTER_AGES = [10,16,24,85,130,500,625,4000]
-CLUSTER_NAMES = ['Upper Scorpius','UCL+LCC','Beta Pic', 'alpha Per','Pleiades','UMa', 'Hyades','M67']
+CLUSTER_NAMES = ['Upper Scorpius','UCL+LCC',r'$\beta$ Pic', r'$\alpha$ Per','Pleiades','UMa', 'Hyades','M67']
 MARKERS = ['^','>','p','+','s','d','o','x']
+FMTS = ['C0s' for i in range(len(MARKERS))]
+#FMTS = ['C0' + MARKERS[i] for i in range(len(MARKERS))]
 
 #just main 4 clusters
 #CLUSTER_AGES = [10,130,625,4000] #sco_cen,pleiades,hyades,m67
@@ -36,9 +38,13 @@ METAL = np.linspace(METAL_RANGE[0],METAL_RANGE[1],1000) #the axis of the 2D arra
 AGE = np.arange(1,GALAXY_AGE,1)#np.logspace(0,4,1000) #in units of Myr
 BV_UNCERTAINTY = .002
 
+#new scatter from histogram fitting which equally weights each star.still constant fits. polynomial fit at a given B-V like mamajek polynomial
+DEFAULT_MEDIAN_GRID = "grids/median_rhk_030719.npy"
+DEFAULT_SIGMA_GRID = "grids/sigma_rhk_030719.npy"
+
 #updated ages. constant fits/scatter. polynomial fit at a given B-V like mamajek polynomial
-DEFAULT_MEDIAN_GRID = "grids/median_rhk_103018.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_rhk_103018.npy"
+#DEFAULT_MEDIAN_GRID = "grids/median_rhk_103018.npy"
+#DEFAULT_SIGMA_GRID = "grids/sigma_rhk_103018.npy"
 
 #constant fits/scatter. polynomial fit at a given B-V like mamajek polynomial
 #DEFAULT_MEDIAN_GRID = "grids/median_rhk_const.npy"
