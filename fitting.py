@@ -3,18 +3,19 @@ Module giving necessary fitting functions
 """
 
 import numpy as np
+from numpy import genfromtxt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from scipy import interpolate
+from scipy import interpolate,integrate
+from scipy.stats import norm
+from scipy.optimize import minimize
 import copy
 import bisect
 import pickle
-from scipy import integrate
-from scipy.optimize import minimize
 import probability as prob
 from astropy.io import ascii
 from astropy.table import Table
-from numpy import genfromtxt
+import utils
 
 BIN_SIZE = 10
 MIN_PER_BIN = 4
@@ -52,7 +53,7 @@ def constrained_poly_minimizer(params,x,y,lim):
     if (vert > lim):
         return 1000000*(vert - lim)
     y_model = np.poly1d(params)(x)
-    return prob.chi_sqr(y_model,y,total=True)
+    return prob.chi_sqr(y,y_model,total=True)
 
 #computes fit of age and lithium depletion boundary (well bv at which lithium goes to zero)
 # returns function such that giving it a b-v value returns oldest age it could be.  
@@ -89,7 +90,8 @@ def bldb_fit(fits,plot=False):
         pp.close()
     
     return ldb_age
-
+"""
+# not sure this works, finds scatter in age instead of Li ?
 def ldb_scatter(fits):
     bv_at_zero_li,ages,cluster_names = [],[],[]
     import li_constants as const
@@ -106,6 +108,7 @@ def ldb_scatter(fits):
     def ldb_age(x):
         return np.power(10,fit(x))
     return np.std(residuals(bv_at_zero_li,np.log10(ages),ldb_age))
+"""
 
 #returns the 1d polynomial
 def linear_fit(x,y,scatter=False):
@@ -141,7 +144,7 @@ def minimize_polynomial(x,y,n,upper_lim):
 
 def poly_minimizer(params,c,r,upper_lim):
     sig = params[-1]
-    if (prob.negative_sig(sig)):
+    if (utils.negative_sig(sig)):
         return np.inf
     r_model = np.poly1d(params[0:-1])(c)
     #sig_model = log_scatter_with_linear_offset(sig,np.poly1d(params[0:-1]))(c)
@@ -149,9 +152,29 @@ def poly_minimizer(params,c,r,upper_lim):
        
     return inverse_log_likelihood(r_model,sig_model,r,upper_lim)
 
+# 4 params = mu,sig,amplitude,vertical_offset
+def fit_gaussian(x,y):
+    guess = [np.mean(x),np.std(x),np.max(y)-np.min(y),np.min(y)]
+    res = minimize(gaussian_scatter_minimizer,guess,args=(x,y), method='Nelder-Mead')
+    if (not res.success):
+        print "Unsuccessful minimizing of gaussian scatter_vs_age fit"
+        print res.x
+
+    [mu,sig,A,c] = res.x
+    def gauss_fit(x_coords):
+        return prob.gaussian(x_coords,mu,sig)*A + c
+    return gauss_fit
+
+def gaussian_scatter_minimizer(params,x,y):
+    [mu,sig,A,c] = params
+    fit = prob.gaussian(x,mu,sig)*A + c
+    return prob.chi_sqr(y,fit,total=True)
+
 def constant_fit(y):
     m,s = np.mean(y),np.std(y)
     return [np.poly1d([m]),np.poly1d([s])]
+
+
 
 # finds total scatter in log space combining astrophysical scatter and constant measurement uncertainty
 # sig is the constant astrophysical scatter in log space, li_fit is the log lithium mean functional fit
@@ -205,10 +228,10 @@ def fit_two_scatters(bv_m,fits,upper_lim=None,omit_cluster=None):
     if (not res.success):
         print "Unsuccessful minimizing scatter."
         print "Guess: ",guess, " Result: ", res.x
-    else:
-        print "Successful Scatter: ", res.x
+    #else:
+    #    print "Successful Scatter: ", res.x
     def fit(EW):
-        return two_scatter([.15,15],EW)
+        return two_scatter(res.x,EW)
     return fit
 
 def scatter_minimizer(params,bv_m,fits,upper_lim,omit_cluster):
@@ -285,7 +308,7 @@ def plot_comp(comp,upper_lim, converged):
     
     plt.legend()
     #plt.show()
-
+"""
 def compare_fits(params,argv): #c,r,upper_lim):
     x_coords,c,r,upper_lim = argv[0],argv[1],argv[2],argv[3]
     x,y,sig = get_x_y_sig(params,x_coords)
@@ -300,28 +323,28 @@ def compare_fits(params,argv): #c,r,upper_lim):
         else:
                 l.append(prob.log_gaussian(r_model[i],sig_model[i],r[i]))
     return l
-
+"""
 def piecewise_minimizer(params,x_coords,c,r,upper_lim):
     x,y,sig = get_x_y_sig(params,x_coords)
-    if (prob.negative_sig(sig)):
+    if (utils.negative_sig(sig)):
         return np.inf
-        if (len(x) != len(y) or len(sig) != len(x) - 1):
-                print params
-                print x,y,sig
-                raise RuntimeError("Error in inverse_log_likelihood")
-        r_model = piecewise(x,y)(c)
-        sig_model = step(c,x[1:-1],sig)
-        return inverse_log_likelihood(r_model,sig_model,r,upper_lim)
+    if (len(x) != len(y) or len(sig) != len(x) - 1):
+        print params
+        print x,y,sig
+        raise RuntimeError("Error in inverse_log_likelihood")
+    r_model = piecewise(x,y)(c)
+    sig_model = step(c,x[1:-1],sig)
+    return inverse_log_likelihood(r_model,sig_model,r,upper_lim)
 
 #minimizing the negative of the log_likelihood
+#accounts for upper limits
 def inverse_log_likelihood(r_model,sig_model,r,upper_lim):
     total_sum = 0
     for i in range(len(r)):
-            if (upper_lim[i]):
-                    r_range = np.linspace(r_model[i] - 4*sig_model[i],r[i],100)
-                    total_sum += np.log(np.trapz(prob.gaussian(r_model[i],sig_model[i],r_range),r_range))
-            else:
-                    total_sum += prob.log_gaussian(r_model[i],sig_model[i],r[i])
+        if (upper_lim[i]):
+            total_sum += norm.logcdf(r[i],loc=r_model[i],scale=sig_model[i])
+        else:
+            total_sum += norm.logpdf(r[i],loc=r_model[i],scale=sig_model[i])
     return -total_sum
 
 
@@ -551,10 +574,107 @@ def getMamaRHK(age):
     log_age = np.log10(np.array(age)*1e6)
     return 8.94 - 4.849*log_age + .624*log_age**2 - .028 * log_age**3
 
+def VI_to_teff(in_column=2,out_column=6,switch=False):
+    #if switch:
+    #    in_column,out_column = out_column,in_column
+    t = ascii.read('data/Teff_to_V-I.csv')
+    x,y = [],[] #x is input and y is output like a function
+    for row in t:
+        try:
+            a = float(row[in_column])
+            b = float(row[out_column])
+            if np.isnan(a) or np.isnan(b):
+                continue
+            x.append(a)
+            y.append(b)
+        except:
+            continue
+    VI = interpolate.interp1d(x,y, fill_value='extrapolate') 
+    VI2 = lambda x: 9581.1 + -14264*x + 40759*x**2 - 74141*x**3 + 60932*x**4 - 18021*x**5
+    return lambda vi: (vi < 1.2) * VI2(vi) + (vi >= 1.2) * VI(vi)
+
+#######################################################
+
+def get_valid_metal(bv,fits,const,primordial_li_fit=None,ldb_fit=None,omit_cluster=None):
+    #if const.METAL_NAME == 'calcium':
+    #   rhk = [fits[i][0](bv) for i in range(len(fits))]
+    #   sig = np.mean([fits[i][1](bv) for i in range(len(fits))]) #Change if non-constant scatter
+    
+    rhk,scatter,CLUSTER_AGES,CLUSTER_NAMES = [],[],[],[]
+    #info added from primordial lithium
+    if (const.METAL_NAME == 'lithium'):
+        if not primordial_li_fit:
+            primordial_li_fit = primordial_li()
+        CLUSTER_AGES.append(const.PRIMORDIAL_LI_AGE)
+        rhk.append(primordial_li_fit(bv))
+        CLUSTER_NAMES.append("Primordial LiEW")
+        scatter.append(0)
+    for i in range(len(fits)):
+        if (omit_cluster and i == omit_cluster):
+            continue
+        r = fits[i][0](bv)
+        if (const.METAL_RANGE[0] <  r < const.METAL_RANGE[1]):
+            rhk.append(r)
+            scatter.append(fits[i][1](bv))
+            CLUSTER_AGES.append(const.CLUSTER_AGES[i])
+            CLUSTER_NAMES.append(const.CLUSTER_NAMES[i])
+    #info added from depletion boundary
+    if (const.METAL_NAME == 'lithium'):
+        if not ldb_fit:
+            ldb_fit = bldb_fit(fits)
+        scatter.append(0)
+        CLUSTER_NAMES.append('LDB point')
+        CLUSTER_AGES.append(ldb_fit(bv))
+        rhk.append(const.ZERO_LI)
+    return rhk,scatter,CLUSTER_AGES,CLUSTER_NAMES
+
+#returns functions that take in age to get metal,sigma
+def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,li_scatter_fit=None,ca_scatter=None):
+    if not li_scatter_fit and metal == 'lithium':
+        return
+    elif not ca_scatter and metal == 'calcium':
+        return
+   
+    metal_fit = None
+    mu_lbl = ''
+    if (metal == 'calcium'):
+        metal_fit = poly_fit(np.log10(cluster_ages),rhk,2)
+        mu_lbl = 'Polynomial fit'
+    elif (metal == 'lithium'):
+        if (.76 <= bv <= .94): #Patch to fix bad region. NEED TO FIX BETTER
+            metal_fit = piecewise([0,2.2,3],[2.5,2.1,.5])
+            mu_lbl = piecewise
+        else:
+            metal_fit = constrained_poly_fit(np.log10(cluster_ages),rhk,0)
+            mu_lbl = 'Constrained Polynomial'
+    def mu(age):
+        return metal_fit(np.log10(age))
+
+    sig = None
+    #find fit to mu of ca/li for grid
+    #5 different methods for handling scatter:
+    # gaussian fit,total detrended mean, mean clusters, best-fit, linear interp
+    if (metal == 'calcium'):
+        scatter_fit = fit_gaussian(np.log10(CLUSTER_AGES),scatter)
+        #sigma.append(scatter_fit(np.log10(self.const.AGE))) #linear extrapolate
+        def scatter(age):
+            return scatter_fit(np.log10(age))
+        sig = scatter
+
+    elif (metal == 'lithium'):
+        def scatter(age):
+            return li_scatter_fit(mu(age))
+        sig = scatter
+
+    #m = np.mean(scatter)
+    #sigma.append([m for i in range(len(self.const.AGE))])
+    #sigma.append(np.poly1d(np.polyfit(np.log10(self.const.CLUSTER_AGES), scatter, 1))(np.log10(self.const.AGE)))
+    #g = interpolate.interp1d(np.log10(self.const.CLUSTER_AGES),scatter, fill_value='extrapolate')
+    #sigma.append(g(np.log10(self.const.AGE))) #linear extrapolate
+    
+    return mu,sig,mu_lbl
 
 
-
-
-
+###########################################
 
 

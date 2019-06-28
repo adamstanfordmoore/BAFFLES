@@ -15,6 +15,7 @@ from astropy.io import ascii
 import numpy as np
 import pickle
 import fitting as my_fits
+import utils
 
 #reads in data and generates fits
 def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
@@ -74,12 +75,82 @@ def read_lithium(fromFile=True,saveToFile=False):
         bv_li = pickle.load(open('data/bv_li_all.p','rb'))
         upper_lim = pickle.load(open('data/upper_lim_all.p','rb'))
         fits = pickle.load(open('data/li_fits_all.p','rb'))
+        #bv_li = pickle.load(open('data/bv_li_gaia.p','rb'))
+        #upper_lim = pickle.load(open('data/upper_lim_gaia.p','rb'))
+        #fits = pickle.load(open('data/li_fits_gaia.p','rb'))
         return bv_li,upper_lim,fits
 
     import li_constants as const
     bv_li = []
     upper_lim = []
-    
+ 
+    teff_to_bv = my_fits.magic_table_convert('teff','bv')
+    #reads in easy to read cluster table
+    def readCluster(filePath,bv_index,EW_index,teff=False,UL_index=None,delimeter=';',mem_indices=[-1,-1],prob_threshold=.9):
+        c,l,ul = [],[],[]
+        t = ascii.read(filePath, fill_values='blank',delimiter=delimeter)
+        rejected,kept = 0,0
+        for line in t[2:]:
+            #check membership
+            if mem_indices[0] != -1 and (not utils.isFloat(line[mem_indices[0]]) \
+                or float(line[mem_indices[0]]) < prob_threshold): 
+                #print("Rejecting",line[mem_indices[0]])
+                rejected += 1
+                continue
+            if mem_indices[1] != -1 and (not utils.isFloat(line[mem_indices[1]]) \
+                or float(line[mem_indices[1]]) < prob_threshold): 
+                #print("B-Rejecting",line[mem_indices[1]])
+                rejected += 1
+                continue
+            if not utils.isFloat(line[bv_index]) or not utils.isFloat(line[EW_index]):
+                #print("not float",line[bv_index],line[EW_index])
+                rejected += 1
+                continue
+            bv = teff_to_bv(float(line[bv_index])) if teff else float(line[bv_index]) 
+            ew = float(line[EW_index])
+            if not in_bounds(bv,ew,const): 
+                #print "not in bounds",bv,np.log10(ew)
+                rejected += 1
+                continue
+            kept += 1
+            c.append(bv)
+            l.append(ew) 
+            if UL_index and line[UL_index] == '<': #upper_lim
+                ul.append(True)
+            else:
+                ul.append(False)
+        print "rejected",rejected,"Kept",kept
+        c,l = np.array(c),np.log10(np.array(l))
+        bv_li.append([c,l])
+        upper_lim.append(ul)
+
+    readCluster('data/cha_I_lithium_gaia.txt',bv_index=3,EW_index=5,teff=True,UL_index=None)
+    readCluster('data/ic4665_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1])
+    readCluster('data/ic2602_lithium_gaia.txt',bv_index=5,EW_index=12,teff=True,UL_index=11,mem_indices=[19,-1])
+    #readCluster('data/ngc2451_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1])
+    readCluster('data/ngc2451_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[-1,18])
+    readCluster('data/ngc2547_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1])
+    readCluster('data/ic2391_lithium_gaia.txt',bv_index=5,EW_index=12,teff=True,UL_index=11,mem_indices=[19,-1])
+    readCluster('data/ngc2516_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1])
+    readCluster('data/ngc6633_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1],prob_threshold=0.8)
+
+
+
+    fits = get_li_fits(bv_li,upper_lim)
+
+    if (saveToFile):
+        pickle.dump(bv_li,open('data/bv_li_gaia.p','wb'))
+        pickle.dump(upper_lim,open('data/upper_lim_gaia.p','wb'))
+        pickle.dump(fits,open('data/li_fits_gaia.p','wb'))
+
+    return bv_li, upper_lim, fits
+
+  
+
+
+
+
+
     """
     t = ascii.read('data/NGC2264_bouvier.txt',delimiter=';')
     ngc2264_c = []
@@ -278,12 +349,43 @@ def read_lithium(fromFile=True,saveToFile=False):
     bv_li.append([ngc3680_c,ngc3680_l])
     upper_lim.append(lim_ngc3680)
     """
+
+    teff_to_bv = my_fits.magic_table_convert('teff','bv')
+    #reads in easy to read cluster table
+    def readCluster(filePath,bv_index,EW_index,teff=False,UL_index=None,delimeter=';'):
+        c,l,ul = [],[],[]
+        t = ascii.read(filePath, delimiter=delimeter)
+        for line in t[2:]:
+            bv = teff_to_bv(float(line[bv_index])) if teff else float(line[bv_index]) 
+            ew = float(line[EW_index])
+            if not in_bounds(bv,ew,const): continue
+            c.append(bv)
+            l.append(ew) 
+            if UL_index and line[UL_index] == '<': #upper_lim
+                ul.append(True)
+            else:
+                ul.append(False)
+        c,l = np.array(c),np.log10(np.array(l))
+        bv_li.append([c,l])
+        upper_lim.append(ul)
+
+    readCluster('data/cha_I_lithium_gaia.txt',bv_index=3,EW_index=5,teff=True,UL_index=None)
+    readCluster('data/ic4665_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
+    readCluster('data/ic2602_lithium_gaia.txt',bv_index=5,EW_index=12,teff=True,UL_index=11)
+    readCluster('data/ngc2451_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
+    readCluster('data/ngc2547_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
+    readCluster('data/ic2391_lithium_gaia.txt',bv_index=5,EW_index=12,teff=True,UL_index=11)
+    readCluster('data/ngc2516_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
+    readCluster('data/ngc6633_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
+
+
+
     fits = get_li_fits(bv_li,upper_lim)
 
     if (saveToFile):
-        pickle.dump(bv_li,open('data/bv_li_all.p','wb'))
-        pickle.dump(upper_lim,open('data/upper_lim_all.p','wb'))
-        pickle.dump(fits,open('data/li_fits_all.p','wb'))
+        pickle.dump(bv_li,open('data/bv_li_gaia.p','wb'))
+        pickle.dump(upper_lim,open('data/upper_lim_gaia.p','wb'))
+        pickle.dump(fits,open('data/li_fits_gaia.p','wb'))
 
     return bv_li, upper_lim, fits
 
