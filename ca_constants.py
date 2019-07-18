@@ -1,4 +1,6 @@
 import numpy as np
+import probability as prob
+METAL_NAME = 'calcium'
 CLUSTER_INDEX = [[0,9],[15,25],[9,15],[33,46],[46,95],[181,198],[95,181],[198,274]]
 CLUSTER_AGES = [10,16,24,85,130,500,625,4000]
 CLUSTER_NAMES = ['Upper Scorpius','UCL+LCC',r'$\beta$ Pic', r'$\alpha$ Per','Pleiades','UMa', 'Hyades','M67']
@@ -20,13 +22,14 @@ FMTS = ['C0s' for i in range(len(MARKERS))]
 
 #COLORS = ['C0','C4','C5','C6','C1','C7','C2','C3']
 #COLORS = ['C0','C4','C2','C1','C5','C6','C7','C8']
-COLORS = ['C0','C1','C3','C6','C2','C7','C4','C5','C8']
+COLORS = ['C0','C1','C3','C6','C1','C7','C2','C3','C8']
+#COLORS = ['C0','C1','C3','C6','C2','C7','C4','C5','C8']
 #COLORS = ['C%s' % n for n in range(10)]
 
 BV_RANGE = [.45,.9]
 METAL_RANGE = [-5,-3.7]
 
-GALAXY_AGE = 13001 #Myr with 1 for range purposes
+GALAXY_AGE = 13000 #Myr with 1 for range purposes
 BIN_SIZE = 10
 DOWN_ARROW = u'$\u2193$'
 
@@ -34,8 +37,9 @@ FIVE_SIGMAS = 9.02e-07
 GAUSS_PROBS = [.0227501,.158655,.5,.841345, .97725]
 
 BV = np.linspace(.45,.9,1000)#the axis of the 2D arrays
-METAL = np.linspace(METAL_RANGE[0],METAL_RANGE[1],1000) #the axis of the 2D arrays
-AGE = np.arange(1,GALAXY_AGE,1)#np.logspace(0,4,1000) #in units of Myr
+METAL = prob.polyspace(METAL_RANGE[0],METAL_RANGE[1],1000) #the axis of the 2D arrays
+AGE = np.logspace(0,np.log10(GALAXY_AGE),1000) #in units of Myr
+#AGE = np.arange(1,GALAXY_AGE + 1,1)#np.logspace(0,4,1000) #in units of Myr
 BV_UNCERTAINTY = .002
 
 #new scatter from histogram fitting which equally weights each star.still constant fits. polynomial fit at a given B-V like mamajek polynomial

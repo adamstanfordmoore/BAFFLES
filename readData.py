@@ -16,6 +16,7 @@ import numpy as np
 import pickle
 import fitting as my_fits
 import utils
+import copy
 
 #reads in data and generates fits
 def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
@@ -40,6 +41,12 @@ def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
         else:
             c = np.array(t["__B-V_0"][cluster_index[i][0]:cluster_index[i][1]]).astype(np.float)
             r = np.array(t["logR_HK"][cluster_index[i][0]:cluster_index[i][1]]).astype(np.float)
+        
+        # omit stars out of bv/metal range
+        mask = (const.BV_RANGE[0] <= c) & (c <= const.BV_RANGE[1]) & \
+                (const.METAL_RANGE[0] <= r) & (r <= const.METAL_RANGE[1])
+        c,r = c[mask],r[mask]
+        
         bv_rhk.append([c,r])
         #fits.append(my_fits.constant_fit(r))
         fits.append(my_fits.poly_fit(c,r,n=fit_degree,scatter=True))
@@ -52,11 +59,20 @@ def get_li_fits(bv_li,upper_lim_all):
     import li_constants as const
     fits = []
     for i in range(len(bv_li)):
-        poly_order = 2
+        fit = None
+        if (const.CLUSTER_NAMES[i] == 'Hyades'):
+            fit = my_fits.li_dip_fit(bv_li[i][0],bv_li[i][1],upper_lim_all[i],\
+                  dip_bv_range=[.398,.513],dip_li_range=[.5,1.6],dip_fit_range=[.39,.52],\
+                  edge_box = [.39,.52,1.9,1.95])
+        else: 
+            poly_order = 2
+            fit = my_fits.poly_fit(bv_li[i][0],bv_li[i][1],poly_order,upper_lim_all[i])
+        
         #if (const.CLUSTER_NAMES[i] in ['UMa','NGC3680']): #these cluster need linear fits
         #    poly_order = 1
-        fit = my_fits.poly_fit(bv_li[i][0],bv_li[i][1],poly_order,upper_lim_all[i])
         #fit = my_fits.pwise_fit(bv_li[i][0],bv_li[i][1],upper_lim=upper_lim_all[i],guess_fit=my_fits.poly_fit(bv_li[i][0],bv_li[i][1]),x_method='bin')
+        
+        
         fits.append(fit)
     return fits
 
@@ -70,20 +86,36 @@ def in_bounds(bv,l,const,log=False):
             return True
     return False
 
+def make_picklable(FITS):
+    const = utils.init_constants('lithium')
+    i = const.CLUSTER_NAMES.index('Hyades')
+    fits = copy.deepcopy(FITS)
+    fits[i][0] = fits[i][0](const.BV)
+    fits[i][1] = fits[i][1](const.BV)
+    return fits
+
+def undo_picklable(fits):
+    const = utils.init_constants('lithium')
+    i = const.CLUSTER_NAMES.index('Hyades')
+    fits[i][0] = my_fits.piecewise(const.BV,fits[i][0])
+    fits[i][1] = my_fits.piecewise(const.BV,fits[i][1])
+
 def read_lithium(fromFile=True,saveToFile=False):
     if (fromFile):
         bv_li = pickle.load(open('data/bv_li_all.p','rb'))
         upper_lim = pickle.load(open('data/upper_lim_all.p','rb'))
         fits = pickle.load(open('data/li_fits_all.p','rb'))
+        undo_picklable(fits)
         #bv_li = pickle.load(open('data/bv_li_gaia.p','rb'))
         #upper_lim = pickle.load(open('data/upper_lim_gaia.p','rb'))
         #fits = pickle.load(open('data/li_fits_gaia.p','rb'))
         return bv_li,upper_lim,fits
-
+    
     import li_constants as const
     bv_li = []
     upper_lim = []
  
+    """
     teff_to_bv = my_fits.magic_table_convert('teff','bv')
     #reads in easy to read cluster table
     def readCluster(filePath,bv_index,EW_index,teff=False,UL_index=None,delimeter=';',mem_indices=[-1,-1],prob_threshold=.9):
@@ -144,7 +176,7 @@ def read_lithium(fromFile=True,saveToFile=False):
         pickle.dump(fits,open('data/li_fits_gaia.p','wb'))
 
     return bv_li, upper_lim, fits
-
+    """
   
 
 
@@ -224,12 +256,12 @@ def read_lithium(fromFile=True,saveToFile=False):
     t = ascii.read('data/pleiades_lithium.tsv', delimiter=';')
     for line in t[2:]:
         if in_bounds(float(line[3]),10*float(line[-7]),const):
-                pleiades_c.append(float(line[3]))
-                pleiades_l.append(10*float(line[-7]))
-        if (line[-8] == '<'):
-            lim_p.append(True)
-        else:
-            lim_p.append(False)
+            pleiades_c.append(float(line[3]))
+            pleiades_l.append(10*float(line[-7]))
+            if (line[-8] == '<'):
+                lim_p.append(True)
+            else:
+                lim_p.append(False)
     pleiades_c,pleiades_l = np.array(pleiades_c),np.log10(np.array(pleiades_l))
     bv_li.append([pleiades_c,pleiades_l])
     upper_lim.append(lim_p)
@@ -285,11 +317,11 @@ def read_lithium(fromFile=True,saveToFile=False):
     t = ascii.read('data/hyades_lithium.tsv', delimiter=';')
     for line in t[2:]:
         if in_bounds(float(line[5]),float(line[10]),const):
-                hyades_c.append(float(line[5]))
-                hyades_l.append(float(line[10]))
-        if (line[9] == '<'):
+            hyades_c.append(float(line[5]))
+            hyades_l.append(float(line[10]))
+            if (line[9] == '<'):
                 lim_h.append(True)
-        else:
+            else:
                 lim_h.append(False)
     hyades_c,hyades_l = np.array(hyades_c),np.log10(np.array(hyades_l))
     bv_li.append([hyades_c,hyades_l])
@@ -298,8 +330,14 @@ def read_lithium(fromFile=True,saveToFile=False):
     m67_c = []
     m67_l = []
     lim_m67 = []
-    t = ascii.read('data/m67_lithium.txt', delimiter=',')
+    t = ascii.read('data/m67_lithium_eric_edits.txt', delimiter=',')
     for line in t:
+        # filter from Eric's notes
+        if line[-1] != 'single member' and line[-1] != 'binary member':
+            continue
+        if line[-1] == 'binary member' and float(line[4]) < 0:
+            continue
+        
         if (float(line[4]) < 0):
             if in_bounds(float(line[2]),-float(line[4]),const):
                 m67_c.append(float(line[2]))
@@ -313,7 +351,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     m67_c,m67_l = np.array(m67_c),np.log10(np.array(m67_l))
     bv_li.append([m67_c,m67_l])
     upper_lim.append(lim_m67)
-   
+
     """
     uma_c = []
     uma_l = []
@@ -349,7 +387,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     bv_li.append([ngc3680_c,ngc3680_l])
     upper_lim.append(lim_ngc3680)
     """
-
+    """
     teff_to_bv = my_fits.magic_table_convert('teff','bv')
     #reads in easy to read cluster table
     def readCluster(filePath,bv_index,EW_index,teff=False,UL_index=None,delimeter=';'):
@@ -377,15 +415,18 @@ def read_lithium(fromFile=True,saveToFile=False):
     readCluster('data/ic2391_lithium_gaia.txt',bv_index=5,EW_index=12,teff=True,UL_index=11)
     readCluster('data/ngc2516_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
     readCluster('data/ngc6633_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
-
+    """
 
 
     fits = get_li_fits(bv_li,upper_lim)
 
     if (saveToFile):
-        pickle.dump(bv_li,open('data/bv_li_gaia.p','wb'))
-        pickle.dump(upper_lim,open('data/upper_lim_gaia.p','wb'))
-        pickle.dump(fits,open('data/li_fits_gaia.p','wb'))
+        pickle.dump(bv_li,open('data/bv_li_all.p','wb'))
+        pickle.dump(upper_lim,open('data/upper_lim_all.p','wb'))
+        pickle.dump(make_picklable(fits),open('data/li_fits_all.p','wb'))
+        #pickle.dump(bv_li,open('data/bv_li_gaia.p','wb'))
+        #pickle.dump(upper_lim,open('data/upper_lim_gaia.p','wb'))
+        #pickle.dump(fits,open('data/li_fits_gaia.p','wb'))
 
     return bv_li, upper_lim, fits
 

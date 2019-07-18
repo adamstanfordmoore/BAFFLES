@@ -5,10 +5,17 @@ from scipy.stats import norm
 
 FIVE_SIGMAS = 9.02e-07
 GAUSS_PROBS = [.0227501,.158655,.5,.841345, .97725] #[-2 sig,-1,mu,+1,+2]
-UL_PROBS = [ 0.31731051,  0.04550026,  0.0026998,1] #[1-.68,1-.95,1-.99, maxAge]
+UL_PROBS = [0.0026998,0.04550026,0.31731051,1] #[1-.99,1-.95,1-.68, maxAge]
 
 #squared residuals divided by std**2 if given
 def chi_sqr(x,mu,sig=1,total=False):
+    if type(sig) == list:
+        sig = np.array(sig) + 1e-10
+    if type(mu) == list:
+        mu = np.array(mu)
+    if type(x) == list:
+        x = np.array(x)
+
     chi2 = (x - mu)**2 / (sig**2)
     if (total):
         return np.sum(chi2)
@@ -19,7 +26,7 @@ def log_gaussian(x,mu,sig):
     return -np.log(sig*np.sqrt(2*np.pi)) - chi2/2
 
 def lognorm(x,s):
-    return 1/(s*x*np.sqrt(2*np.pi))*np.exp(-np.log(x)**2/(2*s**2))
+    return 1/(s*x*np.sqrt(2*np.pi))*np.exp(-np.log10(x)**2/(2*s**2))
 
 #sig and mu can be numpy arrays
 # x is either numpy array of same length or scalar
@@ -73,9 +80,28 @@ def stats(age,y,upperLim=False):
             ages.append(a)
     return ages
 
+#calls func many times changing resample_args, keeping args constant
+# returns product of calls
+def resample(func,resample_args,args, sample_num=10,numIter=4):
+    indices = np.arange(len(resample_args[0]))
+    
+    log_sum = 0
+    for _ in range(numIter):
+        inds = np.random.choice(indices,size=sample_num,replace=False)
+        sampled_args = tuple(np.take(arr,inds) for arr in resample_args)
+        argv = sampled_args + args
+        log_sum += np.log(func(*argv))
+
+    return np.exp(log_sum)
+
+
+
+
+
 # Prior included for generality but is uniform for now
-def prior(age):
-    return 1
+def prior(age,maxAge=None):
+    agePrior = 1 if not maxAge else age <= maxAge
+    return agePrior
     """
     if np.allclose(age[-1]-age[-2],age[1]-age[0]): #linear spacing
         return 1

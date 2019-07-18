@@ -18,6 +18,7 @@ import li_constants as const
 import plotting as my_plot
 import readData
 import fitting as my_fits
+import utils
 
 def main():
     METAL = "lithium"
@@ -27,35 +28,42 @@ def main():
     if (METAL=='calcium'):
         global const
         import ca_constants as const
-        bv_m,fits = readData.read_calcium()#, saveToFile=False,fit_degree=0)
+        bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=False)#, saveToFile=False,fit_degree=0)
     else :
-        bv_m, upper_lim, fits = readData.read_lithium()#fromFile=False,saveToFile=False)
+        bv_m, upper_lim, fits = readData.read_lithium()#fromFile=False,saveToFile=True)
+        fits = my_fits.cluster_scatter_from_stars(bv_m,fits)
         #bv_m, upper_lim, fits = bv_m[-8:], upper_lim[-8:], fits[-8:]
 
     #----------------------------------------------------------------------------------------------------
+    
     #Plot Fits
-    #pp=PdfPages('plots/' + METAL + '_gaia_fits.pdf')
-    #my_plot.plot_fits(bv_m,fits,METAL,pdfPage=pp,showPlots=False,upper_lim=upper_lim)
-    #names.append('plots/' +METAL + '_gaia_fits.pdf')
+    #name = 'plots/' + METAL + '_fits_newerror.pdf'
+    #pp=PdfPages(name)
+    #my_plot.plot_fits(bv_m,fits,METAL,pdfPage=pp,showPlots=False,upper_lim=upper_lim)#,specific_clusters=[9])
+    #names.append(name)
     #pp.close()
 
     #Metal vs B-V
-    #pp=PdfPages('plots/' +METAL + 'thesis_metal_vs_bv.pdf')
-    #clusters = [0,2,4,6,8,9] if METAL == 'lithium' else [0,4,6,7]
-    #sets = [clusters[0:i] for i in range(1,len(clusters)+1)]
-    #for clus in sets:
-    #    my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True,upper_lim=upper_lim,specific_clusters=clus) #,primordial_li=True)
-    #my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True,upper_lim=upper_lim,primordial_li=True,fits_only=True)
-    #names.append('plots/' +METAL + 'thesis_metal_vs_bv.pdf')
+    #pp=PdfPages('plots/' +METAL + '_new_prim_li.pdf')
+    ##clusters = [0,2,4,6,8,9] if METAL == 'lithium' else [0,4,6,7]
+    ##sets = [clusters[0:i] for i in range(1,len(clusters)+1)]
+    ##for clus in sets:
+    #my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True,upper_lim=upper_lim,primordial_li=True)
+    #my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True,upper_lim=upper_lim,primordial_li=True,fits_only=True,shadeScatter=False)
+    #names.append('plots/' +METAL + '_new_prim_li.pdf')
     #pp.close()
 
     #Metal vs Age
-    #pp=PdfPages('plots/' +METAL + '_bad_constr_poly.pdf')
-    #bvRange = [1.4]#np.arange(.35,1.9,.1) if METAL == 'lithium' else np.arange(.45,.9,.05) #np.arange(.35,1.9,.1)
-    #for bv in bvRange:
-    #    my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=True,shadeScatter=True,errorbars=True,title='B-V= %s' % bv, bv_m=bv_m,upper_lim=upper_lim)
-    #names.append('plots/' +METAL + '_bad_constr_poly.pdf')
-    #pp.close()
+    name = 'plots/' + METAL + '_metal_v_age_0718.pdf'
+    pp=PdfPages(name)
+    bvRange = const.BV_S #np.linspace(0.3,1.9,40) #np.arange(1.3,2,.1)#np.arange(0.3,2,.1) if METAL == 'lithium' else np.arange(.45,.9,.05) #np.arange(.35,1.9,.1)
+    for bv in bvRange:
+        print "bv: ",bv
+        my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=False,shadeScatter=False,\
+                errorbars=True,title='B-V= %s' % bv, bv_m=bv_m,upper_lim=upper_lim,\
+                logAge=True,plotStars=True)
+    names.append(name)
+    pp.close()
 
     #Scatter vs B-V
     #pp=PdfPages('plots/' +METAL + '_scatter_vs_bv_with_offset.pdf')
@@ -73,36 +81,49 @@ def main():
     #Fit histogram
     #pp=PdfPages('plots/' +METAL + '_hist_range.pdf')
     #for i in np.arange(1,3,.5):
-    #    my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=True,upper_limits=upper_lim,li_range=[i,i+.5],title="Log(LiEW) between %.1f and %.1f" % (i,i+.5))
+    #my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=True,upper_limits=upper_lim)#, li_range=[np.log10(30),3.5])#,title="Log(LiEW) between %.1f and %.1f" % (i,i+.5))
     #names.append('plots/' +METAL + '_hist_range.pdf')
     #pp.close()
     
     #BLDB fit
     #my_fits.bldb_fit(fits,plot=True)
     #names.append('bldb_vs_age.pdf')
-    
+   
+    # BAFFLES vs Mamajek
+    #pp = PdfPages('plots/' +METAL + '_baffles_vs_mamajek.pdf')
+    #for i in range(len(bv_m)):
+    #    my_plot.baffles_vs_mamajek(bv_m,fits,i,pdfPage=pp,showPlots=False,title=None,mamaProduct=True)
+    #pp.close()
+    #names.append('plots/' +METAL + '_baffles_vs_mamajek.pdf')
 
-    """ 
     #Omitting each cluster
-    pp = PdfPages('plots/' +METAL + '_omit_clusters_42719.pdf')
-    for i in range(1,len(bv_m) - 1):
-        baf = baffles.age_estimator(METAL,default_grids=False)
-        baf.make_grids(bv_m,fits,omit_cluster=i)
-        baf.posterior_product(bv_m[i][0],bv_m[i][1],pp,showPlot=False,showStars=False,givenAge=const.CLUSTER_AGES[i],title= const.CLUSTER_NAMES[i] + ' Posterior Product')
-    names.append('plots/' +METAL + '_omit_clusters_42719.pdf')
-    pp.close()
-    """
+    #name = 'plots/' +METAL + '_omit_clusters_071519.pdf'
+    #pp = PdfPages(name)
+    #for i in range(len(bv_m)):
+    #    print const.CLUSTER_NAMES[i]
+        #mamaProductAge = utils.getMamaProductAge(bv_m[i][1])
+        #print mamaProductAge
+    #    baf = baffles.age_estimator(METAL,default_grids=False)
+    #    baf.make_grids(bv_m,fits,omit_cluster=i)
+    #    p = baf.posterior_product(bv_m[i][0],bv_m[i][1],pdfPage=pp,showPlot=False,\
+    #            showStars=True,givenAge=const.CLUSTER_AGES[i],\
+    #            title= const.CLUSTER_NAMES[i] + ' Posterior Product')
+        #print "True: %.3g BAFFLES: %.3g Mama: %.3g" % (const.CLUSTER_AGES[i],p.stats[2],mamaProductAge)
+    #names.append(name)
+    #pp.close()
     
-    pp = PdfPages('plots/' + METAL + '_posteriors.pdf')
-    baf = baffles.age_estimator('lithium','grids/median_rhk_062719','grids/sigma_rhk_062719',default_grids=False)
-    #baf.make_grids(bv_m,fits,upper_lim,'grids/median_rhk_062719','grids/sigma_rhk_062719')
-    for bv in [1.5]:#[0.6,1.5,1.75,1.9]:
-        for li in [3.1,1]:#[3.1,1]:
-            #my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=True,shadeScatter=True,errorbars=True,title='B-V= %s' % bv, bv_m=bv_m,upper_lim=upper_lim,metal_val=li)
+    # Making posteriors
+    #name = 'plots/' + METAL + '_posteriors_updated_li.pdf'
+    #pp = PdfPages(name)
+    #baf = baffles.age_estimator(METAL,'grids/median_'+METAL[:2]+'_071119','grids/sigma_'+METAL[:2]+'_071119') #'grids/median_rhk_062719','grids/sigma_rhk_062719',default_grids=False)
+    #baf.make_grids(bv_m,fits,upper_lim,'grids/median_'+METAL[:2]+'_071119','grids/sigma_'+METAL[:2]+'_071119')
+    #for bv in [1.5,1.75,1.9]:
+    #    for li in [1,2,3]:#[3.1,1]:
+    #        my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=True,shadeScatter=True,errorbars=True,title='B-V= %s' % bv, bv_m=bv_m,upper_lim=upper_lim,metal_val=li)
             #baffles.baffles_age(bv,li=li,showPlots=True,pdfPage=pp)
-            p = baf.get_posterior(bv,li,pdfPage=pp,showPlot=True,logPlot=False,upperLim = False)
-    names.append('plots/' + METAL + '_posteriors.pdf')
-    pp.close()
+    #        p = baf.get_posterior(bv,li,pdfPage=pp,showPlot=True,logPlot=False,upperLim = True)
+    #names.append(name)
+    #pp.close()
     
 
     """

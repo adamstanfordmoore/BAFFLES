@@ -6,17 +6,37 @@ import probability as prob
 import fitting as my_fits
 from scipy import interpolate
 import baffles
+import utils
+from scipy.stats import lognorm,norm
 #COLORS = ['C0','C4','C2','C1','C5','C6','C7','C8']
 
+import matplotlib as mpl
+import matplotlib.cm as cm
 
 #givenErr = [-5,5] or 5
-def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],givenAge=None,givenErr = None,mamajekAge=None,logPlot=False):
-    isUpperLim = len(stat) == 4 #arbitrarily [.34,.45,.002,1]
+def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],givenAge=None,givenErr = None,mamajekAge=None,logPlot=False,bv_arr = None,metal='calcium'):
+    const = init_constants(metal)
+    isUpperLim = len(stat) == 4 #arbitrarily [.002,.05,.34,1]
     plt.title(title)
-    for post in starArray:
-        prob.scale_to_height(post,np.max(y))
-        plt.plot(const.AGE,post,alpha = .4,linewidth=1,color='.5')
     
+    cmap,norm,sc = None,None,None
+    if bv_arr is not None:
+        cmap = plt.cm.get_cmap('RdYlBu_r')
+        #cmap = plt.cm.get_cmap('bwr')
+        norm = mpl.colors.Normalize(vmin=const.BV_RANGE[0], vmax=const.BV_RANGE[1])#np.max(bv_arr))
+    for i,post in enumerate(starArray):
+        color = '.5'
+        if bv_arr is not None: 
+            color = cmap(norm(bv_arr[i]))
+        
+        prob.scale_to_height(post,np.max(y))
+        plt.plot(const.AGE,post,alpha = 1,linewidth=1,color=color)
+    
+    if bv_arr is not None:
+        sc = plt.scatter([],[],c=[],norm=norm,cmap=cmap)
+        cbar = plt.colorbar(sc)
+        cbar.ax.set_ylabel('B-V', size = 18,rotation=270,labelpad=14)
+
     if (givenAge):
         plt.axvline(x=givenAge,color='r',label='True Age: %d Myr' % givenAge,zorder=10)
         if (givenErr):
@@ -47,15 +67,15 @@ def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],givenAg
 
 def shadeStats(age,y,stat,upperLim):
     if upperLim:
-        plt.fill_between(age,y, where= (age >= stat[0]) & (age <= stat[-1]),\
-                color='.3', label=r'1$\sigma$ lower lim: %.3g Myr' % stat[0])
-        plt.fill_between(age,y, where= (age >= stat[1]) & (age <= stat[0]),\
+        plt.fill_between(age,y, where= (age >= stat[2]) & (age <= stat[3]),\
+                color='.3', label=r'1$\sigma$ lower lim: %.3g Myr' % stat[2])
+        plt.fill_between(age,y, where= (age >= stat[1]) & (age <= stat[2]),\
                 color='.6',alpha=1, label=r'2$\sigma$ lower lim: %.3g Myr' % stat[1])
-        plt.fill_between(age,y, where= (age >= stat[2]) & (age <= stat[1]),\
-                color='.9',alpha=1,label=r'3$\sigma$ lower lim: %.3g Myr' % stat[2])
+        plt.fill_between(age,y, where= (age >= stat[0]) & (age <= stat[1]),\
+                color='.9',alpha=1,label=r'3$\sigma$ lower lim: %.3g Myr' % stat[0])
         return
     
-    age2 = np.linspace(stat[0],stat[-1],100)
+    age2 = np.linspace(stat[0],stat[-1],500)
     interp = my_fits.piecewise(age,y)
     y2 = interp(age2)
 
@@ -98,11 +118,12 @@ def shade_scatter(fit,BV):
     y_bottom -= fit[1](BV)
     plt.fill_between(BV,y_bottom,y_top,alpha=.3)
 
-def plot_fits(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,titles=None):
+def plot_fits(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,titles=None,specific_clusters=None):
     if (not pdfPage and not showPlots):
         return
     const = init_constants(metal)   
     for i in range(len(fits)):
+        if specific_clusters is not None and i not in specific_clusters: continue
         ax = plt.gca()
         color = next(ax._get_lines.prop_cycler)['color']
         for j in range(len(bv_m[i][0])):
@@ -157,32 +178,32 @@ def metal_vs_bv(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,shad
     #plot primordial lithium
     if (primordial_li and metal.lower()[0]=='l'):
         ngc2264_fit = fits[const.CLUSTER_NAMES.index("NGC2264")][0]
-        primordial_li_fit = my_fits.primordial_li(ngc2264_fit,fromFile=False,saveToFile=True) 
+        primordial_li_fit = my_fits.MIST_primordial_li()#ngc2264_fit,fromFile=False,saveToFile=True) 
         plt.plot(const.BV,primordial_li_fit(const.BV),label="Primordial LiEW")
     
     clusters_to_plot = specific_clusters if specific_clusters != None else range(len(bv_m))
     for c in clusters_to_plot:
-            ax = plt.gca()
-            color = const.COLORS[c] #next(ax._get_lines.prop_cycler)['color']
-            marker = const.MARKERS[c]
-            if (not fits_only):
-                for i in range(len(bv_m[c][0])):
-                    if (upper_lim and upper_lim[c][i]):
-                        plt.scatter(bv_m[c][0][i],bv_m[c][1][i],color=color,marker=const.DOWN_ARROW)
-                    else:
-                        plt.scatter(bv_m[c][0][i],bv_m[c][1][i],color=color,marker=marker)
-            plt.plot(const.BV,fits[c][0](const.BV),dashes=[2,2],label=const.CLUSTER_NAMES[c], color=color)
-            
-            if (c == 0):
-                plt.text(.7,-4.005,"Sco-Cen",size=13,color=const.COLORS[0])
-            elif c == 4:
-                plt.text(.725,-4.33,"Pleiades",size=13,color=const.COLORS[4])
-            elif c == 6:
-                plt.text(.75,-4.55,"Hyades",size=13,color=const.COLORS[6])
-            elif c == 7:    
-                plt.text(.61,-4.77,"M67",size=13,color=const.COLORS[7])
-    if (shadeScatter):
-        shade_scatter(fits[c],const.BV.tolist())
+        ax = plt.gca()
+        color = const.COLORS[c] #next(ax._get_lines.prop_cycler)['color']
+        marker = const.MARKERS[c]
+        if (not fits_only):
+            for i in range(len(bv_m[c][0])):
+                if (upper_lim and upper_lim[c][i]):
+                    plt.scatter(bv_m[c][0][i],bv_m[c][1][i],color=color,marker=const.DOWN_ARROW)
+                else:
+                    plt.scatter(bv_m[c][0][i],bv_m[c][1][i],color=color,marker=marker)
+        plt.plot(const.BV,fits[c][0](const.BV),dashes=[2,2],label=const.CLUSTER_NAMES[c], color=color)
+        
+        if (c == 0):
+            plt.text(.7,-4.005,"Sco-Cen",size=13,color=const.COLORS[0])
+        elif c == 4:
+            plt.text(.725,-4.33,"Pleiades",size=13,color=const.COLORS[4])
+        elif c == 6:
+            plt.text(.75,-4.55,"Hyades",size=13,color=const.COLORS[6])
+        elif c == 7:    
+            plt.text(.61,-4.77,"M67",size=13,color=const.COLORS[7])
+        if (shadeScatter):
+            shade_scatter(fits[c],const.BV.tolist())
 
     if (title):
         plt.title(title,size=18)
@@ -211,14 +232,14 @@ def metal_vs_bv(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,shad
 #RHK vs age polynomial
 def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,\
         shadeScatter=False,errorbars=True,bv_m=None,upper_lim=None, \
-        mamajek_poly=False,metal_val=None):
+        mamajek_poly=False,metal_val=None,logAge = True,plotStars=False,omit_cluster=None):
     const = init_constants(metal)
-    rhk,scatter,CLUSTER_AGES,CLUSTER_NAMES = my_fits.get_valid_metal(bv,fits,const)
-    
+    rhk,scatter,CLUSTER_AGES,CLUSTER_NAMES = my_fits.get_valid_metal(bv,fits,const,None,None,omit_cluster)
+
     if (metal[0].lower()=='l'):
         plt.figure(figsize=(7,5))
     ax = plt.gca()
-    ax.set_xscale('log')
+    if logAge: ax.set_xscale('log')
     plt.ylim(const.METAL_RANGE)
     if metal_val:
         plt.hlines(metal_val,0,const.GALAXY_AGE,linestyle='dashed',color='orange',\
@@ -227,7 +248,7 @@ def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,\
     for i in range(len(rhk)):
         if (errorbars):
             plt.errorbar(CLUSTER_AGES[i], rhk[i], yerr=scatter[i],color=const.COLORS[i],\
-                    marker='o',label=CLUSTER_NAMES[i],zorder=10)
+                    marker='o',label=CLUSTER_NAMES[i],markersize=8,capsize=4,zorder=10)
         else:
             plt.scatter(CLUSTER_AGES[i], rhk[i],color=const.COLORS[i],marker=const.MARKERS[i],\
                     label=CLUSTER_NAMES[i],s=80,zorder=10)
@@ -242,6 +263,18 @@ def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,\
 
     plt.plot(const.AGE,mu(const.AGE),label=lbl)
     
+    if (plotStars and bv_m is not None):
+        bv_threshold = 0.05
+        for c in range(len(bv_m)):
+            bv_arr = np.array(bv_m[c][0])
+            mask = (bv_arr >= bv - bv_threshold) & (bv_arr <= bv + bv_threshold)
+            li = np.array(bv_m[c][1])[mask]
+            star_ages = [const.CLUSTER_AGES[c]]*len(li)
+            ul = np.array(upper_lim[c])[mask]
+            for j in range(len(li)):
+                m = const.DOWN_ARROW if ul[j] else '+'
+                plt.scatter(const.CLUSTER_AGES[c],li[j],marker=m,s=30,color=const.COLORS[c+1]) #for primordial li
+
     if (shadeScatter):
         plt.fill_between(const.AGE,mu(const.AGE) - sig(const.AGE),\
                 mu(const.AGE) + sig(const.AGE),alpha=.2,color='C0')
@@ -395,36 +428,56 @@ def plot_mamajek(bv_rhk,fits):
 
 def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,upper_limits=None,li_range=None):
     const = init_constants(metal)
-    allClusters = []
-    #totalStars = []
+    allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,li_range)
+    #allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,li_range,linSpace=True)
+    
+    pdf_fit,cdf_fit = my_fits.fit_histogram(metal,totalStars,fromFile=False,saveToFile=True)
 
-    for c in range(len(fits)):
-        arr = []
-        residuals = my_fits.residuals(bv_m[c][0],bv_m[c][1],fits[c][0])
-        for i in range(len(residuals)):
-            if (upper_limits and upper_limits[c][i]):
-                continue
-            if (li_range and (bv_m[c][1][i] < li_range[0] or li_range[1] < bv_m[c][1][i])):
-                continue
-            arr.append(residuals[i])
-        allClusters.append(arr)
-
-    totalStars = np.concatenate(allClusters)
     mu = np.mean(totalStars)
     sigma = np.std(totalStars)
+    
     
     max_val = np.max([np.max(totalStars),np.abs(np.min(totalStars))]) + .1
     
     plt.rcParams["figure.figsize"] = (8,6)
-    plt.hist(allClusters,bins=20,stacked=True,density=True)
+    plt.hist(allClusters,bins=30,stacked=True,density=True)
+    #plt.hist(allClusters,bins=50,stacked=True,density=True)
+   
+    #plt.hist(np.power(10,bv_m[0][1]),bins=30,density=True)
     
-    x = np.linspace(-1*max_val,max_val,100)
-    plt.plot(x,prob.gaussian(x,mu,sigma))
+    #for m in [1,1.5,2,2.5,3]:
+    #    pdf = pdf_fit(np.log10(const.METAL)-m)[0,0,:]/const.METAL[0,0,:]
+    #    prob.normalize(const.METAL[0,0,:],pdf)
+    #    plt.plot(const.METAL[0,0,:],pdf,label='pdf')
+    #    plt.plot(const.METAL[0,0,:],prob.normalize(const.METAL[0,0,:],prob.lognorm(const.METAL[0,0,:]/10**m,s=0.17)/10**m),label='lognorm')
+        
+        #g_pdf = prob.gaussian(np.log10(const.METAL[0,0,:])-m,0,0.17)/const.METAL[0,0,:]
+        #prob.normalize(const.METAL[0,0,:],g_pdf)
+        #plt.plot(const.METAL[0,0,:],g_pdf,label='shifted gauss')
+    #    plt.xlim(0,min(3*10**m,1600))
+    #    plt.legend()
+    #    plt.show()
+
+    x = np.linspace(-1*max_val,max_val,1000)
+    pdf = pdf_fit(x)
+    prob.normalize(x,pdf)
+    plt.plot(x,pdf)
+    
+    
+    
+    
+    
+    
+    #plt.plot(x,prob.gaussian(x,mu,0.17))
+    #plt.legend()
+    #plt.show()
 
     #plt.legend([r'Gaussian ($\mu,\sigma$) = (%.2f,%.2f)' % (mu,sigma)] + const.CLUSTER_NAMES)
-    plt.legend([r'Gaussian ($\mu$=%.3f,$\sigma$=%.3f)' % (mu,sigma)] + const.CLUSTER_NAMES)
+    #plt.legend([r'Gaussian ($\mu$=%.3f,$\sigma$=%.3f)' % (mu,sigma)] + const.CLUSTER_NAMES)
+    plt.legend(['PDF'] + const.CLUSTER_NAMES)
     plt.xlim([-max_val,max_val])
-    x_axis = 'Log(Li EW) - Li Fit'
+    #x_axis = 'Log(Li EW) - Li Fit'
+    x_axis = 'Li EW - Li Fit'
     if (metal.lower()[0] == 'c'):
         x_axis = 'Log(R\'HK) - Ca Fit'
     plt.xlabel(x_axis,size=18)
@@ -439,21 +492,26 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,upper_
     plt.close()        
 
 
-def baffles_vs_mamajek(bv_rhk,fits,i,pdfPage=None,showPlots=False,title=None):
+def baffles_vs_mamajek(bv_rhk,fits,i,pdfPage=None,showPlots=False,title=None,mamaProduct=False):
     import ca_constants as const
     baf = baffles.age_estimator('calcium',default_grids=False)
     baf.make_grids(bv_rhk,fits,omit_cluster=i)
     my_ages = []
     my_error = []
     mamajek_ages = []
+    post_prod = 0
     for j in range(len(bv_rhk[i][0])):
         b,r = bv_rhk[i][0][j], bv_rhk[i][1][j]
         mamajek_ages.append(my_fits.getMamaAge(r))
         post = baf.get_posterior(b,r)
+        post_prod += np.log(post.array)
         stat = post.stats
         my_ages.append(stat[2])
         my_error.append((stat[2] - stat[1],stat[3] - stat[2]))
-
+    
+    post_prod = prob.normalize(const.AGE,np.exp(post_prod))
+    baffles_age = prob.stats(const.AGE,post_prod)[2]
+    
     plt.Line2D([0], [0], color='C%d'% i,marker=const.MARKERS[i],label=const.CLUSTER_NAMES[i])
     plt.axis([.4,14000,.4,14000])
     plt.title(const.CLUSTER_NAMES[i] + " Stellar Age Comparison",size=18)
@@ -464,6 +522,17 @@ def baffles_vs_mamajek(bv_rhk,fits,i,pdfPage=None,showPlots=False,title=None):
             plt.errorbar(mamajek_ages[j],my_ages[j],np.array([my_error[j]]).T,label=const.CLUSTER_NAMES[i] + ' stars',fmt=const.FMTS[i])
         else:
             plt.errorbar(mamajek_ages[j],my_ages[j],np.array([my_error[j]]).T,fmt=const.FMTS[i])
+    
+    plt.hlines(y=baffles_age,xmin= 0,xmax= baffles_age, \
+        label='Baffles Age: %.3g Myr' % baffles_age ,linestyle='--',color = 'C0')
+    
+
+    if mamaProduct:
+        age = utils.getMamaProductAge(bv_rhk[i][1])
+        plt.vlines(x=age,ymin= 0,ymax= age, \
+            label='M & H (2008): %.3g Myr' % age ,linestyle='--',color = 'C2')
+    
+    
     plt.plot([0,10000],[0,10000],dashes=[2,2],color='k')
     plt.plot(const.CLUSTER_AGES[i],const.CLUSTER_AGES[i],marker='*',markersize=18,color='C1',linestyle='None',label='Accepted Age: %d' % const.CLUSTER_AGES[i],alpha=1,zorder=10)
     ax = plt.gca()
