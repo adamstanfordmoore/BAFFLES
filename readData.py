@@ -49,7 +49,11 @@ def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
         
         bv_rhk.append([c,r])
         #fits.append(my_fits.constant_fit(r))
-        fits.append(my_fits.poly_fit(c,r,n=fit_degree,scatter=True))
+        #fits.append([np.poly1d([np.median(r)]),np.poly1d([0.1])])
+        #fits.append(my_fits.poly_fit(c,r,n=fit_degree,scatter=True))
+        rhk_fit = np.poly1d([np.median(r)])
+        sig_fit = np.poly1d(np.std(my_fits.residuals(c,r,rhk_fit)))
+        fits.append([rhk_fit,sig_fit])
     if (saveToFile):
         pickle.dump(bv_rhk,open('data/bv_rhk.p','wb'))
         pickle.dump(fits,open('data/ca_fits.p','wb'))
@@ -74,6 +78,7 @@ def get_li_fits(bv_li,upper_lim_all):
         
         
         fits.append(fit)
+    fits = my_fits.cluster_scatter_from_stars(bv_li,fits)
     return fits
 
 #simple logic to check if (bv,l) is in bounds
@@ -86,19 +91,23 @@ def in_bounds(bv,l,const,log=False):
             return True
     return False
 
-def make_picklable(FITS):
+def make_picklable(fits):
     const = utils.init_constants('lithium')
-    i = const.CLUSTER_NAMES.index('Hyades')
-    fits = copy.deepcopy(FITS)
-    fits[i][0] = fits[i][0](const.BV)
-    fits[i][1] = fits[i][1](const.BV)
+    #i = const.CLUSTER_NAMES.index('Hyades')
+    #fits = copy.deepcopy(fits)
+    for c,i in [(c,i) for c in range(len(fits)) for i in range(2)]:
+        if type(fits[c][i]) != type(np.poly1d([1])):
+            fits[c][i] = fits[c][i](const.BV)
     return fits
 
 def undo_picklable(fits):
     const = utils.init_constants('lithium')
-    i = const.CLUSTER_NAMES.index('Hyades')
-    fits[i][0] = my_fits.piecewise(const.BV,fits[i][0])
-    fits[i][1] = my_fits.piecewise(const.BV,fits[i][1])
+    #i = const.CLUSTER_NAMES.index('Hyades')
+    for c,i in [(c,i) for c in range(len(fits)) for i in range(2)]:
+        if type(fits[c][i]) != type(np.poly1d([1])):
+            fits[c][i] = my_fits.piecewise(const.BV,fits[c][i])
+    #fits[i][0] = my_fits.piecewise(const.BV,fits[i][0])
+    #fits[i][1] = my_fits.piecewise(const.BV,fits[i][1])
 
 def read_lithium(fromFile=True,saveToFile=False):
     if (fromFile):

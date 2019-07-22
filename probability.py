@@ -2,6 +2,8 @@ import numpy as np
 from scipy import integrate
 import bisect
 from scipy.stats import norm
+import fitting as my_fits
+import matplotlib.pyplot as plt
 
 FIVE_SIGMAS = 9.02e-07
 GAUSS_PROBS = [.0227501,.158655,.5,.841345, .97725] #[-2 sig,-1,mu,+1,+2]
@@ -30,7 +32,7 @@ def lognorm(x,s):
 
 #sig and mu can be numpy arrays
 # x is either numpy array of same length or scalar
-def gaussian(x,mu,sig):
+def gaussian(x,mu=0,sig=1):
     chi2 = chi_sqr(x,mu,sig)
     return 1/(sig*np.sqrt(2*np.pi)) * np.exp(-chi2/2)
 
@@ -42,6 +44,18 @@ def polyspace(start,stop,num,power=2):
     c = start
     a = (stop - start)/(num-1)**power
     return a*x**power + c
+
+# NOT FINISHED
+# takes in densely sampled x,y and returns num sampled x
+def desample(x,y,num):
+    ddy = np.abs(np.gradient(np.gradient(y)))
+    #ddy += 0.0001 ######### CHECK  #########
+    f_arr = cdf(x,1/ddy)
+    f_arr = f_arr*(x[-1] - x[0]) + x[0]
+    f = my_fits.piecewise(x,f_arr)
+    new_x = f(np.linspace(x[0],x[-1],num))
+    new_y = my_fits.piecewise(x,y)(new_x)
+    return new_x,new_y
 
 #normalizes in-place
 def normalize(x,y):

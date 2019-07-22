@@ -38,7 +38,7 @@ def main():
     def BV_ERR(t,err):
         return np.abs(teff_to_bv(t + err) - teff_to_bv(t-err))/2
     
-    baf = baffles.age_estimator('lithium','grids/median_li_071119','grids/sigma_li_071119')
+    baf = baffles.age_estimator('lithium')#,'grids/median_li_071119','grids/sigma_li_071119')
     pp = PdfPages('max_bv_tuchor.pdf')
     for MAX_BV in [2]:# [1.7,1.4,1.3,1.1]:
         abdor_c = []
@@ -86,7 +86,6 @@ def main():
             #print "bv-diff:",np.abs(bv - float(line[4]))
             ew = float(line[5])
             if in_bounds(bv,ew,const) and ew != 20:
-                print line[0],line[1]
                 bp_c.append(bv)
                 bp_l.append(ew)
                 #if ew== 20: 
@@ -107,23 +106,23 @@ def main():
         
         
         pp = PdfPages('moving_group_age.pdf')
-        #baf.posterior_product(abdor_c,abdor_l,abdor_bverr,abdor_lerr,pdfPage=pp,showPlot=True,showStars=True,title='AB DOR Posterior Product: MAX_BV= %.2f' % MAX_BV,givenAge=149,givenErr=[-19,51])
-        #baf.posterior_product(tuchor_c,tuchor_l,tuchor_bverr,tuchor_lerr,pdfPage=pp,showPlot=True,showStars=True,title='TUC/HOR Posterior Product: MAX_BV= %.2f' % MAX_BV,givenAge=45,givenErr=4)
+        baf.posterior_product(abdor_c,abdor_l,abdor_bverr,abdor_lerr,pdfPage=pp,showPlot=True,showStars=True,title='AB DOR Posterior Product: MAX_BV= %.2f' % MAX_BV,givenAge=149,givenErr=[-19,51])
+        baf.posterior_product(tuchor_c,tuchor_l,tuchor_bverr,tuchor_lerr,pdfPage=pp,showPlot=True,showStars=True,title='TUC/HOR Posterior Product: MAX_BV= %.2f' % MAX_BV,givenAge=45,givenErr=4)
         #pp.close()
 
 
-        baf = baffles.age_estimator('li',default_grids=False)#'grids/median_li_071119','grids/sigma_li_071119',default_grids=False)
-        baf.make_grids(bv_li,li_fits,omit_cluster=1)
+        #baf = baffles.age_estimator('li',default_grids=False)#'grids/median_li_071119','grids/sigma_li_071119',default_grids=False)
+        #baf.make_grids(bv_li,li_fits,omit_cluster=1)
         
-        mask = (bp_c < 1) & (bp_c > 0.6)
+        #mask = (bp_c < 1) & (bp_c > 0.6)
         #mask = (abdor_c < 1.2) & (abdor_c > 0.8)
-        for b,l in zip(bp_c[mask],bp_l[mask]):
+        #for b,l in zip(bp_c[mask],bp_l[mask]):
         #for b,l in zip(abdor_c[mask],abdor_l[mask]):
-            print b,l
-            my_plot.metal_vs_age(li_fits,'lithium',.72,pp,showPlots=True,shadeScatter=True,errorbars=True,title='B-V= %s' % .72, bv_m=bv_li,upper_lim=upper_lim,metal_val=l,omit_cluster=1)
-            my_plot.metal_vs_age(li_fits,'lithium',.704,pp,showPlots=True,shadeScatter=True,errorbars=True,title='B-V= %s' % .704, bv_m=bv_li,upper_lim=upper_lim,metal_val=l,omit_cluster=1)
-            my_plot.metal_vs_age(li_fits,'lithium',b,pp,showPlots=True,shadeScatter=True,errorbars=True,title='B-V= %s' % b, bv_m=bv_li,upper_lim=upper_lim,metal_val=l,omit_cluster=1)
-            p = baf.get_posterior(b,l,pdfPage=pp,showPlot=True,logPlot=False,upperLim = False)
+        #    print b,l
+            #my_plot.metal_vs_age(li_fits,'lithium',.72,pp,showPlots=True,shadeScatter=True,errorbars=True,title='B-V= %s' % .72, bv_m=bv_li,upper_lim=upper_lim,metal_val=l,omit_cluster=1)
+            #my_plot.metal_vs_age(li_fits,'lithium',.704,pp,showPlots=True,shadeScatter=True,errorbars=True,title='B-V= %s' % .704, bv_m=bv_li,upper_lim=upper_lim,metal_val=l,omit_cluster=1)
+            #my_plot.metal_vs_age(li_fits,'lithium',b,pp,showPlots=True,shadeScatter=True,errorbars=True,title='B-V= %s' % b, bv_m=bv_li,upper_lim=upper_lim,metal_val=l,omit_cluster=1)
+        #    p = baf.get_posterior(b,l,pdfPage=pp,showPlot=True,logPlot=False,upperLim = False)
             
 
 
@@ -131,7 +130,7 @@ def main():
 
         #pp = PdfPages('beta_pic_posterior_product_v4.pdf')
         baf = baffles.age_estimator('li',default_grids=False)
-        baf.make_grids(bv_li,li_fits,omit_cluster=1)
+        baf.make_grids(bv_li,li_fits,upper_lim,omit_cluster=1)
         #baf.resample_posterior_product(bp_c,bp_l,bp_bv_err,bp_err,lim_bp,pdfPage=pp,showPlot=True,showStars=True,givenAge=24,givenErr=3,title=r'$\beta$ Pic Posterior Product')
         baf.posterior_product(bp_c,bp_l,bp_bv_err,bp_err,lim_bp,pdfPage=pp,showPlot=True,showStars=True,givenAge=24,givenErr=3,title=r'$\beta$ Pic Posterior Product')
     pp.close()

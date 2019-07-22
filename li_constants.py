@@ -35,10 +35,14 @@ AGE = np.logspace(0,np.log10(GALAXY_AGE),1000) #in units of Myr
 METAL = prob.polyspace(0.5,10**METAL_RANGE[1],1000).reshape(1,1,1000) 
 #METAL = np.logspace(-0.3,METAL_RANGE[1],1000).reshape(1,1,1000) 
 
+#including new general piecewise li_vs_age 
+DEFAULT_MEDIAN_GRID = "grids/median_li_071819.npy"
+DEFAULT_SIGMA_GRID = "grids/sigma_li_071819.npy"
+
 #including prim_li, all clusters, new sigma scatter + measurement,\
   #constrained polynomial plus patch from bv .75 to .95
-DEFAULT_MEDIAN_GRID = "grids/median_li_030719.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_li_030719.npy"
+#DEFAULT_MEDIAN_GRID = "grids/median_li_030719.npy"
+#DEFAULT_SIGMA_GRID = "grids/sigma_li_030719.npy"
 
 #including BLDB. polnomial fits to li vs bv. interpolation at given B-V
 #DEFAULT_MEDIAN_GRID = "grids/median_li_103018.npy"

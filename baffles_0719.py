@@ -72,8 +72,6 @@ class age_estimator:
             self.set_grids(grid_median,grid_sigma)
         elif (default_grids):
             self.set_grids(self.const.DEFAULT_MEDIAN_GRID,self.const.DEFAULT_SIGMA_GRID)
-        #if metal == 'calcium':
-        #    self.ca_sig_fit = my_fits.fit_gaussian()
     
     def set_grids(self,grid_median,grid_sigma):
         if (type(grid_median) == str and type(grid_median) == str):
@@ -96,19 +94,11 @@ class age_estimator:
         assert self.const.METAL_RANGE[0] <= metallicity <= self.const.METAL_RANGE[1], \
                 "Indicator value %.2f out of range. Valid range: " % metallicity + str(self.const.METAL_RANGE)
         
-        if mamajekAge == True and self.const.METAL_RANGE[0] <= metallicity <= \
-                self.const.METAL_RANGE[1]:
-            mamajekAge = my_fits.getMamaAge(metallicity)
-
         if self.metal == 'lithium': metallicity = 10**metallicity 
         measure_err = 15
         
         posterior_arr = self.likelihood(bv,bv_uncertainty,metallicity,measure_err,\
                 upperLim) * self.prior(maxAge)
-        if all(posterior_arr == 0):
-            print "Posterior not well defined. Area is zero so adding constant"
-            posterior_arr += 1
-        
         prob.normalize(self.const.AGE,posterior_arr)
         
         p_struct = posterior()
@@ -196,12 +186,12 @@ class age_estimator:
                 #prob.normalize(self.const.AGE,y)
                 star_post.append(y)
             utils.progress_bar(float(i+1)/len(bv_arr),int((len(bv_arr)-(i+1))*sec_per_star))
-            sec_per_star = sec_per_star + 0.1*((time.time() - star_time) - sec_per_star) #exp moving average
+            sec_per_star = sec_per_star + 0.2*((time.time() - star_time) - sec_per_star)
             #sec_per_star = (time.time() - start)/float(i+1)
 
         print "Finished %d stars. Average time per star: %.2f seconds." % (len(bv_arr),(time.time() - start)/len(bv_arr))
 
-        post = np.exp(ln_prob - np.max(ln_prob))  #prevent underflow
+        post = np.exp(ln_prob - np.max(ln_prob))
         prob.normalize(self.const.AGE,post)
         p_struct = posterior()
         p_struct.array = post
@@ -250,35 +240,46 @@ class age_estimator:
             return norm.logcdf(rhk,loc=mu,scale=sig)
         return prob.log_gaussian(rhk,mu,sig)
     
+    def calcium_likelihood(self,bv,rhk):
+        b = 0 #bisect.bisect_left(self.const.BV,bv) ######### SHORTCUT ##########
+        mu = np.array(self.grid_median[b])
+        sig = np.array(self.grid_sigma[b])
+        return prob.gaussian(rhk,mu,sig)
+
+
     # Prior on age
     def prior(self,maxAge=None):
         agePrior = 1 if maxAge is None else self.const.AGE <= maxAge
         return agePrior
     
-    def calcium_likelihood(self,bv,rhk):
-        #b = 0 #bisect.bisect_left(self.const.BV,bv) ######### SHORTCUT ##########
-        #mu = np.array(self.grid_median[b])
-        mu = self.grid_median # .reshape(self.grid_median.shape[0],self.grid_median.shape[1])
-        pdf_fit,cdf_fit = my_fits.fit_histogram(metal='calcium',fromFile=True)
-        pdfs = pdf_fit((rhk - mu)/self.grid_sigma) / self.grid_sigma
-        return np.sum(pdfs,axis=0)
-
     # axes are (axis0=BV,axis1=AGE,axis2=Li)
     def likelihood(self,bv,bv_uncertainty,li,measure_err,isUpperLim):
         if self.metal == 'calcium': return self.calcium_likelihood(bv,li)
+        start = time.time()
 
         pdf_fit,cdf_fit = my_fits.fit_histogram(metal=self.const.METAL_NAME,fromFile=True)
         #pdf_fit = lambda x: norm.pdf(x,loc=0,scale=0.17)
         #cdf_fit = lambda x: norm.cdf(x,loc=0,scale=0.17)
+        #sig = 0.17 #self.astrophysical_scatter#np.array(self.grid_sigma[b])
         
+        #b = bisect.bisect_left(self.const.BV,bv)
         BV = np.linspace(np.max(bv - 4*bv_uncertainty,self.const.BV[0]),\
                 np.min(bv + 4*bv_uncertainty,self.const.BV[1]),15)
         bv_gauss = prob.gaussian(BV,bv,bv_uncertainty)
+        #mask = bisect.bisect_left(self.const.BV,bv)#bv_gauss > prob.FIVE_SIGMAS
+        #bv_gauss = bv_gauss[mask]
+        #bv_gauss = bv_gauss.reshape(1,1,1)
         
         #plt.plot(BV,bv_gauss)
         #plt.show()
         bv_gauss = bv_gauss.reshape(len(bv_gauss),1,1)
+        #print "BV-len",bv_gauss.shape
+        #BV = self.const.BV[mask]
+        #BV = BV.reshape(len(BV),1,1)
 
+        #print "Median shape",self.grid_median.shape
+        #mu = np.array(self.grid_median[mask]) #now of B-V and age
+        #print self.grid_median.shape
         f = interpolate.interp2d(self.const.AGE,self.const.BV_S,self.grid_median)
         mu = f(self.const.AGE,BV)
 
@@ -290,21 +291,77 @@ class age_estimator:
             astro_gauss = cdf_fit(np.log10(li) - mu)
             final_sum = np.sum(astro_gauss,axis=0)
             prob.normalize(self.const.AGE,final_sum)
+            #print "UL time %.2f" % (time.time() - start)
             return final_sum
 
+        #mu = mu.reshape(1,len(mu),1)  #CHANGED 10**
         mu = mu.reshape(mu.shape[0],mu.shape[1],1)  #CHANGED 10**
 
+        #start_sm = time.time()
         li_gauss = prob.gaussian(self.const.METAL,li,measure_err)
+        #print "li-gauss shape",li_gauss.shape
         mask = li_gauss > prob.FIVE_SIGMAS
         li_gauss = li_gauss[mask]
         li_gauss = li_gauss.reshape(1,1,len(li_gauss))
+        #print "new shape",li_gauss.shape
         METAL = self.const.METAL[mask]
         METAL = METAL.reshape(1,1,len(METAL))
-        
+        #print METAL.shape
+        #print "mu",mu.shape
+
+        #start = time.time()
+        #shifted_metal = METAL - mu
+        #print shifted_metal.shape
         astro_gauss = pdf_fit(np.log10(METAL) - mu)/METAL
+        #print astro_gauss.shape,'time',time.time() - start
+        #print astro_gauss.shape
+
+        #y = METAL/10**mu
+        #astro_gauss2 = prob.lognorm(y,s=0.17) / 10**mu
+
+        #print 'Diff', np.sum(np.abs(astro_gauss-astro_gauss2))/astro_gauss.shape[0]/astro_gauss.shape[1]/astro_gauss.shape[2]
+        
+        #rv = lognorm(s=sig,scale=mu)
+        #astro_gauss = rv.pdf(METAL)
+        #print("Astro Time",time.time() - start)
+        #start = time.time()
         product = li_gauss*astro_gauss
+        #print("Product Time",time.time() - start)
+        #print astro_gauss.shape
+        
+        #start = time.time()
         integral = np.trapz(product,METAL,axis=2)
+        #print "integral",integral.shape
         final_sum = np.sum(integral,axis=0)
+        #prob.normalize(self.const.AGE,final_sum)
+        #print final_sum.shape
+        #end = time.time()
+        #print("Integral Time",end - start)
+        #stop_sm = time.time()
+        #time_small = stop_sm - start_sm
+        #print "Time:", time_small
+
+        #start_no = time.time()
+        #sum_noBV = self.get_age_posterior_noBV_err(bv,bv_uncertainty,li,measure_err,isUpperLim)
+        #time_noBV = time.time() - start_no
+
+        #plt.plot(METAL[0,0,:],li_gauss[0,0,:],label="measurement gaussian")
+        #plt.legend()
+        #plt.xlabel("EW mA")
+        #plt.show()
+        #plt.loglog(self.const.AGE,np.abs(sum_noBV - final_sum)/final_sum,label="Percent Error")
+        #plt.title("Time saved:%.3f (%.3f,%.3f)" % (time_small - time_noBV,time_small,time_noBV))
+        #plt.ylabel("Percent Error")
+        #plt.xlabel("Age")
+        #plt.show()
+
+        #plt.semilogx(self.const.AGE,sum_noBV,label="no BV uncertainty")
+        #plt.semilogx(self.const.AGE,final_sum,label="BV uncertainty")
+        #plt.legend()
+        #plt.xlabel("Age")
+        #plt.show()
+        
+        #print "time %.2f" % (time.time() - start)
         return final_sum
 
     """
@@ -469,9 +526,8 @@ class age_estimator:
                     omit_cluster=omit_cluster)
         elif (self.metal == 'calcium'):
             ca_scatter = my_fits.total_scatter(bv_li,fits,omit_cluster)
-            #clust_scatter = [fits[i][1](0.65) for i in range(len(fits))]
-            #self.ca_sig_fit = my_fits.fit_gaussian(np.log10(self.const.CLUSTER_AGES),\
-            #        clust_scatter,fromFile=False,saveToFile=saveAsDefaults)
+            clust_scatter = [fits[i][1](0.65) for i in range(len(fits))]
+            fit_gaussian = my_fits.fit_gaussian(np.log10(self.const.CLUSTER_AGES),clust_scatter)
         
         median_rhk, sigma = [],[] #holds the grids
         for bv in self.const.BV_S:
@@ -482,8 +538,8 @@ class age_estimator:
                     li_scatter_fit,ca_scatter,fit_gaussian)
             median_rhk.append(mu(self.const.AGE))
             sigma.append(sig(self.const.AGE))
-            #if self.metal=='calcium':        ########## SHORTCUT #############
-            #    break
+            if self.metal=='calcium':        ########## SHORTCUT #############
+                break
             
         median_rhk,sigma = np.array(median_rhk),np.array(sigma)
 

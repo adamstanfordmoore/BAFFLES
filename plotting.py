@@ -14,7 +14,9 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 #givenErr = [-5,5] or 5
-def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],givenAge=None,givenErr = None,mamajekAge=None,logPlot=False,bv_arr = None,metal='calcium'):
+def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],\
+        givenAge=None,givenErr = None,mamajekAge=None,logPlot=False,bv_arr = None,\
+        metal='calcium'):
     const = init_constants(metal)
     isUpperLim = len(stat) == 4 #arbitrarily [.002,.05,.34,1]
     plt.title(title)
@@ -238,9 +240,6 @@ def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,\
 
     if (metal[0].lower()=='l'):
         plt.figure(figsize=(7,5))
-    ax = plt.gca()
-    if logAge: ax.set_xscale('log')
-    plt.ylim(const.METAL_RANGE)
     if metal_val:
         plt.hlines(metal_val,0,const.GALAXY_AGE,linestyle='dashed',color='orange',\
                 label=metal[:2].title() + ' = %.2f' % metal_val)
@@ -257,23 +256,24 @@ def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,\
                 #color=const.COLORS[c],label=CLUSTER_NAMES[c])
    
     
-    li_scatter_fit = my_fits.fit_two_scatters(bv_m,fits,upper_lim)
-    ca_scatter = my_fits.total_scatter(bv_m,fits)
+    li_scatter_fit = my_fits.fit_two_scatters(bv_m,fits,upper_lim) if metal == 'lithium' else None
+    ca_scatter = my_fits.total_scatter(bv_m,fits) if metal == 'calcium' else None
     mu,sig,lbl = my_fits.vs_age_fits(bv,CLUSTER_AGES,rhk,scatter,metal,li_scatter_fit,ca_scatter)
 
     plt.plot(const.AGE,mu(const.AGE),label=lbl)
     
     if (plotStars and bv_m is not None):
-        bv_threshold = 0.05
+        bv_threshold = 0.05 if metal=='lithium' else 1
         for c in range(len(bv_m)):
             bv_arr = np.array(bv_m[c][0])
             mask = (bv_arr >= bv - bv_threshold) & (bv_arr <= bv + bv_threshold)
             li = np.array(bv_m[c][1])[mask]
             star_ages = [const.CLUSTER_AGES[c]]*len(li)
-            ul = np.array(upper_lim[c])[mask]
+            ul = np.array(upper_lim[c])[mask] if upper_lim is not None else None
             for j in range(len(li)):
-                m = const.DOWN_ARROW if ul[j] else '+'
-                plt.scatter(const.CLUSTER_AGES[c],li[j],marker=m,s=30,color=const.COLORS[c+1]) #for primordial li
+                m = const.DOWN_ARROW if (upper_lim is not None and ul[j]) else '+'
+                color = const.COLORS[c+1] if metal == 'lithium' else const.COLORS[c]
+                plt.scatter(const.CLUSTER_AGES[c],li[j],marker=m,s=30,color=color) #for primordial li
 
     if (shadeScatter):
         plt.fill_between(const.AGE,mu(const.AGE) - sig(const.AGE),\
@@ -285,6 +285,9 @@ def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,\
         plt.plot(const.AGE,my_fits.getMamaRHK(const.AGE),linestyle='--',color='gray',\
                 label='Mamajek & Hillenbrand 2010')
     
+    ax = plt.gca()
+    if logAge: ax.set_xscale('log')
+    plt.axis([1,const.GALAXY_AGE]+const.METAL_RANGE)
     plt.legend()
     plt.xlabel('Age (Myr)',size=18)
     ylabel = set_ylabel(metal)
@@ -329,15 +332,16 @@ def scatter_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,bv
     rhk,scatter,CLUSTER_AGES,CLUSTER_NAMES = my_fits.get_valid_metal(bv,fits,const)
     
     for i in range(len(scatter)):
-        plt.scatter(CLUSTER_AGES[i], scatter[i],color=const.COLORS[i],marker = const.MARKERS[i],label=CLUSTER_NAMES[i],s=80,zorder=10)
+        plt.scatter(CLUSTER_AGES[i], scatter[i],color=const.COLORS[i],\
+                marker = const.MARKERS[i],label=CLUSTER_NAMES[i],s=80,zorder=10)
     
-    li_scatter_fit = my_fits.fit_two_scatters(bv_m,fits,upper_lim)
-    ca_scatter = my_fits.total_scatter(bv_m,fits)
+    li_scatter_fit = my_fits.fit_two_scatters(bv_m,fits,upper_lim) if metal=='lithium' else None
+    ca_scatter = my_fits.total_scatter(bv_m,fits) if metal=='calcium' else None
     mu,sig,lbl = my_fits.vs_age_fits(bv,CLUSTER_AGES,rhk,scatter,metal,li_scatter_fit,ca_scatter)
 
     #plt.plot(const.AGE,mu(const.AGE),label=lbl)
    
-    lbl = 'meas + astro' #r'constant $\sigma$ = %.3f' % fit(.65) 
+    lbl = 'gaussian fit' if metal=='calcium' else 'meas + astro' #r'constant $\sigma$ = %.3f' % fit(.65) 
     plt.plot(const.AGE,sig(const.AGE),'--',label=lbl,color='orange')
 
     ax = plt.gca()
@@ -426,16 +430,15 @@ def plot_mamajek(bv_rhk,fits):
         plt.text(.61,-4.77,"M67",size=13,color=const.COLORS[3])
 
 
-def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,upper_limits=None,li_range=None):
+def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,upper_limits=None,li_range=None,age_range=None):
     const = init_constants(metal)
-    allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,li_range)
+    allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,li_range,age_range=age_range,scale_by_std= metal=='calcium')
     #allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,li_range,linSpace=True)
     
     pdf_fit,cdf_fit = my_fits.fit_histogram(metal,totalStars,fromFile=False,saveToFile=True)
 
     mu = np.mean(totalStars)
     sigma = np.std(totalStars)
-    
     
     max_val = np.max([np.max(totalStars),np.abs(np.min(totalStars))]) + .1
     
@@ -459,16 +462,19 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,upper_
     #    plt.show()
 
     x = np.linspace(-1*max_val,max_val,1000)
-    pdf = pdf_fit(x)
-    prob.normalize(x,pdf)
-    plt.plot(x,pdf)
+    #plt.plot(x,cdf_fit(x))
+    plt.plot(x,pdf_fit(x))
+    #m = -3
+    #clust_scatter = [fits[i][1](0.65) for i in range(len(fits))]
+    #fit_gaussian = my_fits.fit_gaussian(np.log10(const.CLUSTER_AGES),clust_scatter)
+    #plt.plot(x,pdf_fit((x - m)/fit_gaussian(10))/fit_gaussian(10),label='10')
+    
+    #plt.plot(x,pdf_fit((x-m)/fit_gaussian(100))/fit_gaussian(100),label='100')
+    #plt.plot(x,pdf_fit((x-m)/fit_gaussian(1000))/fit_gaussian(1000),label='1000')
+    #print fit_gaussian(10),fit_gaussian(100),fit_gaussian(1000)
     
     
-    
-    
-    
-    
-    #plt.plot(x,prob.gaussian(x,mu,0.17))
+    #plt.plot(x,prob.gaussian(x,mu,sigma))
     #plt.legend()
     #plt.show()
 
@@ -476,8 +482,7 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,upper_
     #plt.legend([r'Gaussian ($\mu$=%.3f,$\sigma$=%.3f)' % (mu,sigma)] + const.CLUSTER_NAMES)
     plt.legend(['PDF'] + const.CLUSTER_NAMES)
     plt.xlim([-max_val,max_val])
-    #x_axis = 'Log(Li EW) - Li Fit'
-    x_axis = 'Li EW - Li Fit'
+    x_axis = 'Log(Li EW) - Li Fit'
     if (metal.lower()[0] == 'c'):
         x_axis = 'Log(R\'HK) - Ca Fit'
     plt.xlabel(x_axis,size=18)
@@ -489,7 +494,7 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,upper_
         pdfPage.savefig()
     if (showPlots):
         plt.show()
-    plt.close()        
+    #plt.close()        
 
 
 def baffles_vs_mamajek(bv_rhk,fits,i,pdfPage=None,showPlots=False,title=None,mamaProduct=False):

@@ -16,6 +16,7 @@ import probability as prob
 from astropy.io import ascii
 from astropy.table import Table
 import utils
+import readData
 from scipy.signal import savgol_filter
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
@@ -243,7 +244,8 @@ def poly_minimizer(params,c,r,upper_lim):
     return inverse_log_likelihood(r_model,sig_model,r,upper_lim)
 
 # 4 params = mu,sig,amplitude,vertical_offset
-def fit_gaussian(x,y):
+# takes in log ages and returns function of normal ages
+def fit_gaussian(x=None,y=None):
     guess = [np.mean(x),np.std(x),np.max(y)-np.min(y),np.min(y)]
     res = minimize(gaussian_scatter_minimizer,guess,args=(x,y), method='Nelder-Mead')
     if (not res.success):
@@ -252,7 +254,7 @@ def fit_gaussian(x,y):
 
     [mu,sig,A,c] = res.x
     def gauss_fit(x_coords):
-        return prob.gaussian(x_coords,mu,sig)*A + c
+        return prob.gaussian(np.log10(x_coords),mu,sig)*A + c
     
     if not res.success:
         import ca_constants as const
@@ -800,31 +802,6 @@ def VI_to_teff(in_column=2,out_column=6,switch=False):
     VI2 = lambda x: 9581.1 + -14264*x + 40759*x**2 - 74141*x**3 + 60932*x**4 - 18021*x**5
     return lambda vi: (vi < 1.2) * VI2(vi) + (vi >= 1.2) * VI(vi)
 
-
-def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,linSpace=False):
-    #const = utils.init_constants(metal)
-    allClusters = []
-    #residual_arr = []
-
-    for c in range(len(fits)):
-        arr = []
-        resid = None
-        if linSpace:
-            resid = np.power(10,bv_m[c][1]) - np.power(10,fits[c][0](bv_m[c][0]))
-        else: #log space
-            resid = residuals(bv_m[c][0],bv_m[c][1],fits[c][0])  #Log space
-        for i in range(len(resid)):
-            if (upper_limits is not None and upper_limits[c][i]):
-                continue
-            if (li_range is not None and (bv_m[c][1][i] < li_range[0] or \
-                    li_range[1] < bv_m[c][1][i])):
-                continue
-            arr.append(resid[i])
-        allClusters.append(arr)
-
-    residual_arr = np.concatenate(allClusters)
-    return allClusters,residual_arr
-
 # updates fits
 def cluster_scatter_from_stars(bv_m,fits):
     const = utils.init_constants('lithium')
@@ -858,12 +835,43 @@ def cluster_scatter_from_stars(bv_m,fits):
     return fits
 
 
+
+def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=None,linSpace=False,scale_by_std=False):
+    const = utils.init_constants(metal)
+    allClusters = []
+    #residual_arr = []
+
+    for c in range(len(fits)):
+        if age_range is not None and not (age_range[0] <= const.CLUSTER_AGES[c]\
+                <= age_range[1]):
+            allClusters.append([])
+            continue
+        arr = []
+        resid = None
+        if linSpace:
+            resid = np.power(10,bv_m[c][1]) - np.power(10,fits[c][0](bv_m[c][0]))
+        else: #log space
+            resid = residuals(bv_m[c][0],bv_m[c][1],fits[c][0])  #Log space
+        for i in range(len(resid)):
+            if (upper_limits is not None and upper_limits[c][i]):
+                continue
+            if (li_range is not None and (bv_m[c][1][i] < li_range[0] or \
+                    li_range[1] < bv_m[c][1][i])):
+                continue
+            arr.append(resid[i])
+        if scale_by_std:
+            arr = np.array(arr)/np.std(arr)
+        allClusters.append(arr)
+
+    residual_arr = np.concatenate(allClusters)
+    return allClusters,residual_arr
+
 def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     
     if fromFile:
         [x,pdf,cdf] = np.load(metal + '_likelihood_fit.npy')
         return piecewise(x,pdf),piecewise(x,cdf)
-    #const = utils.init_constants(metal)
+    const = utils.init_constants(metal)
     
     assert residual_arr is not None or fromFile, "Must provide residuals if not \
             reading from file"
@@ -871,35 +879,38 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     sigma = np.std(residual_arr)
 
     x = np.linspace(np.min(residual_arr)-.5,np.max(residual_arr)+.5,1000) #1000 for linear?
+    if metal=='calcium':
+        x = np.linspace(np.min(residual_arr)-.5,np.max(residual_arr)+.1,800)
+    before,after = np.linspace(-5,min(x),50),np.linspace(max(x),5,50)
+    x = np.concatenate((before,x,after))
+    print x[0],x[-1]
     cdf = np.array([(residual_arr < n).sum() for n in x],dtype='float')/len(x)
     cdf /= cdf[-1]
     #plt.plot(x,cdf,label='cdf_og')
 
-    #smoothed = savgol_filter(cdf, 51, 3)
-    smoothed = savgol_filter(cdf, 55, 3)
-    smoothed = savgol_filter(smoothed, 25, 3)
-    smoothed = savgol_filter(smoothed, 9, 3)
+    if metal=='calcium':
+        smoothed = savgol_filter(cdf, 55, 3)
+        smoothed = savgol_filter(smoothed, 25, 3)
+        smoothed = savgol_filter(smoothed, 9, 3)
+    else:
+        smoothed = savgol_filter(cdf, 55, 3)
+        smoothed = savgol_filter(smoothed, 25, 3)
+        smoothed = savgol_filter(smoothed, 9, 3)
    
-    #smoothed = savgol_filter(smoothed, 15, 3)
     #plt.plot(x,smoothed,label='smoothed')
     #plt.plot(x,norm.cdf(x,loc=mu,scale=sigma),label='gaussian cdf')
     #plt.legend()
     #plt.show()
 
     pdf = np.gradient(smoothed)
-    #start = 0#smoothed[0] - (smoothed[1]-smoothed[0])
-    #end = 1#smoothed[-1] + (smoothed[-11]-smoothed[-2])
-    #pdf = np.append(smoothed[1:],end) - np.insert(smoothed[:-1],0,start)
-
-    #pdf [:5] = [0,0,0,0,0]
-    #pdf[-5:] = [0,0,0,0,0]
-    #pdf[:200] = savgol_filter(pdf[0:200], 51, 3)
-    #pdf[-150:] = savgol_filter(pdf[-150:], 33, 3)
-    #pdf = savgol_filter(pdf, 15, 3)
     prob.normalize(x,pdf)
-    inds = np.nonzero(pdf > 1.5)[0]
+    
+    #plt.plot(x,pdf,label='smoothed')
+    #plt.show()
+    
+    inds = np.nonzero(pdf > 1.5)[0] if metal=='lithium' else \
+            np.nonzero(pdf > max(pdf)/2)[0]
     i,j = inds[0],inds[-1]
-    #pdf = savgol_filter(cdf, 45, 3)
     def exp_fit(x,a,b,c):
         return a*np.exp(b*x + c)
     popt,pcov = curve_fit(exp_fit,x[:i],pdf[:i],p0=[5,5,-1])
@@ -912,6 +923,16 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     #pdf[i-10:i+10] = savgol_filter(pdf[i-10:i+10], 9, 3)
     #pdf[j-20:j+20] = savgol_filter(pdf[j-20:j+20], 21, 3)
     pdf = savgol_filter(pdf, 9, 3)
+    
+    if metal=='calcium':
+        m,n = np.nonzero(pdf >= 0.32)[0][0],np.nonzero(pdf >= 0.45)[0][0]
+        #plt.plot(x,pdf)
+        #plt.show()
+        pdf[m:n] = piecewise([x[m],x[n]],[pdf[m],pdf[n]])(x[m:n])
+        
+        pdf = savgol_filter(pdf,21,3)
+        #plt.plot(x,pdf)
+        #plt.show()
     
     pdf [:2] = [0,0]
     pdf[-2:] = [0,0]
@@ -935,10 +956,11 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
 #######################################################
 # ldb fit is the bldb fit but doesn't conflict with name
 def get_valid_metal(bv,fits,const,primordial_li_fit=None,ldb_fit=None,omit_cluster=None):
-    #if const.METAL_NAME == 'calcium':
-    #   rhk = [fits[i][0](bv) for i in range(len(fits))]
-    #   sig = np.mean([fits[i][1](bv) for i in range(len(fits))]) #Change if non-constant scatter
-    
+    if const.METAL_NAME == 'calcium': #### SHORTCUT #####
+        rhk = [fits[i][0](bv) for i in range(len(fits))]
+        sig = [fits[i][1](bv) for i in range(len(fits))] #Change if non-constant scatter
+        return rhk,sig,const.CLUSTER_AGES,const.CLUSTER_NAMES
+
     rhk,scatter,CLUSTER_AGES,CLUSTER_NAMES = [],[],[],[]
     #info added from primordial lithium
     if (const.METAL_NAME == 'lithium'):
@@ -1030,10 +1052,10 @@ def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,li_scatter_fit=None,ca_scatter
     if (metal == 'calcium'):
         scatter_fit = fit_gauss if fit_gauss is not None else \
                 fit_gaussian(np.log10(cluster_ages),scatter)
-        def scatter(age):
-            return scatter_fit(np.log10(age))
+        #def scatter(age):
+        #    return scatter_fit(np.log10(age))
         #sig = np.poly1d([ca_scatter])
-        sig = scatter
+        sig = scatter_fit
 
     elif (metal == 'lithium'):
         def scatter(age):
@@ -1080,6 +1102,39 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     if (saveToFile):
         pickle.dump(final_li,open('data/mist_primordial_li.p','wb'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
+
+
+
+
+
+
+
+# refreshes everything saved to files
+def main():
+    upper_lim = None
+    bv_m,fits = readData.read_calcium()
+    _,res_arr = get_fit_residuals(bv_m,fits,'calcium',upper_lim,li_range=None,linSpace=False)
+    fit_histogram('calcium',residual_arr=res_arr,fromFile=False,saveToFile=True)
+    
+    
+    bv_m, upper_lim, fits = readData.read_lithium()
+    MIST_primordial_li(ngc2264_fit=fits[0][0],fromFile=False, saveToFile=True)
+    _,res_arr=get_fit_residuals(bv_m,fits,'lithium',upper_lim,li_range=None,linSpace=False)
+    fit_histogram('lithium',residual_arr=res_arr,fromFile=False,saveToFile=True)
+    
+
+
+
+
+
+if  __name__ == "__main__":
+    main()
+
+
+
+
+
+
 
 
 
