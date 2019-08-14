@@ -21,8 +21,8 @@ import fitting as my_fits
 import utils
 
 def main():
-    #METAL = "lithium"
-    METAL = "calcium"
+    METAL = "lithium"
+    #METAL = "calcium"
     names,pp = [],None
     bv_m,upper_lim,fits = None,None,None
     if (METAL=='calcium'):
@@ -34,7 +34,14 @@ def main():
         #bv_m, upper_lim, fits = bv_m[-8:], upper_lim[-8:], fits[-8:]
 
     #----------------------------------------------------------------------------------------------------
-    
+   
+    for c in range(len(bv_m)):
+        print const.CLUSTER_NAMES[c],len(bv_m[c][0])
+
+
+
+
+
     #Plot Fits
     #name = 'plots/' + METAL + '_fits.pdf'
     #pp=PdfPages(name)
@@ -89,28 +96,28 @@ def main():
     #names.append('bldb_vs_age.pdf')
    
     # BAFFLES vs Mamajek
-    #pp = PdfPages('plots/' +METAL + '_baffles_vs_mamajek.pdf')
-    #for i in range(len(bv_m)):
-    #    my_plot.baffles_vs_mamajek(bv_m,fits,i,pdfPage=pp,showPlots=False,title=None,mamaProduct=True)
-    #pp.close()
-    #names.append('plots/' +METAL + '_baffles_vs_mamajek.pdf')
+    pp = PdfPages('plots/' +METAL + '_baffles_vs_mamajek.pdf')
+    for i in range(len(bv_m)):
+        my_plot.baffles_vs_mamajek(bv_m,fits,i,pdfPage=pp,showPlots=False,title=None,mamaProduct=True)
+    pp.close()
+    names.append('plots/' +METAL + '_baffles_vs_mamajek.pdf')
 
     #Omitting each cluster
     #name = 'plots/' +METAL + '_self_validation.pdf'
-    name = 'plots/' +METAL + '_omit_clusters_072219.pdf'
-    pp = PdfPages(name)
-    for i in range(len(bv_m)):
-        print const.CLUSTER_NAMES[i]
+    #name = 'plots/' +METAL + '_omit_clusters_072219.pdf'
+    #pp = PdfPages(name)
+    #for i in range(len(bv_m)):
+    #    print const.CLUSTER_NAMES[i]
     #    #mamaProductAge = utils.getMamaProductAge(bv_m[i][1])
     #    #print mamaProductAge
-        baf = baffles.age_estimator(METAL,default_grids=False)
-        baf.make_grids(bv_m,fits,omit_cluster=i)
-        p = baf.posterior_product(bv_m[i][0],bv_m[i][1],pdfPage=pp,showPlot=True,\
-                showStars=True,givenAge=const.CLUSTER_AGES[i],\
-                title= const.CLUSTER_NAMES[i] + ' Posterior Product')
-    #    #print "True: %.3g BAFFLES: %.3g Mama: %.3g" % (const.CLUSTER_AGES[i],p.stats[2],mamaProductAge)
-    names.append(name)
-    pp.close()
+    #    baf = baffles.age_estimator(METAL,default_grids=False)
+    #    baf.make_grids(bv_m,fits,omit_cluster=i)
+    #    p = baf.posterior_product(bv_m[i][0],bv_m[i][1],pdfPage=pp,showPlot=True,\
+    #            showStars=True,givenAge=const.CLUSTER_AGES[i],\
+    #            title= const.CLUSTER_NAMES[i] + ' Posterior Product')
+    ##    #print "True: %.3g BAFFLES: %.3g Mama: %.3g" % (const.CLUSTER_AGES[i],p.stats[2],mamaProductAge)
+    #names.append(name)
+    #pp.close()
     
     # Making posteriors
     #name = 'plots/' + METAL + '_posteriors_tail.pdf'

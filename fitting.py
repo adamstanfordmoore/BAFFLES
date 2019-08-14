@@ -18,8 +18,6 @@ from astropy.table import Table
 import utils
 import readData
 from scipy.signal import savgol_filter
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
 import time
 
 BIN_SIZE = 10
@@ -30,19 +28,17 @@ MEASUREMENT_LI_SCATTER = 10 #mA in linear space from measurement error
 PRIMORDIAL_NLI = 3.2
 
 #limits vertex from moving to the right of lim
-# sets vertex to be first point
-def constrained_poly_fit(x,y,x1=None,y1=None,lim=0):
-    if x1 is None: x1 = x[0]
-    if y1 is None: y1 = y[0]
-    guess = [-5] #np.polyfit(x,y,2)[0]
-    #guess = np.polyfit(x,y,2)
-    res = minimize(constrained_poly_minimizer,guess, args=(x,y,x1,y1,lim),method='Nelder-Mead')
+# or sets vertex to be x1,y1. sets vertex to be first point by default
+def constrained_poly_fit(x,y,x1=None,y1=None,lim=None,sigma=None):
+    if x1 is None and lim is None: x1 = x[0]
+    if y1 is None and lim is None: y1 = y[0]
+    guess = np.polyfit(x,y,2)[0] if lim is None else np.polyfit(x,y,2)
+    res = minimize(constrained_poly_minimizer,guess, args=(x,y,x1,y1,lim,sigma),method='Nelder-Mead')
     if (not res.success):
         print "Unsuccessful minimizing of constrained polynomial function, check initial guess"
         print res.x
     #print res.x
-    return poly_constr_vert(res.x,x1,y1)
-    #return np.poly1d(res.x)
+    return poly_constr_vert(res.x,x1,y1) if lim is None else np.poly1d(res.x)
 
 def right_cubic_root(params):
     root = 4*params[1]*params[1] - 12*params[0]*params[2]
@@ -61,9 +57,17 @@ def poly_constr_vert(param,x1,y1):
     c = y1 - a*x1**2 - b*x1
     return np.poly1d([a,b,c])
 
-def constrained_poly_minimizer(params,x,y,x1,y1,lim):
-    y_model = poly_constr_vert(params,x1,y1)(x) #np.poly1d(params)(x)
-    return prob.chi_sqr(y,y_model,total=True)
+def constrained_poly_minimizer(params,x,y,x1,y1,lim,sigma):
+    y_model = None
+    if lim is not None:
+        #if max is greater than lim return a large number
+        vert = -params[1]/(2*params[0])
+        if (vert > lim):
+            return 1e10*(vert - lim)
+        y_model = np.poly1d(params)(x)
+    else:
+        y_model = poly_constr_vert(params,x1,y1)(x) #np.poly1d(params)(x)
+    return prob.chi_sqr(y,y_model,sigma,total=True)
 
 """
 def constrained_poly_minimizer(params,x,y,scatter,lim):
@@ -83,7 +87,7 @@ def bldb_fit(fits,plot=False):
     import li_constants as const
     
     BV = np.linspace(0.6,2.2,300) #picked to include M35
-    for c in range(len(fits)):
+    for c in range(1,len(fits)): #omitting NGC2264
         li = fits[c][0](BV)
         i = np.argmin(np.abs(li - const.ZERO_LI))
         if (i != len(li)):
@@ -101,17 +105,14 @@ def bldb_fit(fits,plot=False):
     #fit = pwise_fit(bv_at_zero_li,np.log10(ages),2,guess_fit=linear_fit,x_method='free')[0]
     
     ldb_age = lambda x : np.power(10,fit(x))
-    #def ldb_age(x):
-    #    return np.power(10,fit(x))
     
     if (plot):
         pp = PdfPages('bldb_vs_age.pdf')
-        #plt.title('Lithium depletion boundary over time')
         plt.xlabel('B-V',size=18)
         plt.ylabel('Age (Myr)',size=18)
         plt.yscale('log')
         for c in range(len(ages)):
-            plt.scatter(bv_at_zero_li[c],ages[c],label=cluster_names[c])
+            plt.scatter(bv_at_zero_li[c],ages[c],s=60,label=cluster_names[c],color=const.COLORS[c+1],marker=const.MARKERS[c+1])
         plt.plot(BV,ldb_age(BV))
         plt.fill_between(BV,ldb_age(BV),color='C0',alpha=.2,label="valid ages")
         plt.legend()
@@ -120,46 +121,65 @@ def bldb_fit(fits,plot=False):
         pp.close()
     
     return ldb_age
-"""
+
 # not sure this works, finds scatter in age instead of Li ?
-def ldb_scatter(fits):
-    bv_at_zero_li,ages,cluster_names = [],[],[]
-    import li_constants as const
-    for c in range(len(fits)):
-        li = fits[c][0](const.BV)
-        i = bisect.bisect_left(const.BV,.65) #only interested in zero crossing at bv > .65
-        while (i < len(li) and li[i] > const.ZERO_LI):
-            i += 1 #can change to 5 for slightly more speed
-        if (i != len(li)):
-            bv_at_zero_li.append(const.BV[i])
-            ages.append(const.CLUSTER_AGES[c])
-            cluster_names.append(const.CLUSTER_NAMES[c])
-    fit = poly_fit(bv_at_zero_li,np.log10(ages),1)
-    def ldb_age(x):
-        return np.power(10,fit(x))
-    return np.std(residuals(bv_at_zero_li,np.log10(ages),ldb_age))
-"""
+#def ldb_scatter(fits):
+#    bv_at_zero_li,ages,cluster_names = [],[],[]
+#    import li_constants as const
+#    for c in range(len(fits)):
+#        li = fits[c][0](const.BV)
+#        i = bisect.bisect_left(const.BV,.65) #only interested in zero crossing at bv > .65
+#        while (i < len(li) and li[i] > const.ZERO_LI):
+#            i += 1 #can change to 5 for slightly more speed
+#        if (i != len(li)):
+#            bv_at_zero_li.append(const.BV[i])
+#            ages.append(const.CLUSTER_AGES[c])
+#            cluster_names.append(const.CLUSTER_NAMES[c])
+#    fit = poly_fit(bv_at_zero_li,np.log10(ages),1)
+#    def ldb_age(x):
+#        return np.power(10,fit(x))
+#    return np.std(residuals(bv_at_zero_li,np.log10(ages),ldb_age))
 
 #returns the 1d polynomial
 def linear_fit(x,y,scatter=False):
     return poly_fit(x,y,1,scatter=scatter)
 
-#def dip_gaussian(x,mu,sig,A):
-#    chi2 = prob.chi_sqr(x,mu,sig)
-#    return 1.985 + A/(sig*np.sqrt(2*np.pi)) * np.exp(-chi2/2)
+def dip_gaussian(x,mu,sig,A,C):
+    chi2 = prob.chi_sqr(x,mu,sig)
+    return C + A/(sig*np.sqrt(2*np.pi)) * np.exp(-chi2/2)
 
 def dip_poly(x,a,b,c):
     return a*x**2 + b*x + c
 
-#def dip_poly(x,a,b,c,d):
-#    return d*x**2 + a*x**2 + b*x + c
-
-
+#def li_dip_fit(bv,li,upper_lim,dip_bv_range,dip_li_range):
+#    const = utils.init_constants('lithium')
+#    # separate out dip stars from non dip
+#
+#    bv,li,upper_lim = np.array(bv),np.array(li),np.array(upper_lim)
+#    dip_mask = (bv <= dip_bv_range[1]) & (bv >= dip_bv_range[0]) & \
+#               (li <= dip_li_range[1]) & (li >= dip_li_range[0])
+#    mask = np.invert(dip_mask)
+#    bv_dip,li_dip,upper_lim_dip = bv[dip_mask],li[dip_mask],upper_lim[dip_mask]
+#    bv_,li_,upper_lim_ = bv[mask],li[mask],upper_lim[mask]
+#    no_dip_fit,no_dip_sig_fit = poly_fit(bv_,li_,2,upper_lim_)
+#    resid = residuals(bv,li,no_dip_fit)
+#    popt,pcov = curve_fit(dip_gaussian,bv,resid,p0=[0.45,.04,-.1,0])
+#    plt.scatter(bv,resid)
+#    xx = np.linspace(min(bv),max(bv),100)
+#    plt.plot(xx,dip_gaussian(xx,*popt))
+#    plt.show()
+#
+#    def dip_fit(x): 
+#        return no_dip_fit(x) + dip_gaussian(np.array(x),*popt)
+#    sig = np.std(residuals(bv,li,dip_fit))
+#    plt.scatter(bv,li)
+#    plt.plot(const.BV,dip_fit(const.BV))
+#    plt.show()
 
 # dip_bv_range and dip_li_range specify box containing dipped stars,
 # so they can be excluded for background polynomial
 # total_dip_fit_range specifies bv range to fit polynomial
-# edge_box specifies box of stars (bv_min,bv_max,li_min,li_max) to make dip go through
+## edge_box specifies box of stars (bv_min,bv_max,li_min,li_max) to make dip go through
 def li_dip_fit(bv,li,upper_lim,dip_bv_range,dip_li_range,dip_fit_range,edge_box):
     const = utils.init_constants('lithium')
     # separate out dip stars from non dip
@@ -204,12 +224,11 @@ def li_dip_fit(bv,li,upper_lim,dip_bv_range,dip_li_range,dip_fit_range,edge_box)
     return [final_fit,final_sig_fit]
 
 
-
 # finds and returns n dimensional polynomial fit.  If scatter=True than it returns [median fit,scatter fit]
-def poly_fit(x,y,n=2,upper_lim=None,scatter=False):
+def poly_fit(x,y,n=2,upper_lim=None,scatter=False,weight = None):
     if (upper_lim is not None):
         return minimize_polynomial(x,y,n,upper_lim)
-    fit = np.poly1d(np.polyfit(x,y,n))
+    fit = np.poly1d(np.polyfit(x,y,n,w=weight))
     if (scatter):
         scatter_fit = np.poly1d(np.std(residuals(x,y,fit)))
         return [fit,scatter_fit]
@@ -245,7 +264,7 @@ def poly_minimizer(params,c,r,upper_lim):
 
 # 4 params = mu,sig,amplitude,vertical_offset
 # takes in log ages and returns function of normal ages
-def fit_gaussian(x=None,y=None):
+def fit_gaussian(x,y):
     guess = [np.mean(x),np.std(x),np.max(y)-np.min(y),np.min(y)]
     res = minimize(gaussian_scatter_minimizer,guess,args=(x,y), method='Nelder-Mead')
     if (not res.success):
@@ -253,6 +272,7 @@ def fit_gaussian(x=None,y=None):
         print res.x
 
     [mu,sig,A,c] = res.x
+    print res.x
     def gauss_fit(x_coords):
         return prob.gaussian(np.log10(x_coords),mu,sig)*A + c
     
@@ -264,9 +284,14 @@ def fit_gaussian(x=None,y=None):
     return gauss_fit
 
 def gaussian_scatter_minimizer(params,x,y):
+    import ca_constants as const
     [mu,sig,A,c] = params
     fit = prob.gaussian(x,mu,sig)*A + c
-    return prob.chi_sqr(y,fit,total=True)
+    num_stars = np.array(const.CLUSTER_INDEX)[:,1] - np.array(const.CLUSTER_INDEX)[:,0]
+    #print num_stars
+    sigma_weight = 1.0/num_stars
+    #print sigma_weight
+    return prob.chi_sqr(y,fit,sigma_weight,total=True)
 
 def constant_fit(y):
     m,s = np.mean(y),np.std(y)
@@ -372,22 +397,6 @@ def general_piecewise(X,Y,segments=3,guess_fit=None, sigma=None,x_method='even',
     y_param = guess_fit(x_coords) if n_pin == 0 else guess_fit(x_coords[1:])
     params0 = np.concatenate((x_param,y_param))
 
-    #x_coords = []
-    #params = []
-    #if (x_method == 'even'):
-    #    if (segments == -1):
-    #        segments = 3
-    #        x_coords = x_even(x,segments)
-    #if (x_method == 'free'):
-    #    if (segments == -1):
-    #        x_coords = x_coords_smart_binning(x,min_bin_size,min_length)   
-    #    else:
-    #        x_coords = x_even(x,segments)
-    #    params += x_coords[1:-1]
-    #elif (x_method[0] == 'b'):
-    #    x_coords = x_coords_smart_binning(x,bin_size,min_length   
-    #params += guess_fit(x_coords).tolist()
-    
     def minimizer(params):
         x_temp,y_temp = params_to_xy(params,X,Y,n_pin,segments)
         #plt.plot(np.power(10,x_temp),y_temp)
@@ -701,6 +710,36 @@ def magic_table_convert(in_column,out_column):
     
     return interpolate.interp1d(x,y, fill_value='extrapolate') 
 
+
+def spt_bv():
+    t = ascii.read('data/mamajek_magic_table.txt')
+    letters = ['O','B','A','F','G','K','M']
+    #val = np.linspace(10,70,len(letters))
+    #val[-1] -= 2
+    spt = [row[0][:-1] for row in t[0:90]]
+    sp = []
+    bv = []
+    for i in range(len(spt)):
+    #    if (spt[i][0:2] == 'K8' or spt[i][0:2] == 'K9'):
+    #        continue
+        sp.append(float(spt[i][1:]) + 10*letters.index(spt[i][0]))
+        bv.append(float(t[i][6]))
+    
+    interp = interpolate.interp1d(sp,bv, fill_value='extrapolate')
+    
+    #plt.plot(bv,sp)
+    
+    def f(x):
+        return interp(utils.float_sptype(x))
+    return f
+
+
+
+
+
+
+
+
 #teff is an array
 #At every T in teff it uses the soderblom 1993 Pleiades table to find the log(EW) corresponding to
 # PRIMORDIAL_NLI = 3.2
@@ -775,13 +814,13 @@ def primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
 
 # takes in the logR'HK value and returns the age in units Myr
-def getMamaAge(r):
-    return np.power(10,-38.053 - 17.912*r - 1.6675*r*r)/1e6
+#def getMamaAge(r):
+#    return np.power(10,-38.053 - 17.912*r - 1.6675*r*r)/1e6
 
 # Takes in age in units Myr and converts to logR'HK
-def getMamaRHK(age):
-    log_age = np.log10(np.array(age)*1e6)
-    return 8.94 - 4.849*log_age + .624*log_age**2 - .028 * log_age**3
+#def getMamaRHK(age):
+#    log_age = np.log10(np.array(age)*1e6)
+#    return 8.94 - 4.849*log_age + .624*log_age**2 - .028 * log_age**3
 
 def VI_to_teff(in_column=2,out_column=6,switch=False):
     #if switch:
@@ -867,9 +906,8 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
     return allClusters,residual_arr
 
 def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
-    
     if fromFile:
-        [x,pdf,cdf] = np.load(metal + '_likelihood_fit.npy')
+        [x,pdf,cdf] = np.load('grids/' + metal + '_likelihood_fit.npy')
         return piecewise(x,pdf),piecewise(x,cdf)
     const = utils.init_constants(metal)
     
@@ -879,11 +917,12 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     sigma = np.std(residual_arr)
 
     x = np.linspace(np.min(residual_arr)-.5,np.max(residual_arr)+.5,1000) #1000 for linear?
+    lim = 2
     if metal=='calcium':
+        lim = 5
         x = np.linspace(np.min(residual_arr)-.5,np.max(residual_arr)+.1,800)
-    before,after = np.linspace(-5,min(x),50),np.linspace(max(x),5,50)
+    before,after = np.linspace(-lim,min(x),50),np.linspace(max(x),lim,50)
     x = np.concatenate((before,x,after))
-    print x[0],x[-1]
     cdf = np.array([(residual_arr < n).sum() for n in x],dtype='float')/len(x)
     cdf /= cdf[-1]
     #plt.plot(x,cdf,label='cdf_og')
@@ -947,7 +986,7 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     #plt.show()
 
     if saveToFile:
-        np.save(metal+'_likelihood_fit',[x,pdf,cdf])
+        np.save('grids/' + metal + '_likelihood_fit',[x,pdf,cdf])
     return piecewise(x,pdf),piecewise(x,cdf)
 
 
@@ -955,11 +994,17 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
 
 #######################################################
 # ldb fit is the bldb fit but doesn't conflict with name
+# only removes omit_cluster for lithium, vs_age_fits does it for calcium only
 def get_valid_metal(bv,fits,const,primordial_li_fit=None,ldb_fit=None,omit_cluster=None):
-    if const.METAL_NAME == 'calcium': #### SHORTCUT #####
-        rhk = [fits[i][0](bv) for i in range(len(fits))]
-        sig = [fits[i][1](bv) for i in range(len(fits))] #Change if non-constant scatter
-        return rhk,sig,const.CLUSTER_AGES,const.CLUSTER_NAMES
+    #if const.METAL_NAME == 'calcium': #### SHORTCUT #####
+        #rhk = [fits[i][0](bv) for i in range(len(fits))]
+        #sig = [fits[i][1](bv) for i in range(len(fits))] #Change if non-constant scatter
+        #if omit_cluster is not None:
+        #    del rhk[omit_cluster]
+        #    del sig[omit_cluster]
+        #    del const.CLUSTER_AGES[omit_cluster]
+        #    del const.CLUSTER_NAMES[omit_cluster]
+        #return rhk,sig,const.CLUSTER_AGES,const.CLUSTER_NAMES
 
     rhk,scatter,CLUSTER_AGES,CLUSTER_NAMES = [],[],[],[]
     #info added from primordial lithium
@@ -968,10 +1013,10 @@ def get_valid_metal(bv,fits,const,primordial_li_fit=None,ldb_fit=None,omit_clust
             primordial_li_fit = MIST_primordial_li()#fits[0][0],fromFile=False,saveToFile=True)
         CLUSTER_AGES.append(const.PRIMORDIAL_LI_AGE)
         rhk.append(float(primordial_li_fit(bv)))
-        CLUSTER_NAMES.append("Primordial LiEW")
+        CLUSTER_NAMES.append("Primordial EWLi")
         scatter.append(0.05)
     for i in range(len(fits)):
-        if (omit_cluster and i == omit_cluster):
+        if (omit_cluster is not None and i == omit_cluster and const.METAL_NAME=='lithium'):
             continue
         r = fits[i][0](bv)
         if (const.METAL_RANGE[0] <=  r <= const.METAL_RANGE[1]):
@@ -1020,19 +1065,24 @@ def get_valid_metal(bv,fits,const,primordial_li_fit=None,ldb_fit=None,omit_clust
 #    return lambda age : np.where(np.array(age) < x[0],lin_fit(age),f(age,*popt))
 
 #returns functions that take in age to get metal,sigma
-def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,li_scatter_fit=None,ca_scatter=None,fit_gauss=None):
+def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,li_scatter_fit=None,omit_cluster=None):
     if not li_scatter_fit and metal == 'lithium':
         assert False
         return
-    elif not ca_scatter and metal == 'calcium':
-        assert False
-        return
-   
+    cluster_ages_og,scatter_og = copy.deepcopy(cluster_ages),copy.deepcopy(scatter)
+    if omit_cluster is not None and metal == 'calcium': 
+        del cluster_ages[omit_cluster]
+        del rhk[omit_cluster]
+        del scatter[omit_cluster]
     metal_fit = None
     mu_lbl = ''
     if (metal == 'calcium'):
-        metal_fit = poly_fit(np.log10(cluster_ages),rhk,2)
-        mu_lbl = 'Polynomial fit'
+        const = utils.init_constants('calcium')
+        num_stars = np.array(const.CLUSTER_INDEX)[:,1] - np.array(const.CLUSTER_INDEX)[:,0]
+        err = 1.0/num_stars
+        metal_fit = constrained_poly_fit(np.log10(cluster_ages),rhk,lim=0,sigma=err)
+        #metal_fit = poly_fit(np.log10(cluster_ages),rhk,2,weight=num_stars)
+        mu_lbl = '2nd-order Polynomial'
     elif (metal == 'lithium'):
         cluster_ages = np.log10(cluster_ages)
         bv_cut = [0.65,1,1.6]
@@ -1050,13 +1100,7 @@ def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,li_scatter_fit=None,ca_scatter
     #5 different methods for handling scatter:
     # gaussian fit,total detrended mean, mean clusters, best-fit, linear interp
     if (metal == 'calcium'):
-        scatter_fit = fit_gauss if fit_gauss is not None else \
-                fit_gaussian(np.log10(cluster_ages),scatter)
-        #def scatter(age):
-        #    return scatter_fit(np.log10(age))
-        #sig = np.poly1d([ca_scatter])
-        sig = scatter_fit
-
+        sig = fit_gaussian(np.log10(cluster_ages_og),scatter_og)
     elif (metal == 'lithium'):
         def scatter(age):
             return li_scatter_fit(mu(age))
@@ -1113,7 +1157,7 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
 def main():
     upper_lim = None
     bv_m,fits = readData.read_calcium()
-    _,res_arr = get_fit_residuals(bv_m,fits,'calcium',upper_lim,li_range=None,linSpace=False)
+    _,res_arr = get_fit_residuals(bv_m,fits,'calcium',upper_lim,li_range=None,linSpace=False,scale_by_std=True)
     fit_histogram('calcium',residual_arr=res_arr,fromFile=False,saveToFile=True)
     
     

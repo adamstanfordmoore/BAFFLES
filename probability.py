@@ -11,6 +11,7 @@ UL_PROBS = [0.0026998,0.04550026,0.31731051,1] #[1-.99,1-.95,1-.68, maxAge]
 
 #squared residuals divided by std**2 if given
 def chi_sqr(x,mu,sig=1,total=False):
+    if sig is None: sig = 1
     if type(sig) == list:
         sig = np.array(sig) + 1e-10
     if type(mu) == list:
@@ -45,14 +46,13 @@ def polyspace(start,stop,num,power=2):
     a = (stop - start)/(num-1)**power
     return a*x**power + c
 
-# NOT FINISHED
 # takes in densely sampled x,y and returns num sampled x
 def desample(x,y,num):
     ddy = np.abs(np.gradient(np.gradient(y)))
     #ddy += 0.0001 ######### CHECK  #########
-    f_arr = cdf(x,1/ddy)
+    f_arr = cdf(x,ddy)
     f_arr = f_arr*(x[-1] - x[0]) + x[0]
-    f = my_fits.piecewise(x,f_arr)
+    f = my_fits.piecewise(f_arr,x)
     new_x = f(np.linspace(x[0],x[-1],num))
     new_y = my_fits.piecewise(x,y)(new_x)
     return new_x,new_y

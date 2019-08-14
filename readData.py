@@ -18,6 +18,111 @@ import fitting as my_fits
 import utils
 import copy
 
+def schkolnik_betaPic():
+    import li_constants as li_const
+    t = np.genfromtxt("data/Shkolnik_2017_betaPic.csv",delimiter=',',dtype=str)
+    b,l,ul,names = [],[],[],[]
+    #sp_bv = my_fits.spt_bv()
+    #sp = []
+    #binaries = ['2MASS J01112542+1526214',
+    #        '2MASS J10172689-5354265',
+    #        '2MASS J05241914-1601153',
+    #        '2MASS J00281434-3227556',
+    #        '2MASS J01071194-1935359',
+    #        '2MASS J01373940+1835332',
+    #        '2MASS J18453704-6451460']
+    for row in t[1:]:
+        if row[13] != '': continue
+        
+        if not utils.isFloat(row[1]) or not utils.isFloat(row[5]) \
+                or row[12] != 'Y' or float(row[5]) <= 0: continue
+        #bv,ew = sp_bv(row[2]),np.log10(float(row[5]))
+        bv,ew = float(row[1]),np.log10(float(row[5]))
+        if not li_const.inRange(bv,ew): continue
+        b.append(bv)
+        l.append(ew)
+        ul.append(row[4]=='<')
+        names.append(row[0])
+        #sp.append(utils.float_sptype(row[2]))
+        #if np.abs(bv2 - bv) > 0.2: print row[0],bv, row[2]
+        #if 1.5 < bv <= 1.7: print row[0],bv, row[2]
+    return b,l,ul,names
+
+def mentuch2008_betaPic(): 
+    import li_constants as li_const
+    bp_c = []
+    bp_l = []
+    lim_bp = []
+    names = []
+    bp_err = []
+    t = ascii.read('data/beta_pic_updated_err_2MASS.txt', delimiter='\t')
+    for line in t:
+        if line[11] != '': continue
+        if in_bounds(float(line[4]),float(line[5]),li_const):
+            bp_c.append(float(line[4]))
+            bp_l.append(float(line[5]))
+            lim_bp.append(False)
+            names.append(line[10])
+            bp_err.append(float(line[6]))
+    bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
+    return bp_c,bp_l,lim_bp,bp_err,names
+
+def merged_betaPic():
+    bp_c,bp_l,lim_bp,bp_err,names = mentuch2008_betaPic()
+    bp_c2,bp_l2,lim_bp2,names2 = schkolnik_betaPic()
+    combined_err = [None]*len(names2)
+    for i in range(len(names)):
+        if names[i] in names2: 
+            #print names[i]
+            continue
+        bp_c2.append(bp_c[i])
+        bp_l2.append(bp_l[i])
+        lim_bp2.append(lim_bp[i])
+        names2.append(names[i])
+        combined_err.append(bp_err[i])
+    return bp_c2,bp_l2,lim_bp2,combined_err,names2
+
+def abdor():
+    import li_constants as const
+    abdor_c = []
+    abdor_l = []
+    abdor_bverr = []
+    abdor_lerr = []
+    t = ascii.read('data/ab_dor_updated_err_bv.csv',delimiter=',')
+    for line in t[1:]:
+        if line[14] != '' or not utils.isFloat(line[13]): continue
+        bv = float(line[13])
+        #bv = teff_to_bv(float(line[5]))
+        ew = float(line[3])
+        if in_bounds(bv,ew,const):
+            abdor_c.append(bv)
+            abdor_l.append(ew)
+            abdor_lerr.append(float(line[4]))
+            #abdor_bverr.append(BV_ERR(float(line[5]),float(line[6])))
+            #lim_bp.append(False)
+    abdor_c,abdor_l = np.array(abdor_c),np.log10(np.array(abdor_l))
+    return abdor_c, abdor_l,abdor_lerr
+
+def tuchor():
+    import li_constants as const
+    tuchor_c = []
+    tuchor_l = []
+    tuchor_bverr,tuchor_lerr = [],[]
+    t = ascii.read('data/tuchor_updated_err_bv.csv',delimiter=',')
+    for line in t[1:]:
+        if line[14] != '' or not utils.isFloat(line[13]): continue
+        bv = float(line[13])
+        #bv = teff_to_bv(float(line[5]))
+        ew = float(line[3])
+        if in_bounds(bv,ew,const):
+            tuchor_c.append(bv)
+            tuchor_l.append(ew)
+            tuchor_lerr.append(float(line[4]))
+            #tuchor_bverr.append(BV_ERR(float(line[5]),float(line[6])))
+            #lim_bp.append(False)
+    tuchor_c,tuchor_l = np.array(tuchor_c),np.log10(np.array(tuchor_l))
+    return tuchor_c,tuchor_l,tuchor_lerr
+
 #reads in data and generates fits
 def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
     if (fromFile):
@@ -32,28 +137,54 @@ def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
     cluster_index = const.CLUSTER_INDEX
     for i in range(len(cluster_index)):
         c,r = [],[]
+        names = []
         if (len(cluster_index[i]) > 2):
             for j in range(0,len(cluster_index[i]),2):
                 c += list(t["__B-V_0"][cluster_index[i][j]:cluster_index[i][j+1]])
                 r += list(t["logR_HK"][cluster_index[i][j]:cluster_index[i][j+1]])
+                names = np.array(t["Name"][cluster_index[i][j]:cluster_index[i][j+1]])
             c = np.array(c).astype(np.float)
             r = np.array(r).astype(np.float)
         else:
             c = np.array(t["__B-V_0"][cluster_index[i][0]:cluster_index[i][1]]).astype(np.float)
             r = np.array(t["logR_HK"][cluster_index[i][0]:cluster_index[i][1]]).astype(np.float)
+            names = np.array(t["Name"][cluster_index[i][0]:cluster_index[i][1]])
         
         # omit stars out of bv/metal range
         mask = (const.BV_RANGE[0] <= c) & (c <= const.BV_RANGE[1]) & \
                 (const.METAL_RANGE[0] <= r) & (r <= const.METAL_RANGE[1])
-        c,r = c[mask],r[mask]
+        c,r,names = c[mask],r[mask],names[mask]
         
+        # average together same stars
+        c2,r2 = [],[]
+        for name in set(names):
+            mask = names == name
+            c2.append(np.mean(c[mask]))
+            r2.append(np.mean(r[mask]))
+        c,r = c2,r2
+
+        if i == const.CLUSTER_NAMES.index(r"$\beta$ Pic"):
+            c += [.49,.59,0.803]
+            r += [-4.41,-4.37,-4.159]
+            #From [Wright 2004, Wright 2004, Gray 2006]
+        if i == const.CLUSTER_NAMES.index("Tuc/Hor"):
+            c +=  [.52,.6]
+            r += [-4.38,-4.33]
+            # From [Jenkins 2006,Henry 1996]
+
+
+
+
+
         bv_rhk.append([c,r])
-        #fits.append(my_fits.constant_fit(r))
-        #fits.append([np.poly1d([np.median(r)]),np.poly1d([0.1])])
-        #fits.append(my_fits.poly_fit(c,r,n=fit_degree,scatter=True))
-        rhk_fit = np.poly1d([np.median(r)])
-        sig_fit = np.poly1d(np.std(my_fits.residuals(c,r,rhk_fit)))
-        fits.append([rhk_fit,sig_fit])
+        if fit_degree > 0:
+            #fits.append(my_fits.constant_fit(r))
+            #fits.append([np.poly1d([np.median(r)]),np.poly1d([0.1])])
+            fits.append(my_fits.poly_fit(c,r,n=fit_degree,scatter=True))
+        else:
+            rhk_fit = np.poly1d([np.median(r)])
+            sig_fit = np.poly1d(np.std(my_fits.residuals(c,r,rhk_fit)))
+            fits.append([rhk_fit,sig_fit])
     if (saveToFile):
         pickle.dump(bv_rhk,open('data/bv_rhk.p','wb'))
         pickle.dump(fits,open('data/ca_fits.p','wb'))
@@ -93,8 +224,7 @@ def in_bounds(bv,l,const,log=False):
 
 def make_picklable(fits):
     const = utils.init_constants('lithium')
-    #i = const.CLUSTER_NAMES.index('Hyades')
-    #fits = copy.deepcopy(fits)
+    fits = copy.deepcopy(fits)
     for c,i in [(c,i) for c in range(len(fits)) for i in range(2)]:
         if type(fits[c][i]) != type(np.poly1d([1])):
             fits[c][i] = fits[c][i](const.BV)
@@ -108,13 +238,14 @@ def undo_picklable(fits):
             fits[c][i] = my_fits.piecewise(const.BV,fits[c][i])
     #fits[i][0] = my_fits.piecewise(const.BV,fits[i][0])
     #fits[i][1] = my_fits.piecewise(const.BV,fits[i][1])
+    return fits
 
 def read_lithium(fromFile=True,saveToFile=False):
     if (fromFile):
         bv_li = pickle.load(open('data/bv_li_all.p','rb'))
         upper_lim = pickle.load(open('data/upper_lim_all.p','rb'))
         fits = pickle.load(open('data/li_fits_all.p','rb'))
-        undo_picklable(fits)
+        fits = undo_picklable(fits)
         #bv_li = pickle.load(open('data/bv_li_gaia.p','rb'))
         #upper_lim = pickle.load(open('data/upper_lim_gaia.p','rb'))
         #fits = pickle.load(open('data/li_fits_gaia.p','rb'))
@@ -196,8 +327,8 @@ def read_lithium(fromFile=True,saveToFile=False):
     t = ascii.read('data/NGC2264_bouvier.txt',delimiter=';')
     ngc2264_c = []
     ngc2264_l = []
-    print t
-    print t[0]
+    #print t
+    #print t[0]
     """
     t = ascii.read('data/ngc2264_lithium_bv.csv',delimiter=';')
     ngc2264_c = []
@@ -219,17 +350,8 @@ def read_lithium(fromFile=True,saveToFile=False):
     ngc2264_l = np.delete(ngc2264_l,ind)
     bv_li.append([ngc2264_c,ngc2264_l])
     upper_lim.append([False]*len(ngc2264_c))
- 
-    bp_c = []
-    bp_l = []
-    lim_bp = []
-    t = ascii.read('data/beta_pic.txt', delimiter='\t')
-    for line in t:
-        if in_bounds(float(line[4]),float(line[5]),const):
-            bp_c.append(float(line[4]))
-            bp_l.append(float(line[5]))
-            lim_bp.append(False)
-    bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
+    
+    bp_c,bp_l,lim_bp,_,_ = merged_betaPic()
     bv_li.append([bp_c,bp_l])
     upper_lim.append(lim_bp)
 
@@ -428,6 +550,11 @@ def read_lithium(fromFile=True,saveToFile=False):
 
 
     fits = get_li_fits(bv_li,upper_lim)
+
+    #primordial_li_fit = my_fits.MIST_primordial_li(fits[0],fromFile=False,saveToFile=True)
+    #fits.insert(0,[primordial_li_fit,np.poly1d([0.05])])
+    #bv_li.insert(0,[])
+    #upper_lim.append([])
 
     if (saveToFile):
         pickle.dump(bv_li,open('data/bv_li_all.p','wb'))
