@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 """
 Adam Stanford-Moore,Eric Nielsen, Bruce Macintosh, Rob De Rosa
 Stanford University Physics Department
@@ -34,10 +34,10 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
     p = None
     if (rhk):
         baf = age_estimator('calcium')
-        p = baf.get_posterior(bv,rhk,pdfPage,showPlots,bv_err,li_err,upperLim=upperLim,maxAge=maxAge,mamajekAge=my_fits.getMamaAge(rhk))
+        p = baf.get_posterior(bv,rhk,pdfPage,showPlots,bv_err,li_err,upperLim=upperLim,maxAge=maxAge,mamajekAge=utils.getMamaAge(rhk))
         if (savePostAsText):
             np.savetxt(fileName + "_calcium.csv", zip(const.AGE,p.array), delimiter=",")
-        print "Ca Median Age: %.3g Myr, 68%% CI: %.3g - %.3g Myr, 95%% CI: %.3g - %.3g Myr" % (p.stats[2],p.stats[1],p.stats[3],p.stats[0],p.stats[4])
+        print("Ca Median Age: %.3g Myr, 68%% CI: %.3g - %.3g Myr, 95%% CI: %.3g - %.3g Myr" % (p.stats[2],p.stats[1],p.stats[3],p.stats[0],p.stats[4]))
     p2 = None
     if (li):
         baf2 = age_estimator('lithium')
@@ -45,8 +45,8 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
         if (savePostAsText):
             np.savetxt(fileName + "_lithium.csv", zip(const.AGE,p2.array), delimiter=",")
         
-        if p2.upperLim: print "1 sig lower-lim: %.3g Myr, 2 sig lower-lim: %.3g Myr, 3 sig: %.3g Myr" % (p2.stats[2],p2.stats[1],p2.stats[0])
-        else: print "Li Median Age: %.3g Myr, 68%% CI: %.3g - %.3g Myr, 95%% CI: %.3g - %.3g Myr" % (p2.stats[2],p2.stats[1],p2.stats[3],p2.stats[0],p2.stats[4])
+        if p2.upperLim: print("1 sig lower-lim: %.3g Myr, 2 sig lower-lim: %.3g Myr, 3 sig: %.3g Myr" % (p2.stats[2],p2.stats[1],p2.stats[0]))
+        else: print("Li Median Age: %.3g Myr, 68%% CI: %.3g - %.3g Myr, 95%% CI: %.3g - %.3g Myr" % (p2.stats[2],p2.stats[1],p2.stats[3],p2.stats[0],p2.stats[4]))
 
     if (p and p2):
         title = ' Calcium/Lithium Posterior Product'
@@ -54,7 +54,7 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
         prob.normalize(const.AGE,y)
         stats = prob.stats(const.AGE,y)
         my_plot.posterior(const.AGE,y,prob.stats(const.AGE,y),title,pdfPage,showPlots)
-        print "Final Median Age: %.3g Myr, 68%% CI: %.3g - %.3g, 95%% CI: %.3g - %.3g" % (stats[2],stats[1],stats[3],stats[0],stats[4])
+        print("Final Median Age: %.3g Myr, 68%% CI: %.3g - %.3g, 95%% CI: %.3g - %.3g" % (stats[2],stats[1],stats[3],stats[0],stats[4]))
 
         if (savePostAsText):
             np.savetxt(fileName + "_product.csv", zip(const.AGE,y), delimiter=",")
@@ -110,7 +110,7 @@ class age_estimator:
         
         if mamajekAge == True and self.const.METAL_RANGE[0] <= metallicity <= \
                 self.const.METAL_RANGE[1]:
-            mamajekAge = my_fits.getMamaAge(metallicity)
+            mamajekAge = utils.getMamaAge(metallicity)
 
         #if self.metal == 'lithium': metallicity = 10**metallicity 
         
@@ -120,7 +120,7 @@ class age_estimator:
         posterior_arr = self.likelihood(bv,bv_uncertainty,metallicity,measure_err,\
                 upperLim) * self.prior(maxAge)
         if all(posterior_arr == 0):
-            print "Posterior not well defined. Area is zero so adding constant"
+            print("Posterior not well defined. Area is zero so adding constant")
             posterior_arr += 1
         
         prob.normalize(self.const.AGE,posterior_arr)
@@ -217,7 +217,7 @@ class age_estimator:
             sec_per_star = sec_per_star + 0.1*((time.time() - star_time) - sec_per_star) #exp moving average
             #sec_per_star = (time.time() - start)/float(i+1)
 
-        print "Finished %d stars. Average time per star: %.2f seconds." % (len(bv_arr),(time.time() - start)/len(bv_arr))
+        print("Finished %d stars. Average time per star: %.2f seconds." % (len(bv_arr),(time.time() - start)/len(bv_arr)))
 
 
         #print "Nonzero Range",max(min_list),min(max_list)
@@ -382,9 +382,9 @@ if  __name__ == "__main__":
     \noptional flags:\n\
     -ul indicates that the log(EW/mA) reading is an upper-limit reading. \n\
     -maxAge allows user to input max posible age of star (Myr) if upper-limit flag is used. default is %d \n\
-    -bmv_err <float uncertainity> provides the uncertainty on B-V with default %f \n\
+    -bmv_err <float uncertainity> provides the uncertainty on B-V with default %.2f \n\
     -li_err <float uncertainity> provides the uncertainty in LiEW measurement with default %dmA \n\
-    -noPlot suppresses all plotting and just generates .csv files (-s extension is implied. Used with -showplots it prevents saving).\n\
+    -noPlot suppresses all plotting and just generates prints a .csv files (-s extension is implied. Used with -showplots it prevents saving).\n\
     -s saves posteriors as .csv \n\
     -showPlot to show posterior plots to user before saving. \n\
     -filename <name of file w/o extension> name of files to be saved: name.pdf is graphs, name_calcium.csv/name_lithium.csv/name_product.csv are posterior csv files for calcium/lithium/product respectively.  csv is stored as age, probability in two 1000 element columns.\n\
@@ -392,7 +392,7 @@ if  __name__ == "__main__":
     
     argv = sys.argv #starts with 'baffles.py'
     if (len(argv) < 3 or '-help' in argv):
-        print err,help_msg
+        print(err,help_msg)
         sys.exit()
     bv = None
     bv_err,li_err = None,None
@@ -407,8 +407,8 @@ if  __name__ == "__main__":
     extra_flags = ['-showplot','-showPlots','-showplots','noPlots','-noplots','-noplot','-UL']
     for ar in argv[1:]:
         if not utils.isFloat(ar) and ar not in valid_flags and ar not in extra_flags:
-            print "Invalid flag '" + ar + "'. Did you mean one of these:"
-            print valid_flags
+            print("Invalid flag '" + ar + "'. Did you mean one of these:")
+            print(valid_flags)
             exit()
     try:
         if ('-bmv' in argv):
@@ -417,23 +417,23 @@ if  __name__ == "__main__":
             rhk = float(argv[argv.index('-rhk') + 1])
             import ca_constants as const
             if bv is not None and (not (const.BV_RANGE[0] <= bv <= const.BV_RANGE[1])):
-                print "B-V out of range. Must be in range " + str(const.BV_RANGE)
+                print("B-V out of range. Must be in range " + str(const.BV_RANGE))
                 sys.exit()
             if (not (const.METAL_RANGE[0] <= rhk <= const.METAL_RANGE[1])):
-                print "Log(R\'HK) out of range. Must be in range " + str(const.METAL_RANGE)
+                print("Log(R\'HK) out of range. Must be in range " + str(const.METAL_RANGE))
                 sys.exit()
         if ('-li' in argv):
             li = float(argv[argv.index('-li') + 1])
             import li_constants as const
             if 0 < li < 3:
-                print "Interpretting LiEW as log(LiEW)"
+                print("Interpretting LiEW as log(LiEW)")
                 li = 10**li
             
             if (not (const.BV_RANGE[0] <= bv <= const.BV_RANGE[1])):
-                print "B-V out of range. Must be in range " + str(const.BV_RANGE)
+                print("B-V out of range. Must be in range " + str(const.BV_RANGE))
                 sys.exit()
             if (not (const.METAL_RANGE_LIN[0] <= li <= const.METAL_RANGE_LIN[1])):
-                print "Li EW out of range. Must be in range " + str(const.METAL_RANGE) + " mA"
+                print("Li EW out of range. Must be in range " + str(const.METAL_RANGE) + " mA")
                 sys.exit()
         if ('-s' in argv):
             save = True
@@ -453,8 +453,8 @@ if  __name__ == "__main__":
         if ('-maxAge' in argv):
             maxAge = float(argv[argv.index('-maxAge') + 1])
     except IndexError:
-        print err
+        print(err)
     except ValueError:
-        print err
+        print(err)
     
     baffles_age(bv,rhk,li,bv_err,li_err,upperLim,maxAge,fileName,showPlots=showPlots,noPlots=noPlots, savePostAsText=save)

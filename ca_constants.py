@@ -58,8 +58,8 @@ BV_UNCERTAINTY = .002
 MEASURE_ERR = None #no default uncertainty in measurement 
 
 #new numerical likelihood pdf from histogram fitting. still constant fits. polynomial fit at a given B-V like mamajek polynomial
-DEFAULT_MEDIAN_GRID = "grids/median_rhk_081319.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_rhk_081319.npy"
+DEFAULT_MEDIAN_GRID = "grids/median_rhk_081419.npy"
+DEFAULT_SIGMA_GRID = "grids/sigma_rhk_081419.npy"
 
 #new scatter from histogram fitting which equally weights each star.still constant fits. polynomial fit at a given B-V like mamajek polynomial
 #DEFAULT_MEDIAN_GRID = "grids/median_rhk_030719.npy"

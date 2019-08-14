@@ -452,7 +452,7 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,upper_
     allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,li_range,age_range=age_range,scale_by_std= metal=='calcium')
     #allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,li_range,linSpace=True)
     
-    pdf_fit,cdf_fit = my_fits.fit_histogram(metal,totalStars)#,fromFile=False,saveToFile=True)
+    pdf_fit,cdf_fit = my_fits.fit_histogram(metal,totalStars,fromFile=False,saveToFile=False)
 
     mu = np.mean(totalStars)
     sigma = np.std(totalStars)

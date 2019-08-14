@@ -22,7 +22,7 @@ bv_m, upper_lim, fits = readData.read_lithium()#fromFile=False,saveToFile=False)
 bv_ca, ca_fits = readData.read_calcium()#fromFile=False,saveToFile=False)
 
 def printName(n):
-    print "scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/"
+    print("scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/")
     #print "sips -s format png -s formatOptions best ~/Desktop/" + n[6:] + " --out ~/Desktop/"
 
   
@@ -104,7 +104,7 @@ def metal_vs_age():
     pp=PdfPages(name)
     bvRange = const.BV_S #np.linspace(0.3,1.9,40) #np.arange(1.3,2,.1)#np.arange(0.3,2,.1) if METAL == 'lithium' else np.arange(.45,.9,.05) #np.arange(.35,1.9,.1)
     for bv in bvRange:
-        print "bv: ",bv
+        print("bv: ",bv)
         my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=False,shadeScatter=False,\
                 errorbars=False,title='B-V = %.3f' % bv, bv_m=bv_m,upper_lim=upper_lim,\
                 logAge=True,plotStars=True)
@@ -146,7 +146,7 @@ def combined_validation():
     pp=PdfPages(name)
     baf_default = baffles.age_estimator(METAL)
     for i in range(len(bv_m)):
-        print const.CLUSTER_NAMES[i]
+        print(const.CLUSTER_NAMES[i])
         baf = baffles.age_estimator(METAL,default_grids=False)
         baf.make_grids(bv_m,fits,omit_cluster=i)
         p_val = baf.posterior_product(bv_m[i][0],bv_m[i][1],upperLim_arr=upper_lim[i])
@@ -170,7 +170,7 @@ def omitting(validation=False):
     pp=PdfPages(name)
     baf = baffles.age_estimator(METAL,default_grids=False)
     for i in range(len(bv_m)):
-        print const.CLUSTER_NAMES[i]
+        print(const.CLUSTER_NAMES[i])
         if not validation: baf.make_grids(bv_m,fits,omit_cluster=i)
         p = baf.posterior_product(bv_m[i][0],bv_m[i][1],pdfPage=pp,showPlot=False,\
                 showStars=True,givenAge=const.CLUSTER_AGES[i],\

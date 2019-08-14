@@ -35,9 +35,9 @@ def constrained_poly_fit(x,y,x1=None,y1=None,lim=None,sigma=None):
     guess = np.polyfit(x,y,2)[0] if lim is None else np.polyfit(x,y,2)
     res = minimize(constrained_poly_minimizer,guess, args=(x,y,x1,y1,lim,sigma),method='Nelder-Mead')
     if (not res.success):
-        print "Unsuccessful minimizing of constrained polynomial function, check initial guess"
-        print res.x
-    #print res.x
+        print("Unsuccessful minimizing of constrained polynomial function, check initial guess")
+        print(res.x)
+    #print(res.x
     return poly_constr_vert(res.x,x1,y1) if lim is None else np.poly1d(res.x)
 
 def right_cubic_root(params):
@@ -95,7 +95,7 @@ def bldb_fit(fits,plot=False):
             ages.append(const.CLUSTER_AGES[c])
             cluster_names.append(const.CLUSTER_NAMES[c])
    
-    #print cluster_names
+    #print(cluster_names
     upper_clusters = ['M67','Hyades','M34','M35']
     upper_ages = [ages[cluster_names.index(name)] for name in upper_clusters]
     upper_bv = [bv_at_zero_li[cluster_names.index(name)] for name in upper_clusters]
@@ -209,7 +209,7 @@ def li_dip_fit(bv,li,upper_lim,dip_bv_range,dip_li_range,dip_fit_range,edge_box)
 
     #dip_fit,dip_sig_fit = linear_fit(bv_dip,li_dip,scatter=True)
     popt,pcov = curve_fit(dip_poly,bv_dip,li_dip,sigma=sigma)#,p0=[100,-90,21.25])
-    #print popt
+    #print(popt)
     #popt,pcov = curve_fit(dip_gaussian,bv_dip,li_dip,p0=[0.45,.04,-.1],sigma=sigma)
     dip_fit = lambda x: dip_poly(np.array(x),*popt)
     #dip_fit = lambda x: dip_gaussian(np.array(x),*popt)
@@ -239,8 +239,8 @@ def minimize_polynomial(x,y,n,upper_lim):
     guess = np.append(guess_poly[0],guess_poly[1])  
     res = minimize(poly_minimizer,guess,args=(x,y,upper_lim), method='Nelder-Mead')
     if (not res.success):
-        print "Unsuccessful minimizing of polynomial function, check initial guess"
-        print res.x
+        print("Unsuccessful minimizing of polynomial function, check initial guess")
+        print(res.x)
 
     #comp.append(compare_fits(res.x,argv))
     #plot_comp(comp,argv[3],res.success)
@@ -268,11 +268,11 @@ def fit_gaussian(x,y):
     guess = [np.mean(x),np.std(x),np.max(y)-np.min(y),np.min(y)]
     res = minimize(gaussian_scatter_minimizer,guess,args=(x,y), method='Nelder-Mead')
     if (not res.success):
-        print "Unsuccessful minimizing of gaussian scatter_vs_age fit"
-        print res.x
+        print("Unsuccessful minimizing of gaussian scatter_vs_age fit")
+        print(res.x)
 
     [mu,sig,A,c] = res.x
-    print res.x
+    print(res.x)
     def gauss_fit(x_coords):
         return prob.gaussian(np.log10(x_coords),mu,sig)*A + c
     
@@ -288,9 +288,9 @@ def gaussian_scatter_minimizer(params,x,y):
     [mu,sig,A,c] = params
     fit = prob.gaussian(x,mu,sig)*A + c
     num_stars = np.array(const.CLUSTER_INDEX)[:,1] - np.array(const.CLUSTER_INDEX)[:,0]
-    #print num_stars
+    #print(num_stars
     sigma_weight = 1.0/num_stars
-    #print sigma_weight
+    #print(sigma_weight
     return prob.chi_sqr(y,fit,sigma_weight,total=True)
 
 def constant_fit(y):
@@ -349,10 +349,10 @@ def fit_two_scatters(bv_m,fits,upper_lim=None,omit_cluster=None):
     argv = (bv_m,fits,upper_lim,omit_cluster)
     res = minimize(scatter_minimizer,params,args=argv, method='Nelder-Mead')
     if (not res.success):
-        print "Unsuccessful minimizing scatter."
-        print "Guess: ",guess, " Result: ", res.x
+        print("Unsuccessful minimizing scatter.")
+        print("Guess: ",guess, " Result: ", res.x)
     #else:
-    #    print "Successful Scatter: ", res.x
+    #    print("Successful Scatter: ", res.x)
     def fit(EW):
         return two_scatter(res.x,EW)
     return fit
@@ -368,10 +368,10 @@ def params_to_xy(params,X,Y,n_pin,s):
     x_temp = np.concatenate((X[:max(1,n_pin)],params[:num_x],X[-1:]))
     y_temp = np.concatenate((Y[:n_pin],params[num_x:]))
     if len(x_temp) != len(y_temp):
-        print s, n_pin
-        print params,num_x
-        print x_temp
-        print y_temp
+        print(s, n_pin)
+        print(params,num_x)
+        print(x_temp)
+        print(y_temp)
         assert len(x_temp) == len(y_temp), "Error parsing params"
     return x_temp,y_temp
 
@@ -402,7 +402,7 @@ def general_piecewise(X,Y,segments=3,guess_fit=None, sigma=None,x_method='even',
         #plt.plot(np.power(10,x_temp),y_temp)
         if not all(a + min_length <= b for a,b in zip(x_temp[:-1], x_temp[1:])): 
             return np.inf
-        #print zip(y_temp[max(0,n_pin-1):-1], y_temp[max(1,n_pin):])
+        #print(zip(y_temp[max(0,n_pin-1):-1], y_temp[max(1,n_pin):])
         if (monotonic == -1):#decreasing
             if not all(a >= b for a,b in zip(y_temp[max(0,n_pin-1):-1], y_temp[max(1,n_pin):])): 
                 return np.inf
@@ -417,10 +417,10 @@ def general_piecewise(X,Y,segments=3,guess_fit=None, sigma=None,x_method='even',
     
     res = minimize(minimizer,params0, method='Nelder-Mead')
     if (not res.success):
-        print "Unsuccessful minimizing of %d segment piecewise function" % segments
-        print "Params:",res.x
+        print("Unsuccessful minimizing of %d segment piecewise function" % segments)
+        print("Params:",res.x)
         if segments - 1 >= 0:
-            print "Trying %d segment fit instead" % (segments - 1)
+            print("Trying %d segment fit instead" % (segments - 1))
             return general_piecewise(X,Y,segments - 1,guess_fit,sigma,x_method, min_bin_size,min_length,monotonic,n_pin)
     
     #x_val,y_val = params_to_xy(params0,X,Y,n_pin,segments)
@@ -464,8 +464,8 @@ def combined_fit(params,argv):
     res = minimize(piecewise_minimizer,params,args=argv, method='Nelder-Mead')
         
     if (not res.success):
-        print "Unsuccessful minimizing of %d segment piecewise function, check initial guess" % (len(argv[0])-1)
-        print res.x
+        print("Unsuccessful minimizing of %d segment piecewise function, check initial guess" % (len(argv[0])-1))
+        print(res.x)
     
     #comp.append(compare_fits(res.x,argv))
     #plot_comp(comp,argv[3],res.success)
@@ -513,8 +513,8 @@ def piecewise_minimizer(params,x_coords,c,r,upper_lim):
     if (utils.negative_sig(sig)):
         return np.inf
     if (len(x) != len(y) or len(sig) != len(x) - 1):
-        print params
-        print x,y,sig
+        print(params)
+        print(x,y,sig)
         raise RuntimeError("Error in inverse_log_likelihood")
     r_model = piecewise(x,y)(c)
     sig_model = step(c,x[1:-1],sig)
@@ -647,11 +647,11 @@ def x_even(c,num_segments):
 #y_coords are the free parameters changed to minimze chi2
 # c in the bv color ard r is r'hk value
 def chi2_piecewise(params,min_max,c,r):
-        print params
+        print(params
         x,y,sig = get_x_y_sig(params,min_max)
         if (len(x) != len(y) or len(sig) != len(x) - 1):
-                print params
-                print x,y,sig
+                print(params
+                print(x,y,sig
                 raise RuntimeError("Error in chi2_piecewise")
         r_model = piecewise(c,x,y)
         sig_model = step(c,x[1:-1],sig)
@@ -747,14 +747,14 @@ def spt_bv():
 def teff_to_primli(teff):
     t = genfromtxt('data/NLi_to_LiEW.csv', delimiter=',')
     logEW = [row[0] for row in t[1:]]
-    #print logEW
+    #print(logEW
     arr = []
     for temp in teff:
         #make my own column via interp
         col = []
         for row in t[1:]:
-            #print row[1:]
-            #print t[0][1:]
+            #print(row[1:]
+            #print(t[0][1:]
             col.append(interpolate.interp1d(t[0][1:], row[1:],fill_value='extrapolate')(temp))
         arr.append(interpolate.interp1d(col,logEW, fill_value='extrapolate')(PRIMORDIAL_NLI).tolist())
             
@@ -769,21 +769,21 @@ def teff_nli_to_li(teff,NLI):
     t2[1:,1:] = np.log10(1000*t2[1:,1:]) #convert to logEW
     logEW = [row[0] for row in t[1:]]
     temp_axis = [row[0] for row in t2[1:]]
-    #print logEW
+    #print(logEW
     arr = []
     for temp,nli in zip(teff,NLI):
         #make my own column via interp of exact temp
         col = []
         if temp <= 4000:
             for row in t2[1:]:
-                #print row[1:]
-                #print t2[0][1:]
+                #print(row[1:]
+                #print(t2[0][1:]
                 col.append(interpolate.interp1d(t2[0][1:], row[1:],fill_value='extrapolate')(nli))
             arr.append(interpolate.interp1d(temp_axis,col,fill_value='extrapolate')(temp).tolist())
         else:
             for row in t[1:]:
-                #print row[1:]
-                #print t[0][1:]
+                #print(row[1:]
+                #print(t[0][1:]
                 col.append(interpolate.interp1d(t[0][1:], row[1:],fill_value='extrapolate')(temp))
             arr.append(interpolate.interp1d(col,logEW, fill_value='extrapolate')(nli).tolist())
     return np.array(arr)
@@ -803,12 +803,12 @@ def primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     BTNEXTGEN_BOUNDARY = 1.522 # No lithium has decreased by 5 Myr
     loc1 = bisect.bisect_left(const.BV,SODERBLOM_4000K_BOUNDARY)
     loc2 = bisect.bisect_left(const.BV,BTNEXTGEN_BOUNDARY)
-    #print [prim_li[loc1],ngc2264_fit(BTNEXTGEN_BOUNDARY)]
+    #print([prim_li[loc1],ngc2264_fit(BTNEXTGEN_BOUNDARY)]
     middle = interpolate.interp1d([SODERBLOM_4000K_BOUNDARY,BTNEXTGEN_BOUNDARY],[prim_li[loc1],ngc2264_fit(BTNEXTGEN_BOUNDARY)], fill_value='extrapolate')(const.BV[loc1:loc2])
 
     final_li = prim_li[0:loc1] + middle.tolist() + ngc2264_fit(const.BV[loc2:]).tolist()
 
-    #print final_li
+    #print(final_li
     if (saveToFile):
         pickle.dump(final_li,open('data/primordial_li.p','wb'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')

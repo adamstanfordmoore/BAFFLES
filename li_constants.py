@@ -57,8 +57,8 @@ MEASURE_ERR = 15 #mA
 
 
 #including new general piecewise li_vs_age 
-DEFAULT_MEDIAN_GRID = "grids/median_li_081319.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_li_081319.npy"
+DEFAULT_MEDIAN_GRID = "grids/median_li_081419.npy"
+DEFAULT_SIGMA_GRID = "grids/sigma_li_081419.npy"
 
 #including prim_li, all clusters, new sigma scatter + measurement,\
   #constrained polynomial plus patch from bv .75 to .95

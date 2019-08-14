@@ -15,15 +15,15 @@ import readData
 import utils
 METAL = "calcium"
 upper_lim = None
-bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=0)
-print [len(x[0]) for x in bv_m]
+bv_m,fits = readData.read_calcium()#fromFile=False,saveToFile=False,fit_degree=0)
+print([len(x[0]) for x in bv_m])
 
 def main():
-    #plot_fits()
-    #metal_vs_bv()
+    plot_fits()
+    metal_vs_bv()
     metal_vs_age()
-    #scatter_vs_age()
-    #fit_hist()
+    scatter_vs_age()
+    fit_hist()
     #baffles_vs_mamajek()
     #combined_validation()
 
@@ -31,8 +31,8 @@ def main():
 
 
 def printName(n):
-    print "scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/"
-    #print "sips -s format png -s formatOptions best ~/Desktop/" + n[6:] + " --out ~/Desktop/"
+    print("scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/")
+    #print("sips -s format png -s formatOptions best ~/Desktop/" + n[6:] + " --out ~/Desktop/"
 
 def plot_fits(cluster_indices=None):
     #Plot Fits
@@ -62,7 +62,7 @@ def metal_vs_age():
     pp=PdfPages(name)
     bvRange = const.BV_S 
     for bv in bvRange:
-        print "bv: ",bv
+        print("bv: ",bv)
         my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=True,shadeScatter=False,\
                 errorbars=True,title=' ', bv_m=bv_m,upper_lim=upper_lim,\
                 logAge=True,plotStars=False,mamajek_poly=True)
@@ -109,14 +109,14 @@ def omitting(validation=False):
     pp = PdfPages(name)
     baf = baffles.age_estimator(METAL,default_grids=validation)
     for i in range(len(bv_m)):
-        print const.CLUSTER_NAMES[i]
+        print(const.CLUSTER_NAMES[i])
         #mamaProductAge = utils.getMamaProductAge(bv_m[i][1])
-        #print mamaProductAge
+        #print(mamaProductAge
         if not validation: baf.make_grids(bv_m,fits,omit_cluster=i)
         p = baf.posterior_product(bv_m[i][0],bv_m[i][1],pdfPage=pp,showPlot=True,\
                 showStars=True,givenAge=const.CLUSTER_AGES[i],\
                 title= const.CLUSTER_NAMES[i])
-        #print "True: %.3g BAFFLES: %.3g Mama: %.3g" % (const.CLUSTER_AGES[i],p.stats[2],mamaProductAge)
+        #print("True: %.3g BAFFLES: %.3g Mama: %.3g" % (const.CLUSTER_AGES[i],p.stats[2],mamaProductAge)
     printName(name)
     pp.close()
 
@@ -127,7 +127,7 @@ def combined_validation():
     pp=PdfPages(name)
     baf_default = baffles.age_estimator(METAL)
     for i in range(len(bv_m)):
-        print const.CLUSTER_NAMES[i]
+        print(const.CLUSTER_NAMES[i])
         baf = baffles.age_estimator(METAL,default_grids=False)
         baf.make_grids(bv_m,fits,omit_cluster=i)
         p_val = baf.posterior_product(bv_m[i][0],bv_m[i][1])
@@ -137,7 +137,7 @@ def combined_validation():
             pdfPage=pp,showPlot=False,\
             showStars=True,givenAge=const.CLUSTER_AGES[i],\
             title= const.CLUSTER_NAMES[i])
-        print np.sum(p_val.array - p.array)
+        print(np.sum(p_val.array - p.array))
     printName(name)
     pp.close()
 
