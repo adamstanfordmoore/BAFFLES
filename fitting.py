@@ -810,7 +810,7 @@ def primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
 
     #print(final_li
     if (saveToFile):
-        pickle.dump(final_li,open('data/primordial_li.p','wb'))
+        pickle.dump(final_li,open('data/primordial_li.p','wb+'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
 
 # takes in the logR'HK value and returns the age in units Myr
@@ -1144,7 +1144,7 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     #final_li = teff_nli_to_li(teff,Nli5)
 
     if (saveToFile):
-        pickle.dump(final_li,open('data/mist_primordial_li.p','wb'))
+        pickle.dump(final_li,open('data/mist_primordial_li.p','wb+'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
 
 
