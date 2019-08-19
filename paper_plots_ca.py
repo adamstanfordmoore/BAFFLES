@@ -15,23 +15,25 @@ import readData
 import utils
 METAL = "calcium"
 upper_lim = None
-bv_m,fits = readData.read_calcium()#fromFile=False,saveToFile=False,fit_degree=0)
+bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=0)
 print([len(x[0]) for x in bv_m])
 
 def main():
-    plot_fits()
-    metal_vs_bv()
-    metal_vs_age()
-    scatter_vs_age()
-    fit_hist()
+    #plot_fits()
+    #metal_vs_bv()
+    #metal_vs_age()
+    #scatter_vs_age()
+    #fit_hist()
     #baffles_vs_mamajek()
     #combined_validation()
-
+    posteriors()
 
 
 
 def printName(n):
+    print("\n")
     print("scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/")
+    print("\n")
     #print("sips -s format png -s formatOptions best ~/Desktop/" + n[6:] + " --out ~/Desktop/"
 
 def plot_fits(cluster_indices=None):
@@ -89,6 +91,7 @@ def fit_hist():
     name = 'plots/' +METAL + '_hist_fit.pdf'
     pp=PdfPages(name)
     my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=True)
+    my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=True,plot_cdf=True)
     printName(name)
     pp.close()
 
@@ -145,24 +148,21 @@ def combined_validation():
 
 def posteriors():
     #Making posteriors
-    name = 'plots/' + METAL + '_posteriors_tail.pdf'
+    name = 'plots/' + METAL + '_posteriors.pdf'
     pp = PdfPages(name)
     baf = baffles.age_estimator(METAL,default_grids=False)
     baf.make_grids(bv_m,fits,upper_lim)#,omit_cluster=0)
-    #for bv in [0.65]:#[1.5,1.75,1.9]:
-    #    for li in np.linspace(-3.8,-5,5):#[1,2,3]:#[3.1,1]:
-    for bv,li in zip(bv_m[0][0],bv_m[1][1]):
-        #my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=True,shadeScatter=False,errorbars=True,title='B-V= %s' % bv, bv_m=bv_m,upper_lim=upper_lim,metal_val=li)
-    #        #baffles.baffles_age(bv,li=li,showPlots=True,pdfPage=pp)
-        p = baf.get_posterior(bv,li,pdfPage=pp,showPlot=True,logPlot=False,upperLim = False,mamajekAge=True)
+    for bv in [0.65]:
+        for li in np.linspace(-3.8,-5,5):
+            #my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=True,shadeScatter=False,
+            #                     errorbars=True,title='B-V= %s' % bv, bv_m=bv_m,
+            #                     upper_lim=upper_lim,metal_val=li)
+            #baffles.baffles_age(bv,li=li,showPlots=True,pdfPage=pp)
+            p = baf.get_posterior(bv,li,pdfPage=pp,showPlot=True,logPlot=False,upperLim = False,
+                                  mamajekAge=True)
     printName(name)
     pp.close()
     
-
-
-
-
-
    
 if  __name__ == "__main__":
     main()

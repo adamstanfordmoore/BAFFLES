@@ -10,7 +10,7 @@ the paper Stanford-Moore et al, 2020.
 ### Requirements
 
 Python 3
-astropy (https://www.astropy.org)
+astropy (https://docs.astropy.org/en/stable/install.html#installing-astropy)
 
 ## Authors
 
@@ -29,7 +29,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 Quick usage from the command line. Let's find an age for the sun using B-V of 0.65 and 
 logR'HK = -4.908 (Mamajek & Hillenbrand 2008). By default it saves a pdf.
  
-./baffles.py -bmv 0.65 -rhk -4.906 -showPlot
+'./baffles.py -bmv 0.65 -rhk -4.906 -showPlot'
 
 Now age of HR 2562 using B-V=.45 ± .02, log(R'HK) = -4.55 (Gray 2006), and lithium EW 
 of 21 ± 5 (Mesa el al 2018). "-ul" would denote an upper limit.  "-s" will 
@@ -38,7 +38,7 @@ constrain the prior on age to be uniform out to 10 Gyr. "-li\_err" allows input 
 on EW Li, and "-bv\_err" uncertainty on B-V. The following command will determine the age
 using calcium and lithium separately and then find the combined posterior product.    
 
-./baffles.py -bmv 0.45 -bmv\_err .02 -rhk -4.55 -li 21 -li\_err 5 -showPlot
+'./baffles.py -bmv 0.45 -bmv\_err .02 -rhk -4.55 -li 21 -li\_err 5 -showPlot'
 
 Type "./baffles.py -help" to learn more.
 

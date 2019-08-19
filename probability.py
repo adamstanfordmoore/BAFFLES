@@ -49,7 +49,6 @@ def polyspace(start,stop,num,power=2):
 # takes in densely sampled x,y and returns num sampled x
 def desample(x,y,num):
     ddy = np.abs(np.gradient(np.gradient(y)))
-    #ddy += 0.0001 ######### CHECK  #########
     f_arr = cdf(x,ddy)
     f_arr = f_arr*(x[-1] - x[0]) + x[0]
     f = my_fits.piecewise(f_arr,x)
@@ -97,8 +96,7 @@ def stats(age,y,upperLim=False):
 #calls func many times changing resample_args, keeping args constant
 # returns product of calls
 def resample(func,resample_args,args, sample_num=10,numIter=4):
-    indices = np.arange(len(resample_args[0]))
-    
+    indices = np.arange(len(resample_args[0]))    
     log_sum = 0
     for _ in range(numIter):
         inds = np.random.choice(indices,size=sample_num,replace=False)
@@ -107,22 +105,3 @@ def resample(func,resample_args,args, sample_num=10,numIter=4):
         log_sum += np.log(func(*argv))
 
     return np.exp(log_sum)
-
-
-
-
-
-# Prior included for generality but is uniform for now
-def prior(age,maxAge=None):
-    agePrior = 1 if not maxAge else age <= maxAge
-    return agePrior
-    """
-    if np.allclose(age[-1]-age[-2],age[1]-age[0]): #linear spacing
-        return 1
-    #otherwise non-uniform
-    prior = (age[2:] - age[:-2])/2
-    prior = np.insert(prior,0,age[1]-age[0])
-    prior = np.append(prior,age[-1]-age[-2])
-    normalize(age,prior)
-    return prior
-    """

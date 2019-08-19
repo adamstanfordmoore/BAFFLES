@@ -31,10 +31,10 @@ def getMamaProductAge(r_arr):
 # Takes in age in units Myr and converts to logR'HK
 def getMamaRHK(age):
     log_age = np.log10(np.array(age)*1e6)
-    #log_age[-50:] = [6]* len(log_age[-50:]) 
-    a,b,c = -1.6675,-17.912,-38.053 - log_age
-    return (-b - np.sqrt(b**2 - 4*a*c)) / (2*a)
-    
+    #Inverting Equation 3
+    #a,b,c = -1.6675,-17.912,-38.053 - log_age
+    #return (-b - np.sqrt(b**2 - 4*a*c)) / (2*a)
+    #Equation 4
     return 8.94 - 4.849*log_age + .624*log_age**2 - .028 * log_age**3
 
 def init_constants(metal):
@@ -53,7 +53,6 @@ def progress_bar(frac,secondsLeft=None):
     if frac == 1:
         sys.stdout.write('\n')
     sys.stdout.flush()
-
 
 def round_sigs(x,sigs=3):
     i = int(np.log10(x)+1)*-1 + sigs

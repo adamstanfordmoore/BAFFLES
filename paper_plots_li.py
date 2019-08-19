@@ -38,15 +38,15 @@ def main():
     #    plt.show()
     #pp.close()
 
-    #notable_stars()
-    metal_vs_age()
     #plot_fits()
     #metal_vs_bv()
-    #combined_validation()
-    #omitting()
-    #omitting(validation=True)
-    #moving_group()
+    #metal_vs_age()
+    #fit_hist()
 
+    #combined_validation()
+    #moving_group()
+    #notable_stars()
+    posteriors()
 
 def moving_group():
     name = 'plots/moving_group_age.pdf'
@@ -113,9 +113,9 @@ def metal_vs_age():
 
 def scatter_vs_bv():
     #Scatter vs B-V
-    pp=PdfPages('plots/' +METAL + '_scatter_vs_bv_with_offset.pdf')
+    pp=PdfPages('plots/' + METAL + '_scatter_vs_bv_with_offset.pdf')
     my_plot.scatter_vs_bv(fits,METAL,pp,showPlots=True)
-    names.append('plots/' +METAL + '_scatter_vs_bv_with_offset.pdf')
+    names.append('plots/' + METAL + '_scatter_vs_bv_with_offset.pdf')
     pp.close()
 
 def scatter_vs_age():
@@ -131,6 +131,7 @@ def fit_hist():
     name = 'plots/' +METAL + '_hist_fit.pdf'
     pp=PdfPages(name)
     my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=True,upper_limits=upper_lim)
+    my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=True,upper_limits=upper_lim,plot_cdf=True)
     printName(name)
     pp.close()
    
@@ -300,22 +301,18 @@ def robs_fomalhaut():
     return my_fits.piecewise(x,pdf)
 
 
-
-
-
-
-
 def posteriors():
     # Making posteriors
     name = 'plots/' + METAL + '_posteriors_tail.pdf'
     pp = PdfPages(name)
     baf = baffles.age_estimator(METAL,default_grids=False)#,'grids/median_'+METAL[:2]+'_071119','grids/sigma_'+METAL[:2]+'_071119') #'grids/median_rhk_062719','grids/sigma_rhk_062719',default_grids=False)
     baf.make_grids(bv_m,fits,upper_lim,'grids/median_'+METAL[:2]+'_072219','grids/sigma_'+METAL[:2]+'_072219',setAsDefaults=True)
-    for bv in [0.65]:#[1.5,1.75,1.9]:
-        for li in np.linspace(-3.8,-5,5):#[1,2,3]:#[3.1,1]:
-            my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=False,shadeScatter=False,errorbars=True,title='B-V= %s' % bv, bv_m=bv_m,upper_lim=upper_lim,metal_val=li)
+    for bv in [.6,1,1.4]:
+        for li in [10,10**1.5,100]:
+            my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=False,shadeScatter=False,errorbars=True,
+                                 title='B-V= %s' % bv, bv_m=bv_m,upper_lim=upper_lim,metal_val=li)
             #baffles.baffles_age(bv,li=li,showPlots=True,pdfPage=pp)
-            p = baf.get_posterior(bv,li,pdfPage=pp,showPlot=True,logPlot=False,upperLim = False,mamajekAge=True)
+            p = baf.get_posterior(bv,li,pdfPage=pp,showPlot=True,logPlot=False,upperLim = False)
     pp.close()
     printName(name)
     
