@@ -24,13 +24,13 @@ import time
 # shortcut to quickly computing using default grids the posteriors for calcium and/or lithium
 def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=False,
             maxAge=None,fileName='baffles',pdfPage=None,showPlots=True,
-            noPlots=False,savePostAsText=False):
+            savePlots=False,savePostAsText=False):
     if (not rhk and not li):
         raise RuntimeError("Must provide at least one of calcium logR'HK or lithium EW")
     if (li and not bv):
         raise RuntimeError("Must provide B-V value with lithium EW")
     
-    if (not pdfPage and not noPlots):
+    if (not pdfPage and savePlots):
         pdfPage = PdfPages(fileName + '.pdf')
         
     p = None
@@ -39,7 +39,7 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
         p = baf.get_posterior(bv,rhk,pdfPage,showPlots,bv_err,li_err,
                 upperLim=upperLim,maxAge=maxAge,mamajekAge=utils.getMamaAge(rhk))
         if (savePostAsText):
-            np.savetxt(fileName + "_calcium.csv", zip(const.AGE,p.array), delimiter=",")
+            np.savetxt(fileName + "_calcium.csv", list(zip(const.AGE,p.array)), delimiter=",")
         print("Ca Median Age: %.3g Myr, 68%% CI: %.3g - %.3g Myr, 95%% CI: %.3g - %.3g Myr" \
                % (p.stats[2],p.stats[1],p.stats[3],p.stats[0],p.stats[4]))
     p2 = None
@@ -48,7 +48,7 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
         p2 = baf2.get_posterior(bv,li,pdfPage,showPlots,bv_err,li_err,
                                 upperLim=upperLim,maxAge=maxAge)
         if (savePostAsText):
-            np.savetxt(fileName + "_lithium.csv", zip(const.AGE,p2.array),
+            np.savetxt(fileName + "_lithium.csv", list(zip(const.AGE,p2.array)),
                        delimiter=",")
         
         if p2.upperLim: print("1 sig lower-lim: %.3g Myr, 2 sig lower-lim: \
@@ -66,7 +66,7 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
                % (stats[2],stats[1],stats[3],stats[0],stats[4]))
 
         if (savePostAsText):
-            np.savetxt(fileName + "_product.csv", zip(const.AGE,y), delimiter=",")
+            np.savetxt(fileName + "_product.csv", list(zip(const.AGE,y)), delimiter=",")
 
     if pdfPage:
         pdfPage.close()
@@ -346,7 +346,7 @@ class age_estimator:
 
 if  __name__ == "__main__":
     const = utils.init_constants('lithium')
-    err = "Usage:  python2.7 baffles.py -bmv <B-V> -rhk <Log10(R\'HK)> -li <EWLi> [-bmv_err <> -li_err <> -ul -maxAge <13000> -noPlot -s -showPlot -filename <> -help]"
+    err = "Usage:  python baffles.py -bmv <B-V> -rhk <Log10(R\'HK)> -li <EWLi> [-bmv_err <> -li_err <> -ul -maxAge <13000> -plot -s -savePlot -filename <> -help]"
     
     help_msg = "\n\
     -bmv corrected (B-V)o of the star (optional for calcium)\n\
@@ -357,10 +357,10 @@ if  __name__ == "__main__":
     -maxAge allows user to input max posible age of star (Myr) if upper-limit flag is used. default is %d \n\
     -bmv_err <float uncertainity> provides the uncertainty on B-V with default %.2f \n\
     -li_err <float uncertainity> provides the uncertainty in LiEW measurement with default %dmA \n\
-    -noPlot suppresses all plotting and just generates prints a .csv files (-s extension is implied. Used with -showplots it prevents saving).\n\
-    -s saves posteriors as .csv \n\
-    -showPlot to show posterior plots to user before saving. \n\
-    -filename <name of file w/o extension> name of files to be saved: name.pdf is graphs, name_calcium.csv/name_lithium.csv/name_product.csv are posterior csv files for calcium/lithium/product respectively.  csv is stored as age, probability in two 1000 element columns.\n\
+    -s saves posteriors as .csv as age, probability in two 1000 element columns.\n\
+    -plot plots and shows the PDF. \n\
+    -savePlot saves the plotted posteriors to a pdf. \n\
+    -filename <name of file w/o extension> name of files to be saved: name.pdf is graphs, name_calcium.csv/name_lithium.csv/name_product.csv are posterior csv files for calcium/lithium/product respectively.  \n\
     -help prints this message \n" % (const.GALAXY_AGE,const.BV_UNCERTAINTY, const.MEASURE_ERR)
     
     argv = sys.argv #starts with 'baffles.py'
@@ -373,13 +373,14 @@ if  __name__ == "__main__":
     save = False
     showPlots = False
     fileName = 'baffles'
-    noPlots = False
+    savePlots = False
     upperLim = False
     maxAge = const.GALAXY_AGE
-    valid_flags = ['-bmv','-rhk','-li','-li_err','-bmv_err','-showPlot','-noPlot','-ul','-maxAge','-help']
-    extra_flags = ['-showplot','-showPlots','-showplots','noPlots','-noplots','-noplot','-UL']
-    for ar in argv[1:]:
-        if not utils.isFloat(ar) and ar not in valid_flags and ar not in extra_flags:
+    valid_flags = ['-bmv','-rhk','-li','-li_err','-bmv_err','-plot','-savePlot','-ul','-maxAge','-s','-filename','-help']
+    extra_flags = ['-Plot','-plots','-Plots','-savePlots','-saveplots','-saveplot','-UL','-save']
+    for i,ar in enumerate(argv[1:]):
+        if ar not in valid_flags and ar not in extra_flags \
+            and not utils.isFloat(ar) and argv[i] != '-filename':
             print("Invalid flag '" + ar + "'. Did you mean one of these:")
             print(valid_flags)
             exit()
@@ -408,13 +409,12 @@ if  __name__ == "__main__":
             if (not (const.METAL_RANGE_LIN[0] <= li <= const.METAL_RANGE_LIN[1])):
                 print("Li EW out of range. Must be in range " + str(const.METAL_RANGE) + " mA")
                 sys.exit()
-        if ('-s' in argv):
+        if ('-s' in argv or '-save' in argv):
             save = True
-        if ('-showplots' in argv or '-showplot' in argv or '-showPlots' in argv or '-showPlot' in argv):
+        if ('-plot' in argv or '-Plot' in argv or '-plots' in argv or '-Plots' in argv):
             showPlots = True
-        if ('-noplot' in argv or '-noplots' in argv or '-noPlots' in argv or '-noPlot' in argv):
-            noPlots = True
-            save = True
+        if ('-saveplot' in argv or '-saveplots' in argv or '-savePlots' in argv or '-savePlot' in argv):
+            savePlots = True
         if ('-filename' in argv):
             fileName = argv[argv.index('-filename') + 1]
         if ('-bmv_err' in argv):
@@ -430,4 +430,4 @@ if  __name__ == "__main__":
     except ValueError:
         print(err)
     
-    baffles_age(bv,rhk,li,bv_err,li_err,upperLim,maxAge,fileName,showPlots=showPlots,noPlots=noPlots, savePostAsText=save)
+    baffles_age(bv,rhk,li,bv_err,li_err,upperLim,maxAge,fileName,showPlots=showPlots,savePlots=savePlots, savePostAsText=save)

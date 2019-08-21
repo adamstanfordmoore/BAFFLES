@@ -1,12 +1,13 @@
 
 # BAFFLES: Bayesian Ages for Lower-mass Field Stars
 
-This package computes age posteriors for field stars from measurements of R'HK calcium emission and/or B-V color and lithium equivalent width absorption.  For calcium emission our method is calibrated to stars with $B-V$ between 0.45 and 0.9 ($\sim$F6-K2) and 
-log($R'_{HK}$) between -3.7 and -5.  For lithium we have calibrated BAFFLES to stars with $B-V$ between 0.35 and 1.9 ($\sim$F2-M5) and Li EW between 3.2 and 1500 mA.  See the paper Stanford-Moore et al. 2020.      
+This package computes age posteriors for field stars from measurements of R'HK calcium emission and/or B-V color and lithium equivalent width absorption (Li EW).  For calcium emission our method is calibrated to stars with B-V between 0.45 and 0.9 (~ F6-K2) and 
+log(R'HK) between -3.7 and -5.  For lithium we have calibrated BAFFLES to stars with B-V between 0.35 and 1.9 (~F2-M5) and Li EW between 3.2 and 1500 mA.  See the paper Stanford-Moore et al. 2019.      
 
 ### Requirements
 
 Python 3.7
+
 [astropy](https://docs.astropy.org/en/stable/install.html#installing-astropy)
 
 ## Authors
@@ -18,14 +19,20 @@ Python 3.7
 
 ## Command Line Usage Examples
 
-Quick usage from the command line. Let's find an age for the sun using B-V of 0.65 and logR'HK = -4.908 (Mamajek & Hillenbrand 2008). By default it saves a pdf.
+Quick usage from the command line. Let's find an age for the sun using B-V of 0.65 and logR'HK = -4.908 (Mamajek & Hillenbrand 2008).
  
-```python baffles.py -bmv 0.65 -rhk -4.906 -showPlot```
+```python baffles.py -bmv 0.65 -rhk -4.906 -plot```
 
-Now lets find the age of HR 2562 using B-V=.45 ± .02, log(R'HK) = -4.55 (Gray 2006), and lithium EW of 21 ± 5 (Mesa el al 2018). "-ul" would denote an upper limit.  "-s" will save a text file of the posterior. "-noPlot" will suppress plotting. -maxAge 10000 will constrain the prior on age to be uniform out to 10 Gyr. "-li_err" allows input of uncertainty
-on EW Li, and "-bv_err" uncertainty on B-V. The following command will determine the age using calcium and lithium separately and then find the combined posterior product.    
+To save this probability density function in a csv file as 1000 lines of age,probability with optional filename (_calcium.csv will be appended to name):
 
-```python baffles.py -bmv 0.45 -bmv_err .02 -rhk -4.55 -li 21 -li_err 5 -showPlot```
+```python baffles.py -bmv 0.65 -rhk -4.906 -plot -s -filename suns_age```
+
+
+
+Now lets find the age of HR 2562 using B-V=.45 ± .02, log(R'HK) = -4.55 (Gray 2006), and lithium EW of 21 ± 5 (Mesa el al 2018). "-ul" would denote an upper limit.  "-s" will save a csv file of the posterior. "-plot" will show a plot of the posterior. -maxAge 10000 will constrain the prior on age to be uniform out to 10 Gyr. "-li_err" allows input of uncertainty
+on Li EW, and "-bv_err" uncertainty on B-V. The following command will determine the age using calcium and lithium separately and then find the combined posterior product.    
+
+```python baffles.py -bmv 0.45 -bmv_err .02 -rhk -4.55 -li 21 -li_err 5 -plot```
 
 Type `python baffles.py -help` into the command line to learn more.
 
