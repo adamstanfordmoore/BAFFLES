@@ -79,19 +79,29 @@ def mode(x,y):
     return x[np.argmax(y)]
 
 #finds median age,ranges for 1,2 sigma as [-2 sigma,-1 sigma, median,+1 sigma,+2 sigma]
-#finds ages from cdf
+#finds ages from cdf values
 def stats(age,y,upperLim=False): 
     c = cdf(age,y)
     probs = UL_PROBS if upperLim else GAUSS_PROBS
-    ages = []
-    for cum_prob in probs:
-        if cum_prob == 0: #handle edge case
-            ages.append(age[0])
-        else:
-            i = bisect.bisect_left(c,cum_prob)
-            a = (age[i] - age[i-1])/(c[i] - c[i-1]) * (cum_prob - c[i-1]) + age[i-1]
-            ages.append(a)
-    return ages
+    fit = my_fits.piecewise(c,age)
+    return fit(probs)
+
+    #ages = []
+    #for cum_prob in probs:
+    #    if cum_prob == 0: #handle edge case
+    #        ages.append(age[0])
+    #    else:
+    #        i = bisect.bisect_left(c,cum_prob)
+    #        a = (age[i] - age[i-1])/(c[i] - c[i-1]) * (cum_prob - c[i-1]) + age[i-1]
+    #        ages.append(a)
+    #return ages
+
+# takes in a PDF given by age,y and a given age to compare to
+# returns the percentile X such that given Age is within X %
+def get_percentile(age,y,givenAge):
+    c = cdf(age,y)
+    fit = my_fits.piecewise(age,c)
+    return np.abs(fit(givenAge) - .5)*2*100
 
 #calls func many times changing resample_args, keeping args constant
 # returns product of calls

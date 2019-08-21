@@ -41,6 +41,7 @@ def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],\
         cbar.ax.set_ylabel('B-V', size = 18,rotation=270,labelpad=17)
 
     if (givenAge):
+        print('Isochronal age exists within %f %% CI' % prob.get_percentile(age,y,givenAge))
         plt.axvline(x=givenAge,color='r',label='Isochronal age: %d Myr' % givenAge)
         if (givenErr):
             if (type(givenErr) == float or type(givenErr) == int):
@@ -57,7 +58,7 @@ def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],\
     plt.ylabel('Probability',size=18)
     plt.legend() #loc="upper right")
     if (not logPlot and not isUpperLim):
-        r = getAgeRange(stat,starArray)
+        r = getAgeRange(stat,starArray,givenAge)
         plt.xlim(r)
     if (len(starArray) > 1):
             plt.ylim([0,np.max(y)*1.5])
@@ -91,7 +92,7 @@ def shadeStats(age,y,stat,upperLim):
             alpha=0.5, label='95%% CI: %.2g - %.2g' % (stat[0],stat[-1]))
 
 #Determines the domain for plotting posterior in linear space
-def getAgeRange(stat,starArray):
+def getAgeRange(stat,starArray,givenAge):
         l = 0
         u = const.GALAXY_AGE
         median = stat[2]
@@ -103,6 +104,11 @@ def getAgeRange(stat,starArray):
             l = median - 4*sigma
         if (median + 4*sigma < u):
             u = median + 4*sigma
+        if givenAge and not (l < givenAge < u):
+            if givenAge < l:
+                l = givenAge - 0.1*(median - l) #move lower-bound a little left
+            elif givenAge > u:
+                    u = givenAge + 0.1*(u - median) #move lower-bound a little left
         return [l,u]
 
 
@@ -159,11 +165,11 @@ def plot_fits(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,
 
 def metal_vs_bv(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,
                 shadeScatter=False,title=None,primordial_li = False,fits_only=False,
-                specific_clusters = None,legend=True):
+                specific_clusters = None,legend=True,textlabels=False):
     const = init_constants(metal)
     plt.xlabel(r'$(B-V)_0$',size=18)
     set_ylabel(metal)    
-    plt.axis([const.BV_RANGE[0]-.01,const.BV_RANGE[1]] + const.METAL_RANGE)
+    plt.axis([const.BV_RANGE[0],const.BV_RANGE[1]] + const.METAL_RANGE)
     
     #plot primordial lithium
     if (primordial_li and metal.lower()[0]=='l'):
@@ -194,11 +200,11 @@ def metal_vs_bv(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,
         if (shadeScatter):
             shade_scatter(fits[c],const.BV.tolist())
 
-    if not legend and metal == 'calcium':
+    if textlabels and metal == 'calcium':
         plt.text(.7,-4.005,"Sco-Cen",size=13,color=const.COLORS[0])
-        plt.text(.725,-4.27,"Pleiades",size=13,color=const.COLORS[4])
-        plt.text(.75,-4.55,"Hyades",size=13,color=const.COLORS[6])
-        plt.text(.61,-4.77,"M67",size=13,color=const.COLORS[7])
+        plt.text(.725,-4.27,"Pleiades",size=13,color=const.COLORS[5])
+        plt.text(.75,-4.55,"Hyades",size=13,color=const.COLORS[7])
+        plt.text(.61,-4.77,"M67",size=13,color=const.COLORS[8])
 
     if (title):
         plt.title(title,size=18)
@@ -212,9 +218,11 @@ def metal_vs_bv(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,
                 else:
                     plt.setp(leg.get_texts()[i],color=const.COLORS[clusters_to_plot[i-1]])
             else:
-                plt.setp(leg.get_texts()[i],color=const.COLORS[clusters_to_plot[i]])
+                plt.setp(leg.get_texts()[i],color=const.COLORS[clusters_to_plot[i]],size=13)
         
     plt.tight_layout()
+    plt.minorticks_on()
+    plt.tick_params(axis='both',which='both',right=True,top=True)
         
     if (pdfPage):
         pdfPage.savefig()

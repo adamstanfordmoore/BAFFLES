@@ -20,13 +20,13 @@ print([len(x[0]) for x in bv_m])
 
 def main():
     #plot_fits()
-    #metal_vs_bv()
+    metal_vs_bv()
     #metal_vs_age()
     #scatter_vs_age()
     #fit_hist()
     #baffles_vs_mamajek()
     #combined_validation()
-    posteriors()
+    #posteriors()
 
 
 
@@ -49,7 +49,7 @@ def metal_vs_bv():
     name = 'plots/' +METAL + '_metal_vs_bv.pdf'
     pp=PdfPages(name)
     ##clusters = [0,4,6,7]
-    my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True)#,specific_clusters = clusters)
+    my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True,legend=False)#,specific_clusters = clusters)
     #my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True,upper_lim=upper_lim,primordial_li=True,fits_only=True,shadeScatter=False)
     
     bv_m_linear,fits_linear = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=1)

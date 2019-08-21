@@ -16,7 +16,6 @@ import fitting as my_fits
 import utils
 import bisect
 
-#from readData import schkolnik_betaPic
 METAL = "lithium"
 bv_m, upper_lim, fits = readData.read_lithium()#fromFile=False,saveToFile=False)
 bv_ca, ca_fits = readData.read_calcium()#fromFile=False,saveToFile=False)
@@ -39,14 +38,13 @@ def main():
     #pp.close()
 
     #plot_fits()
-    #metal_vs_bv()
+    metal_vs_bv()
     #metal_vs_age()
     #fit_hist()
-
     #combined_validation()
     #moving_group()
     #notable_stars()
-    posteriors()
+    #posteriors()
 
 def moving_group():
     name = 'plots/moving_group_age.pdf'
@@ -146,7 +144,7 @@ def combined_validation():
     name = 'plots/' +METAL + '_combined_validation.pdf'
     pp=PdfPages(name)
     baf_default = baffles.age_estimator(METAL)
-    for i in range(len(bv_m)):
+    for i in [3]:#range(len(bv_m)):
         print(const.CLUSTER_NAMES[i])
         baf = baffles.age_estimator(METAL,default_grids=False)
         baf.make_grids(bv_m,fits,omit_cluster=i)
@@ -154,7 +152,7 @@ def combined_validation():
 
         plt.plot(const.AGE,p_val.array,linewidth=2,linestyle='--',label='Posterior with removal')
         p = baf_default.posterior_product(bv_m[i][0],bv_m[i][1],upperLim_arr=upper_lim[i],\
-                pdfPage=pp,showPlot=False,\
+                pdfPage=pp,showPlot=True,\
                 showStars=True,givenAge=const.CLUSTER_AGES[i],\
                 title= const.CLUSTER_NAMES[i])
         

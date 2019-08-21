@@ -3,7 +3,7 @@ import probability as prob
 METAL_NAME = 'calcium'
 CLUSTER_INDEX = [[0,9],[15,25],[9,15],[25,33],[33,46],[46,95],[181,198],[95,181],[198,274]]
 CLUSTER_AGES = [10,16,24,45,85,130,500,625,4000]
-CLUSTER_NAMES = ['Upper Scorpius','UCL+LCC',r'$\beta$ Pic','Tuc/Hor',r'$\alpha$ Per','Pleiades','UMa', 'Hyades','M67']
+CLUSTER_NAMES = ['Upper Sco','UCL+LCC',r'$\beta$ Pic','Tuc/Hor',r'$\alpha$ Per','Pleiades','UMa', 'Hyades','M67']
 
 COLORS = ['C6','C7','C1','cornflowerblue','C2','C3','darkcyan','C4','C5']
 MARKERS = ['H','*','^','4','D','s','P','o','x']
@@ -34,5 +34,5 @@ BV_UNCERTAINTY = None #B-V not incorporated into fits
 MEASURE_ERR = None #no default uncertainty in measurement 
 
 #Fits as a function of age
-DEFAULT_MEDIAN_GRID = "grids/median_rhk_081519.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_rhk_081519.npy"
+DEFAULT_MEDIAN_GRID = "grids/median_rhk_082119.npy"
+DEFAULT_SIGMA_GRID = "grids/sigma_rhk_082119.npy"

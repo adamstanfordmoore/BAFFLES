@@ -123,6 +123,22 @@ def tuchor():
     tuchor_c,tuchor_l = np.array(tuchor_c),np.log10(np.array(tuchor_l))
     return tuchor_c,tuchor_l,tuchor_lerr
 
+def alpha_per_lithium():
+    import li_constants as const
+    c = []
+    l = []
+    teff_to_bv = my_fits.magic_table_convert('teff','bv')
+    t = np.genfromtxt("data/alpha_per_balachandra.csv",delimiter=',',dtype=str)
+    for line in t:
+        if line[11] != '': continue
+        bv = teff_to_bv(float(line[1]))
+        ew = float(line[7])
+        if in_bounds(bv,ew,const):
+            c.append(bv)
+            l.append(ew)
+    c,l = np.array(c),np.log10(l)
+    return c,l,[False]*len(c)
+
 #reads in data and generates fits
 def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
     if (fromFile):
@@ -367,19 +383,19 @@ def read_lithium(fromFile=True,saveToFile=False):
     bv_li.append([ic2602_c,ic2602_l])
     upper_lim.append([False]*len(ic2602_c))
     
-    aper_c = []
-    aper_l = []
-    lim_aper = []
-    t = ascii.read('data/alpha_per.txt', delimiter='\t')
-    for line in t:
-        if in_bounds(float(line[2]),float(line[4]),const):
-            aper_c.append(float(line[2]))
-            aper_l.append(float(line[4])) 
-            lim_aper.append(False)
-    aper_c,aper_l = np.array(aper_c),np.log10(np.array(aper_l))
+    #aper_c = []
+    #aper_l = []
+    #lim_aper = []
+    #t = ascii.read('data/alpha_per.txt', delimiter='\t')
+    #for line in t:
+    #    if in_bounds(float(line[2]),float(line[4]),const):
+    #        aper_c.append(float(line[2]))
+    #        aper_l.append(float(line[4]))
+    #        lim_aper.append(False)
+    #aper_c,aper_l = np.array(aper_c),np.log10(np.array(aper_l))
+    aper_c,aper_l,lim_aper = alpha_per_lithium()
     bv_li.append([aper_c,aper_l])
     upper_lim.append(lim_aper)
-
    
     pleiades_c = []
     pleiades_l = []
