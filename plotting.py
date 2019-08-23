@@ -15,13 +15,16 @@ import probability as prob
 import fitting as my_fits
 import baffles
 import utils
+TITLE_SIZE = 16
+AXIS_LABEL_SIZE = 16
+
 
 def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],\
         givenAge=None,givenErr = None,mamajekAge=None,logPlot=False,bv_arr = None,\
         metal='calcium'):
     const = init_constants(metal)
     isUpperLim = len(stat) == 4 #arbitrarily age at CDF=[.002,.05,.34,1]
-    plt.title(title)
+    plt.title(title,size=TITLE_SIZE)
     
     cmap,norm,sc = None,None,None
     if bv_arr is not None:
@@ -54,8 +57,8 @@ def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],\
     else:
         plt.plot(age,y,color = 'C0',linewidth=2)
     shadeStats(age,y,stat,isUpperLim)
-    plt.xlabel(u'Age (Myr)',size=18)
-    plt.ylabel('Probability',size=18)
+    plt.xlabel(u'Age (Myr)',size=AXIS_LABEL_SIZE)
+    plt.ylabel('Probability',size=AXIS_LABEL_SIZE)
     plt.legend() #loc="upper right")
     if (not logPlot and not isUpperLim):
         r = getAgeRange(stat,starArray,givenAge)
@@ -63,6 +66,8 @@ def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],\
     if (len(starArray) > 1):
             plt.ylim([0,np.max(y)*1.5])
     plt.tight_layout()
+    plt.minorticks_on()
+    plt.tick_params(axis='both',which='both',right=True,top=True)
     if (pp):
         pp.savefig()
     if (showPlot):
@@ -137,24 +142,26 @@ def plot_fits(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,
         
         if shadeScatter:
             shade_scatter(fits[i],const.BV.tolist())
-        plt.title(const.CLUSTER_NAMES[i])
+        plt.title(const.CLUSTER_NAMES[i],,size=TITLE_SIZE))
         plt.axis(const.BV_RANGE + const.METAL_RANGE)
-        plt.xlabel(r'$(B-V)_o$',size=18)
+        plt.xlabel(r'$(B-V)_o$',size=AXIS_LABEL_SIZE)
         set_ylabel(metal)
         #plt.legend()
         plt.tight_layout()
+        plt.minorticks_on()
+        plt.tick_params(axis='both',which='both',right=True,top=True)
         if (pdfPage):
             pdfPage.savefig()
         if (showPlots):
             plt.show()
         plt.close()
-        if residauls:
+        if residuals:
             resid = residuals(bv_m[i][0],bv_m[i][1],fits[i][s][0])
             plt.scatter(bv_m[i][0],resid,label = fit_names[s])
             plt.axhline(y=0,linestyle='--',color='k')
-            plt.title(CLUSTER_NAMES[i] + ' Residuals')
+            plt.title(CLUSTER_NAMES[i] + ' Residuals',,size=TITLE_SIZE))
             plt.xlim(const.BV_RANGE)
-            plt.xlabel(r'$(B-V)_o$',size=18)
+            plt.xlabel(r'$(B-V)_o$',size=AXIS_LABEL_SIZE)
             set_ylabel(metal)
             plt.legend()
             if (pdfPage):
@@ -167,7 +174,7 @@ def metal_vs_bv(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,
                 shadeScatter=False,title=None,primordial_li = False,fits_only=False,
                 specific_clusters = None,legend=True,textlabels=False):
     const = init_constants(metal)
-    plt.xlabel(r'$(B-V)_0$',size=18)
+    plt.xlabel(r'$(B-V)_0$',size=AXIS_LABEL_SIZE)
     set_ylabel(metal)    
     plt.axis([const.BV_RANGE[0],const.BV_RANGE[1]] + const.METAL_RANGE)
     
@@ -207,7 +214,7 @@ def metal_vs_bv(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,
         plt.text(.61,-4.77,"M67",size=13,color=const.COLORS[8])
 
     if (title):
-        plt.title(title,size=18)
+        plt.title(title,size=TITLE_SIZE)
     
     if legend:
         leg = plt.legend(loc='lower right')
@@ -297,11 +304,13 @@ def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,\
     if logAge: ax.set_xscale('log')
     plt.axis([1,const.GALAXY_AGE]+const.METAL_RANGE)
     plt.legend()
-    plt.xlabel('Age (Myr)',size=18)
+    plt.xlabel('Age (Myr)',size=AXIS_LABEL_SIZE)
     ylabel = set_ylabel(metal)
     if (title):
-        plt.title(title,size=18)
+        plt.title(title,size=TITLE_SIZE)
     plt.tight_layout()
+    plt.minorticks_on()
+    plt.tick_params(axis='both',which='both',right=True,top=True)
     if (pdfPage):
         pdfPage.savefig()
     if (showPlots):
@@ -310,18 +319,20 @@ def metal_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,\
 
 def scatter_vs_bv(fits,metal,pdfPage=None,showPlots=False,title=None):
     const = init_constants(metal)
-    plt.xlabel(r'$(B-V)_0$',size=18)
-    #plt.ylabel(r'Li EW (m$\AA$)',size=18)
+    plt.xlabel(r'$(B-V)_0$',size=AXIS_LABEL_SIZE)
+    #plt.ylabel(r'Li EW (m$\AA$)',size=AXIS_LABEL_SIZE)
     m = 'Log(LiEW/m$\AA$)'
-    plt.ylabel('Scatter in ' + m,size=16)
+    plt.ylabel('Scatter in ' + m,size=AXIS_LABEL_SIZE)
     for c in range(len(fits)):
         ax = plt.gca()
         color = const.COLORS[c]
         plt.plot(const.BV,fits[c][1](const.BV),dashes=[2,2],label=const.CLUSTER_NAMES[c], color=color)
     plt.legend()
     if (title):
-        plt.title(title,size=18)
+        plt.title(title,size=TITLE_SIZE)
     plt.tight_layout()
+    plt.minorticks_on()
+    plt.tick_params(axis='both',which='both',right=True,top=True)
     if (pdfPage):
         pdfPage.savefig()
     if (showPlots):
@@ -345,14 +356,16 @@ def scatter_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,bv
     ax = plt.gca()
     ax.set_xscale('log')
     plt.legend()
-    plt.xlabel('Age (Myr)',size=18)
+    plt.xlabel('Age (Myr)',size=AXIS_LABEL_SIZE)
     y_axis  = 'Log(LiEW/m$\AA$)'
     if (metal.lower()[0] == 'c'):
         y_axis = "Log(R'" + r'$_{HK})$'
-    plt.ylabel('Scatter in ' + y_axis ,size=16)
+    plt.ylabel('Scatter in ' + y_axis ,size=AXIS_LABEL_SIZE)
     if (title):
-        plt.title(title,size=18)
+        plt.title(title,size=TITLE_SIZE)
     plt.tight_layout()
+    plt.minorticks_on()
+    plt.tick_params(axis='both',which='both',right=True,top=True)
     if (pdfPage):
         pdfPage.savefig()
     if (showPlots):
@@ -362,10 +375,10 @@ def scatter_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,bv
 
 def set_ylabel(metal):
     if (metal[0].lower() == 'c'):
-        plt.ylabel("Log(R'" + r'$_{HK})$',size=16)
+        plt.ylabel("Log(R'" + r'$_{HK})$',size=AXIS_LABEL_SIZE)
         return 'Calcium Emission Strength'
     elif (metal[0].lower() == 'l'):
-        plt.ylabel(r'Log(LiEW/m$\AA$)',size=18)
+        plt.ylabel(r'Log(LiEW/m$\AA$)',size=AXIS_LABEL_SIZE)
         return 'Lithium Abundance'
 
 def init_constants(metal):
@@ -394,10 +407,11 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
     if not plot_cdf:
         plt.plot(x,pdf_fit(x),color='red',linewidth=2)
         plt.plot(x,prob.gaussian(x,mu,sigma),linestyle = '--',color='gray')
-        plt.rcParams["figure.figsize"] = (8,6)
+        #plt.rcParams["figure.figsize"] = (8,6)
         plt.hist(allClusters,bins=30,stacked=True,density=True,color=const.COLORS)
-    else:
+    else:        
         plt.plot(x,cdf_fit(x),color='red',linewidth=2,zorder=10)
+        #plt.rcParams["figure.figsize"] = (4,3)
         plt.plot(x,prob.gaussian_cdf(x,mu,sigma),linestyle = '--',color='gray',linewidth=2)
         cdf = np.array([(totalStars < n).sum() for n in x],dtype='float')
         cdf /= cdf[-1]
@@ -415,13 +429,15 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
     x_axis = 'Log(Li EW) - Li Fit'
     if (metal.lower()[0] == 'c'):
         x_axis = "Log(R'" + r'$_{HK})$' + ' - Ca Fit'
-    plt.xlabel(x_axis,size=18)
+    plt.xlabel(x_axis,size=AXIS_LABEL_SIZE)
 
-    if plot_cdf: plt.ylabel('CDF',size=16)
-    else: plt.ylabel('Frequency',size=16)
+    if plot_cdf: plt.ylabel('CDF',size=AXIS_LABEL_SIZE)
+    else: plt.ylabel('Frequency',size=AXIS_LABEL_SIZE)
     if (title):
-        plt.title(title,size=18)
+        plt.title(title,size=TITLE_SIZE)
     plt.tight_layout()
+    plt.minorticks_on()
+    plt.tick_params(axis='both',which='both',right=True,top=True)
     if (pdfPage):
         pdfPage.savefig()
     if (showPlots):
@@ -451,9 +467,9 @@ def baffles_vs_mamajek(bv_rhk,fits,i,pdfPage=None,showPlots=False,title=None,mam
     
     plt.Line2D([0], [0], color='C%d'% i,marker=const.MARKERS[i],label=const.CLUSTER_NAMES[i])
     plt.axis([.4,14000,.4,14000])
-    plt.title(const.CLUSTER_NAMES[i],size=16)
-    plt.xlabel(r'Age derived from M & H (2008)',size=16)
-    plt.ylabel(u'BAFFLES Age (Myr)',size=18)
+    plt.title(const.CLUSTER_NAMES[i],size=TITLE_SIZE)
+    plt.xlabel(r'Age derived from M & H (2008)',size=AXIS_LABEL_SIZE)
+    plt.ylabel(u'BAFFLES Age (Myr)',size=AXIS_LABEL_SIZE)
     for j in range(len(my_ages)):
         if (j==0):
             plt.errorbar(mamajek_ages[j],my_ages[j],np.array([my_error[j]]).T,
@@ -479,6 +495,8 @@ def baffles_vs_mamajek(bv_rhk,fits,i,pdfPage=None,showPlots=False,title=None,mam
     ax.set_xscale('log')
     plt.legend(loc=2)
     plt.tight_layout()
+    plt.minorticks_on()
+    plt.tick_params(axis='both',which='both',right=True,top=True)
     
     if (pdfPage):
         pdfPage.savefig()
@@ -490,10 +508,10 @@ def baffles_vs_mamajek(bv_rhk,fits,i,pdfPage=None,showPlots=False,title=None,mam
     def plot_mamajek(bv_rhk,fits):
         import ca_constants as const
         #plt.figure(figsize=(7,6))
-        plt.xlabel(r'$(B-V)_0$',size=18)
-        #plt.ylabel(u'logR\'HK',size=18)
-        #plt.ylabel(u'Log Calcium Abundance',size=17)
-        plt.ylabel(r"Log(R'$_{HK})$",size=16)
+        plt.xlabel(r'$(B-V)_0$',size=AXIS_LABEL_SIZE)
+        #plt.ylabel(u'logR\'HK',size=AXIS_LABEL_SIZE)
+        #plt.ylabel(u'Log Calcium Abundance',size=AXIS_LABEL_SIZE)
+        plt.ylabel(r"Log(R'$_{HK})$",size=AXIS_LABEL_SIZE)
         plt.axis([.45,.9,-5,-3.7])
         for i in range(len(bv_rhk)):
             color = const.COLORS[i]

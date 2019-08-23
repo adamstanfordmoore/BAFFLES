@@ -1,5 +1,5 @@
 #Jones, Fischer, and Soderblom 1999
-#Montgomery_num, vmag, bmv, teff, ewli, nli, rv, eric_notes
+#Montgomery_num, vmag, bmv_0, teff, ewli, nli, rv, eric_notes
 
 5517, 14.87, 0.668, 5631, -12, -1.47, 33.8, single member
 5718, 14.04, 0.611, 5845, 34, 2.14, 32.7, binary member

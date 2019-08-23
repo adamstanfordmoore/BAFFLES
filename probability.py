@@ -73,6 +73,12 @@ def scale_to_height(y,height):
 def cdf(x,y): #depends on spacing 1 between age
     cum = integrate.cumtrapz(y,x,initial=0) 
     return cum / cum[-1]
+def hist_cdf(vals):
+    a,b = min(vals),max(vals)
+    x = np.linspace(a - .05*(b-a),b + .05*(b-a),500)
+    cdf = np.array([(vals < n).sum() for n in x],dtype='float')
+    cdf /= cdf[-1]
+    return x,cdf
 
 #finds the x value with the largest y value
 def mode(x,y):

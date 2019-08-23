@@ -526,21 +526,23 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     x = np.concatenate((before,x,after))
     cdf = np.array([(residual_arr < n).sum() for n in x],dtype='float')
     cdf /= cdf[-1]
-    #plt.plot(x,cdf,label='cdf_og')
 
     if metal=='calcium':
         smoothed = savgol_filter(cdf, 145, 3)
         smoothed = savgol_filter(smoothed, 55, 3)
     else:
-        smoothed = savgol_filter(cdf, 55, 3)
-        smoothed = savgol_filter(smoothed, 25, 3)
-        smoothed = savgol_filter(smoothed, 9, 3)
+        smoothed = savgol_filter(cdf, 85, 3)
+        smoothed = savgol_filter(smoothed, 55, 3)
+        #smoothed = savgol_filter(cdf, 55, 3)
+        #smoothed = savgol_filter(smoothed, 25, 3)
+        #smoothed = savgol_filter(smoothed, 9, 3)
    
     pdf = np.gradient(smoothed)
     prob.normalize(x,pdf)
-    
-    inds = np.nonzero(pdf > 1.5)[0] if metal=='lithium' else \
-            np.nonzero(pdf > max(pdf)/2)[0]
+
+    inds = np.nonzero(pdf > max(pdf)/2)[0]
+    #inds = np.nonzero(pdf > 1.5)[0] if metal=='lithium' else \
+    #        np.nonzero(pdf > max(pdf)/2)[0]
     i,j = inds[0],inds[-1]
     def exp_fit(x,a,b,c):
         return a*np.exp(b*x + c)

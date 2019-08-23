@@ -1,13 +1,15 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 """
-11/28/18
-Imports the lithium data to three lists:
-bv_li has an array for each cluster of [np.arra([B-V]),np.arrya([LogEW])]
-bv_li = [[[cluster 1 B-V],[cluster1 LogEW]],[[cluster 1 B-V],[cluster1 LogEW]],....]
+Adam Stanford-Moore
+8/30/19
+Imports the calcium and lithium data and functions.
+Lithium data imported int three lists:
+bv_li has an array for each cluster of [np.arra([B-V]),np.array([LogEW])]
+bv_li = [[[cluster1 B-V],[cluster1 LogEW]],[[cluster2 B-V],[cluster2 LogEW]],....]
 upper_lim has an array for each cluster with a boolean for each data point indicating if point is an upper limit
 upper_lim [[T,F,T,F,F,F],[F,F,F,F,F]....]
-fits stored as [median function,scatter function]
+fits stored as [median function,scatter function] for each cluster
 """
 import warnings
 from astropy.table import Table
@@ -18,69 +20,6 @@ import fitting as my_fits
 import utils
 import copy
 
-def schkolnik_betaPic():
-    import li_constants as li_const
-    t = np.genfromtxt("data/Shkolnik_2017_betaPic.csv",delimiter=',',dtype=str)
-    b,l,ul,names = [],[],[],[]
-    #sp_bv = my_fits.spt_bv()
-    #sp = []
-    #binaries = ['2MASS J01112542+1526214',
-    #        '2MASS J10172689-5354265',
-    #        '2MASS J05241914-1601153',
-    #        '2MASS J00281434-3227556',
-    #        '2MASS J01071194-1935359',
-    #        '2MASS J01373940+1835332',
-    #        '2MASS J18453704-6451460']
-    for row in t[1:]:
-        if row[13] != '': continue
-        
-        if not utils.isFloat(row[1]) or not utils.isFloat(row[5]) \
-                or row[12] != 'Y' or float(row[5]) <= 0: continue
-        #bv,ew = sp_bv(row[2]),np.log10(float(row[5]))
-        bv,ew = float(row[1]),np.log10(float(row[5]))
-        if not li_const.inRange(bv,ew): continue
-        b.append(bv)
-        l.append(ew)
-        ul.append(row[4]=='<')
-        names.append(row[0])
-        #sp.append(utils.float_sptype(row[2]))
-        #if np.abs(bv2 - bv) > 0.2: print row[0],bv, row[2]
-        #if 1.5 < bv <= 1.7: print row[0],bv, row[2]
-    return b,l,ul,names
-
-def mentuch2008_betaPic(): 
-    import li_constants as li_const
-    bp_c = []
-    bp_l = []
-    lim_bp = []
-    names = []
-    bp_err = []
-    t = ascii.read('data/beta_pic_updated_err_2MASS.txt', delimiter='\t')
-    for line in t:
-        if line[11] != '': continue
-        if in_bounds(float(line[4]),float(line[5]),li_const):
-            bp_c.append(float(line[4]))
-            bp_l.append(float(line[5]))
-            lim_bp.append(False)
-            names.append(line[10])
-            bp_err.append(float(line[6]))
-    bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
-    return bp_c,bp_l,lim_bp,bp_err,names
-
-def merged_betaPic():
-    bp_c,bp_l,lim_bp,bp_err,names = mentuch2008_betaPic()
-    bp_c2,bp_l2,lim_bp2,names2 = schkolnik_betaPic()
-    combined_err = [None]*len(names2)
-    for i in range(len(names)):
-        if names[i] in names2: 
-            #print names[i]
-            continue
-        bp_c2.append(bp_c[i])
-        bp_l2.append(bp_l[i])
-        lim_bp2.append(lim_bp[i])
-        names2.append(names[i])
-        combined_err.append(bp_err[i])
-    return bp_c2,bp_l2,lim_bp2,combined_err,names2
 
 def abdor():
     import li_constants as const
@@ -92,14 +31,11 @@ def abdor():
     for line in t[1:]:
         if line[14] != '' or not utils.isFloat(line[13]): continue
         bv = float(line[13])
-        #bv = teff_to_bv(float(line[5]))
         ew = float(line[3])
         if in_bounds(bv,ew,const):
             abdor_c.append(bv)
             abdor_l.append(ew)
             abdor_lerr.append(float(line[4]))
-            #abdor_bverr.append(BV_ERR(float(line[5]),float(line[6])))
-            #lim_bp.append(False)
     abdor_c,abdor_l = np.array(abdor_c),np.log10(np.array(abdor_l))
     return abdor_c, abdor_l,abdor_lerr
 
@@ -112,32 +48,13 @@ def tuchor():
     for line in t[1:]:
         if line[14] != '' or not utils.isFloat(line[13]): continue
         bv = float(line[13])
-        #bv = teff_to_bv(float(line[5]))
         ew = float(line[3])
         if in_bounds(bv,ew,const):
             tuchor_c.append(bv)
             tuchor_l.append(ew)
             tuchor_lerr.append(float(line[4]))
-            #tuchor_bverr.append(BV_ERR(float(line[5]),float(line[6])))
-            #lim_bp.append(False)
     tuchor_c,tuchor_l = np.array(tuchor_c),np.log10(np.array(tuchor_l))
     return tuchor_c,tuchor_l,tuchor_lerr
-
-def alpha_per_lithium():
-    import li_constants as const
-    c = []
-    l = []
-    teff_to_bv = my_fits.magic_table_convert('teff','bv')
-    t = np.genfromtxt("data/alpha_per_balachandra.csv",delimiter=',',dtype=str)
-    for line in t:
-        if line[11] != '': continue
-        bv = teff_to_bv(float(line[1]))
-        ew = float(line[7])
-        if in_bounds(bv,ew,const):
-            c.append(bv)
-            l.append(ew)
-    c,l = np.array(c),np.log10(l)
-    return c,l,[False]*len(c)
 
 #reads in data and generates fits
 def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
@@ -188,14 +105,8 @@ def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
             r += [-4.38,-4.33]
             # From [Jenkins 2006,Henry 1996]
 
-
-
-
-
         bv_rhk.append([c,r])
         if fit_degree > 0:
-            #fits.append(my_fits.constant_fit(r))
-            #fits.append([np.poly1d([np.median(r)]),np.poly1d([0.1])])
             fits.append(my_fits.poly_fit(c,r,n=fit_degree,scatter=True))
         else:
             rhk_fit = np.poly1d([np.median(r)])
@@ -217,13 +128,7 @@ def get_li_fits(bv_li,upper_lim_all):
                   edge_box = [.39,.52,1.9,1.95])
         else: 
             poly_order = 2
-            fit = my_fits.poly_fit(bv_li[i][0],bv_li[i][1],poly_order,upper_lim_all[i])
-        
-        #if (const.CLUSTER_NAMES[i] in ['UMa','NGC3680']): #these cluster need linear fits
-        #    poly_order = 1
-        #fit = my_fits.pwise_fit(bv_li[i][0],bv_li[i][1],upper_lim=upper_lim_all[i],guess_fit=my_fits.poly_fit(bv_li[i][0],bv_li[i][1]),x_method='bin')
-        
-        
+            fit = my_fits.poly_fit(bv_li[i][0],bv_li[i][1],poly_order,upper_lim_all[i])        
         fits.append(fit)
     fits = my_fits.cluster_scatter_from_stars(bv_li,fits)
     return fits
@@ -248,13 +153,77 @@ def make_picklable(fits):
 
 def undo_picklable(fits):
     const = utils.init_constants('lithium')
-    #i = const.CLUSTER_NAMES.index('Hyades')
     for c,i in [(c,i) for c in range(len(fits)) for i in range(2)]:
         if type(fits[c][i]) != type(np.poly1d([1])):
             fits[c][i] = my_fits.piecewise(const.BV,fits[c][i])
-    #fits[i][0] = my_fits.piecewise(const.BV,fits[i][0])
-    #fits[i][1] = my_fits.piecewise(const.BV,fits[i][1])
     return fits
+
+
+def schkolnik_betaPic():
+    import li_constants as li_const
+    t = np.genfromtxt("data/Shkolnik_2017_betaPic.csv",delimiter=',',dtype=str)
+    b,l,ul,names = [],[],[],[]
+    for row in t[1:]:
+        if row[13] != '': continue
+        if not utils.isFloat(row[1]) or not utils.isFloat(row[5]) \
+                or row[12] != 'Y' or float(row[5]) <= 0: continue
+        bv,ew = float(row[1]),np.log10(float(row[5]))
+        if not li_const.inRange(bv,ew): continue
+        b.append(bv)
+        l.append(ew)
+        ul.append(row[4]=='<')
+        names.append(row[0])
+    return b,l,ul,names
+
+def mentuch2008_betaPic():
+    import li_constants as li_const
+    bp_c = []
+    bp_l = []
+    lim_bp = []
+    names = []
+    bp_err = []
+    t = ascii.read('data/beta_pic_updated_err_2MASS.txt', delimiter='\t')
+    for line in t:
+        if line[11] != '': continue
+        if in_bounds(float(line[4]),float(line[5]),li_const):
+            bp_c.append(float(line[4]))
+            bp_l.append(float(line[5]))
+            lim_bp.append(False)
+            names.append(line[10])
+            bp_err.append(float(line[6]))
+    bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
+    return bp_c,bp_l,lim_bp,bp_err,names
+
+def merged_betaPic():
+    bp_c,bp_l,lim_bp,bp_err,names = mentuch2008_betaPic()
+    bp_c2,bp_l2,lim_bp2,names2 = schkolnik_betaPic()
+    combined_err = [None]*len(names2)
+    for i in range(len(names)):
+        if names[i] in names2:
+            #print names[i]
+            continue
+        bp_c2.append(bp_c[i])
+        bp_l2.append(bp_l[i])
+        lim_bp2.append(lim_bp[i])
+        names2.append(names[i])
+        combined_err.append(bp_err[i])
+    return bp_c2,bp_l2,lim_bp2,combined_err,names2
+
+def alpha_per_lithium():
+    import li_constants as const
+    c = []
+    l = []
+    teff_to_bv = my_fits.magic_table_convert('teff','bv')
+    t = np.genfromtxt("data/alpha_per_balachandra.csv",delimiter=',',dtype=str)
+    for line in t:
+        if line[11] != '': continue
+        bv = teff_to_bv(float(line[1]))
+        ew = float(line[7])
+        if in_bounds(bv,ew,const):
+            c.append(bv)
+            l.append(ew)
+    c,l = np.array(c),np.log10(l)
+    return c,l,[False]*len(c)
 
 def read_lithium(fromFile=True,saveToFile=False):
     if (fromFile):
@@ -262,83 +231,12 @@ def read_lithium(fromFile=True,saveToFile=False):
         upper_lim = pickle.load(open('data/upper_lim_all.p','rb'))
         fits = pickle.load(open('data/li_fits_all.p','rb'))
         fits = undo_picklable(fits)
-        #bv_li = pickle.load(open('data/bv_li_gaia.p','rb'))
-        #upper_lim = pickle.load(open('data/upper_lim_gaia.p','rb'))
-        #fits = pickle.load(open('data/li_fits_gaia.p','rb'))
         return bv_li,upper_lim,fits
     
     import li_constants as const
     bv_li = []
     upper_lim = []
  
-    """
-    teff_to_bv = my_fits.magic_table_convert('teff','bv')
-    #reads in easy to read cluster table
-    def readCluster(filePath,bv_index,EW_index,teff=False,UL_index=None,delimeter=';',mem_indices=[-1,-1],prob_threshold=.9):
-        c,l,ul = [],[],[]
-        t = ascii.read(filePath, fill_values='blank',delimiter=delimeter)
-        rejected,kept = 0,0
-        for line in t[2:]:
-            #check membership
-            if mem_indices[0] != -1 and (not utils.isFloat(line[mem_indices[0]]) \
-                or float(line[mem_indices[0]]) < prob_threshold): 
-                #print("Rejecting",line[mem_indices[0]])
-                rejected += 1
-                continue
-            if mem_indices[1] != -1 and (not utils.isFloat(line[mem_indices[1]]) \
-                or float(line[mem_indices[1]]) < prob_threshold): 
-                #print("B-Rejecting",line[mem_indices[1]])
-                rejected += 1
-                continue
-            if not utils.isFloat(line[bv_index]) or not utils.isFloat(line[EW_index]):
-                #print("not float",line[bv_index],line[EW_index])
-                rejected += 1
-                continue
-            bv = teff_to_bv(float(line[bv_index])) if teff else float(line[bv_index]) 
-            ew = float(line[EW_index])
-            if not in_bounds(bv,ew,const): 
-                #print "not in bounds",bv,np.log10(ew)
-                rejected += 1
-                continue
-            kept += 1
-            c.append(bv)
-            l.append(ew) 
-            if UL_index and line[UL_index] == '<': #upper_lim
-                ul.append(True)
-            else:
-                ul.append(False)
-        print "rejected",rejected,"Kept",kept
-        c,l = np.array(c),np.log10(np.array(l))
-        bv_li.append([c,l])
-        upper_lim.append(ul)
-
-    readCluster('data/cha_I_lithium_gaia.txt',bv_index=3,EW_index=5,teff=True,UL_index=None)
-    readCluster('data/ic4665_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1])
-    readCluster('data/ic2602_lithium_gaia.txt',bv_index=5,EW_index=12,teff=True,UL_index=11,mem_indices=[19,-1])
-    #readCluster('data/ngc2451_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1])
-    readCluster('data/ngc2451_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[-1,18])
-    readCluster('data/ngc2547_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1])
-    readCluster('data/ic2391_lithium_gaia.txt',bv_index=5,EW_index=12,teff=True,UL_index=11,mem_indices=[19,-1])
-    readCluster('data/ngc2516_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1])
-    readCluster('data/ngc6633_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9,mem_indices=[17,-1],prob_threshold=0.8)
-
-
-
-    fits = get_li_fits(bv_li,upper_lim)
-
-    if (saveToFile):
-        pickle.dump(bv_li,open('data/bv_li_gaia.p','wb'))
-        pickle.dump(upper_lim,open('data/upper_lim_gaia.p','wb'))
-        pickle.dump(fits,open('data/li_fits_gaia.p','wb'))
-
-    return bv_li, upper_lim, fits
-    """
-  
-
-
-
-
-
     """
     t = ascii.read('data/NGC2264_bouvier.txt',delimiter=';')
     ngc2264_c = []
@@ -449,10 +347,11 @@ def read_lithium(fromFile=True,saveToFile=False):
     lim_coma = []
     t = ascii.read('data/coma_berenices.txt', delimiter=',')
     for line in t:
+        if line[-1] != '': continue
         if in_bounds(float(line[2]),float(line[4]),const):
             coma_c.append(float(line[2]))
             coma_l.append(float(line[4]))
-            lim_coma.append(line[-1]==1)
+            lim_coma.append(line[7]==1)
     coma_c,coma_l = np.array(coma_c),np.log10(np.array(coma_l))
     bv_li.append([coma_c,coma_l])
     upper_lim.append(lim_coma)
@@ -534,51 +433,13 @@ def read_lithium(fromFile=True,saveToFile=False):
     bv_li.append([ngc3680_c,ngc3680_l])
     upper_lim.append(lim_ngc3680)
     """
-    """
-    teff_to_bv = my_fits.magic_table_convert('teff','bv')
-    #reads in easy to read cluster table
-    def readCluster(filePath,bv_index,EW_index,teff=False,UL_index=None,delimeter=';'):
-        c,l,ul = [],[],[]
-        t = ascii.read(filePath, delimiter=delimeter)
-        for line in t[2:]:
-            bv = teff_to_bv(float(line[bv_index])) if teff else float(line[bv_index]) 
-            ew = float(line[EW_index])
-            if not in_bounds(bv,ew,const): continue
-            c.append(bv)
-            l.append(ew) 
-            if UL_index and line[UL_index] == '<': #upper_lim
-                ul.append(True)
-            else:
-                ul.append(False)
-        c,l = np.array(c),np.log10(np.array(l))
-        bv_li.append([c,l])
-        upper_lim.append(ul)
-
-    readCluster('data/cha_I_lithium_gaia.txt',bv_index=3,EW_index=5,teff=True,UL_index=None)
-    readCluster('data/ic4665_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
-    readCluster('data/ic2602_lithium_gaia.txt',bv_index=5,EW_index=12,teff=True,UL_index=11)
-    readCluster('data/ngc2451_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
-    readCluster('data/ngc2547_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
-    readCluster('data/ic2391_lithium_gaia.txt',bv_index=5,EW_index=12,teff=True,UL_index=11)
-    readCluster('data/ngc2516_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
-    readCluster('data/ngc6633_lithium_gaia.txt',bv_index=3,EW_index=10,teff=True,UL_index=9)
-    """
-
 
     fits = get_li_fits(bv_li,upper_lim)
-
-    #primordial_li_fit = my_fits.MIST_primordial_li(fits[0],fromFile=False,saveToFile=True)
-    #fits.insert(0,[primordial_li_fit,np.poly1d([0.05])])
-    #bv_li.insert(0,[])
-    #upper_lim.append([])
 
     if (saveToFile):
         pickle.dump(bv_li,open('data/bv_li_all.p','wb'))
         pickle.dump(upper_lim,open('data/upper_lim_all.p','wb'))
         pickle.dump(make_picklable(fits),open('data/li_fits_all.p','wb'))
-        #pickle.dump(bv_li,open('data/bv_li_gaia.p','wb'))
-        #pickle.dump(upper_lim,open('data/upper_lim_gaia.p','wb'))
-        #pickle.dump(fits,open('data/li_fits_gaia.p','wb'))
 
     return bv_li, upper_lim, fits
 

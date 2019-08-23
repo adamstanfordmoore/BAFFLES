@@ -17,8 +17,11 @@ import utils
 import bisect
 
 METAL = "lithium"
-bv_m, upper_lim, fits = readData.read_lithium()#fromFile=False,saveToFile=False)
+bv_m, upper_lim, fits = readData.read_lithium(fromFile=False,saveToFile=False)
 bv_ca, ca_fits = readData.read_calcium()#fromFile=False,saveToFile=False)
+print([len(x[0]) for x in bv_m])
+#CLUSTER_NAMES = ['NGC2264',r'$\beta$ Pic','IC2602',r'$\alpha$ Per','Pleiades',\
+#                 'M35','M34','Coma','Hyades','M67']
 
 def printName(n):
     print("scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/")
@@ -37,14 +40,15 @@ def main():
     #    plt.show()
     #pp.close()
 
-    #plot_fits()
-    metal_vs_bv()
+    plot_fits([7])
+    #metal_vs_bv()
     #metal_vs_age()
     #fit_hist()
-    #combined_validation()
+    combined_validation()
     #moving_group()
     #notable_stars()
     #posteriors()
+
 
 def moving_group():
     name = 'plots/moving_group_age.pdf'
@@ -78,11 +82,11 @@ def moving_group():
 
 
 
-def plot_fits():
+def plot_fits(cluster=None):
     #Plot Fits
     name = 'plots/' + METAL + '_fits.pdf'
     pp=PdfPages(name)
-    my_plot.plot_fits(bv_m,fits,METAL,pdfPage=pp,showPlots=True,upper_lim=upper_lim,shadeScatter=False,specific_clusters=[8])
+    my_plot.plot_fits(bv_m,fits,METAL,pdfPage=pp,showPlots=True,upper_lim=upper_lim,shadeScatter=False,specific_clusters=cluster)
     printName(name)
     pp.close()
 
@@ -144,7 +148,7 @@ def combined_validation():
     name = 'plots/' +METAL + '_combined_validation.pdf'
     pp=PdfPages(name)
     baf_default = baffles.age_estimator(METAL)
-    for i in [3]:#range(len(bv_m)):
+    for i in [7]:#range(len(bv_m)):
         print(const.CLUSTER_NAMES[i])
         baf = baffles.age_estimator(METAL,default_grids=False)
         baf.make_grids(bv_m,fits,omit_cluster=i)
@@ -152,7 +156,7 @@ def combined_validation():
 
         plt.plot(const.AGE,p_val.array,linewidth=2,linestyle='--',label='Posterior with removal')
         p = baf_default.posterior_product(bv_m[i][0],bv_m[i][1],upperLim_arr=upper_lim[i],\
-                pdfPage=pp,showPlot=True,\
+                pdfPage=pp,showPlot=False,\
                 showStars=True,givenAge=const.CLUSTER_AGES[i],\
                 title= const.CLUSTER_NAMES[i])
         
@@ -183,7 +187,7 @@ def notable_stars():
     name = 'plots/notable_stars.pdf'
     names = ["HR 2562","HD 206893","TW PsA"]
     bv = [.45,.44,1.1]
-    bv_err = [np.sqrt(.014**2+.01**2),np.sqrt(.02**2+.01**2),.03]
+    bv_err = [np.sqrt(.014**2+.01**2),np.sqrt(.02**2+.01**2),None]   # .03 b-v error for TW PsA?
     rhk = [-4.55,-4.466,None]
     mamaAge = [utils.getMamaAge(rhk[0]),utils.getMamaAge(rhk[1]),None]
     li = [21,28.5,33]
@@ -195,7 +199,7 @@ def notable_stars():
     age_range = [[300,900],[200,2100],[400,480]]
     pp=PdfPages(name)
 
-    my_plot.metal_vs_bv(bv_ca,ca_fits,'calcium',None,False,specific_clusters=[0,5,7,8],legend=False)
+    my_plot.metal_vs_bv(bv_ca,ca_fits,'calcium',None,False,specific_clusters=[0,5,7,8],legend=False,textlabels=True)
     plt.plot(bv,rhk,marker='s',markersize=markerSize,color='w',linestyle='None',zorder=9)
     for i in [0,1]:
         plt.plot(bv[i],rhk[i],marker=markers[i],markersize=markerSize,color=colors[i],linestyle='None',zorder=10,label=names[i])
@@ -263,14 +267,11 @@ def notable_stars():
     plt.title(names[2])
     plt.xlim([0,1200])
     plt.legend()
+    plt.ylabel("Probability",size=16)
+    plt.xlabel("Age (Myr)",size=16)
     pp.savefig()
     #plt.show()
     plt.close()
-
-
-    
-
-
 
     printName(name)
     pp.close()
@@ -315,14 +316,8 @@ def posteriors():
     printName(name)
     
 
-    """
-    # Update default grids
-    baf = baffles.age_estimator('calcium',default_grids=False)
-    baf.make_grids(bv_rhk,rhk_fits,'grids/median_rhk_030719','grids/sigma_rhk_030719',True)
-    
-    baf2 = baffles.age_estimator('lithium',default_grids=False)
-    baf2.make_grids(bv_m,fits,upper_lim,'grids/median_li_071819','grids/sigma_li_071819',setAsDefaults=True)
-    """
+
+
 
 
 if  __name__ == "__main__":

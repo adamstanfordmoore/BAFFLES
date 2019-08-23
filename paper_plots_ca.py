@@ -20,13 +20,14 @@ print([len(x[0]) for x in bv_m])
 
 def main():
     #plot_fits()
-    metal_vs_bv()
+    #metal_vs_bv()
     #metal_vs_age()
     #scatter_vs_age()
     #fit_hist()
     #baffles_vs_mamajek()
     #combined_validation()
     #posteriors()
+    nearest_stars_hist()
 
 
 
@@ -162,6 +163,58 @@ def posteriors():
                                   mamajekAge=True)
     printName(name)
     pp.close()
+
+
+def nearest_stars_hist():
+    t = np.genfromtxt("data/MH08_table13.txt",delimiter=';',dtype=str,skip_header=75)
+    bv,rhk = t[:,6].astype(np.float),t[:,8].astype(np.float)
+    #mask = (const.BV_RANGE[0] <= bv) & (bv <= const.BV_RANGE[1]) & \
+    mask = (.8 <= bv) & (bv <= .9) & \
+           (const.METAL_RANGE[0] <= rhk) & (rhk <= const.METAL_RANGE[1])
+    bv,rhk = bv[mask],rhk[mask]
+    baf = baffles.age_estimator('calcium')
+    for i in range(1):
+        ages = []#,array = [],np.zeros(1000)
+        for b,r in zip(bv,rhk):
+            p = baf.get_posterior(b,r)
+            #chance = p.array/np.sum(p.array)
+            a = p.stats[2]#np.random.choice(const.AGE,p=chance)
+            ages.append(a)
+            #array += p.array
+            #plt.hist(ages)
+            #plt.xlabel("Age (Myr)")
+            #plt.ylabel("Frequency")
+            #plt.show()
+        plt.hist(ages)
+        plt.xlabel("Age (Myr)")
+        plt.ylabel("Frequency")
+        plt.title(".8 <= B-V <= .9")
+        plt.show()
+
+        #x,cdf = prob.hist_cdf(ages)
+        #plt.plot(x,cdf,color='gray')
+
+    #plt.show()
+
+
+
+
+        #pp.close()
+        #prob.normalize(const.AGE,array)
+        #plt.plot(const.AGE,array)
+        #plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
     
    
 if  __name__ == "__main__":

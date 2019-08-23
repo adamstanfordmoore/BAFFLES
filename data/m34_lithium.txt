@@ -1,6 +1,6 @@
 #Jones et al. 1997
 #negative ew and nli mean upper limits
-;jp_num,bmv,teff,ew6707,lognli,vsini,vrad,membership_prob
+;jp_num,bmv_0,teff,ew6707,lognli,vsini,vrad,membership_prob
 
 17 , 0.46 , 6474 , 20 , 2.43 , 28.5 , -9.8 , 99
 42 , 0.90 , 4870 , 62 , 1.38 , 7.4 , -11.5 , 76
