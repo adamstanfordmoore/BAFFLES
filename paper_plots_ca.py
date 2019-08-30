@@ -6,6 +6,8 @@ import warnings
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.cm as cm
 import fitting as my_fits
 import probability as prob
 import baffles
@@ -15,26 +17,30 @@ import readData
 import utils
 METAL = "calcium"
 upper_lim = None
-bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=0)
+bv_m,fits = readData.read_calcium()#fromFile=False,saveToFile=False,fit_degree=0)
 print([len(x[0]) for x in bv_m])
 
 def main():
-    #plot_fits()
-    #metal_vs_bv()
-    #metal_vs_age()
-    #scatter_vs_age()
-    #fit_hist()
-    #baffles_vs_mamajek()
-    #combined_validation()
+
+
+    plot_fits()
+    metal_vs_bv()
+    metal_vs_age()
+    scatter_vs_age()
+    fit_hist()
+    baffles_vs_mamajek()
+    combined_validation_subplots()
+    combined_validation()
+
     #posteriors()
-    nearest_stars_hist()
+    #nearest_stars_hist()
 
 
 
 def printName(n):
-    print("\n")
-    print("scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/")
-    print("\n")
+    print("-----\n")
+    #print("scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/")
+    #print("\n")
     #print("sips -s format png -s formatOptions best ~/Desktop/" + n[6:] + " --out ~/Desktop/"
 
 def plot_fits(cluster_indices=None):
@@ -50,11 +56,11 @@ def metal_vs_bv():
     name = 'plots/' +METAL + '_metal_vs_bv.pdf'
     pp=PdfPages(name)
     ##clusters = [0,4,6,7]
-    my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True,legend=False)#,specific_clusters = clusters)
+    my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=False,legend=False)#,specific_clusters = clusters)
     #my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True,upper_lim=upper_lim,primordial_li=True,fits_only=True,shadeScatter=False)
     
     bv_m_linear,fits_linear = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=1)
-    my_plot.metal_vs_bv(bv_m_linear,fits_linear,METAL,pp,showPlots=True)#,specific_clusters = clusters)
+    my_plot.metal_vs_bv(bv_m_linear,fits_linear,METAL,pp,showPlots=False)#,specific_clusters = clusters)
     #my_plot.metal_vs_bv(bv_m_linear,fits_linear,METAL,pp,showPlots=True,upper_lim=upper_lim,primordial_li=True,fits_only=True,shadeScatter=False)
     printName(name)
     pp.close()
@@ -66,7 +72,7 @@ def metal_vs_age():
     bvRange = const.BV_S 
     for bv in bvRange:
         print("bv: ",bv)
-        my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=True,shadeScatter=False,\
+        my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=False,shadeScatter=False,\
                 errorbars=True,title=' ', bv_m=bv_m,upper_lim=upper_lim,\
                 logAge=True,plotStars=False,mamajek_poly=True)
     printName(name)
@@ -74,16 +80,16 @@ def metal_vs_age():
 
 def scatter_vs_bv():
     #Scatter vs B-V
-    pp=PdfPages('plots/' +METAL + '_scatter_vs_bv_with_offset.pdf')
+    pp=PdfPages('plots/' + METAL + '_scatter_vs_bv_with_offset.pdf')
     my_plot.scatter_vs_bv(fits,METAL,pp,showPlots=True)
-    names.append('plots/' +METAL + '_scatter_vs_bv_with_offset.pdf')
+    names.append('plots/' + METAL + '_scatter_vs_bv_with_offset.pdf')
     pp.close()
 
 def scatter_vs_age():
     #Scatter vs Age
     name = 'plots/' +METAL + '_scatter_vs_age.pdf'
     pp=PdfPages(name)
-    my_plot.scatter_vs_age(fits,METAL,.65,pp,showPlots=True,bv_m=bv_m,upper_lim=upper_lim)
+    my_plot.scatter_vs_age(fits,METAL,.65,pp,showPlots=False,bv_m=bv_m,upper_lim=upper_lim)
     pp.close()
     printName(name)
 
@@ -91,8 +97,8 @@ def fit_hist():
     #Fit histogram
     name = 'plots/' +METAL + '_hist_fit.pdf'
     pp=PdfPages(name)
-    my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=True)
-    my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=True,plot_cdf=True)
+    my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=False)
+    my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=False,plot_cdf=True)
     printName(name)
     pp.close()
 
@@ -117,7 +123,7 @@ def omitting(validation=False):
         #mamaProductAge = utils.getMamaProductAge(bv_m[i][1])
         #print(mamaProductAge
         if not validation: baf.make_grids(bv_m,fits,omit_cluster=i)
-        p = baf.posterior_product(bv_m[i][0],bv_m[i][1],pdfPage=pp,showPlot=True,\
+        p = baf.posterior_product(bv_m[i][0],bv_m[i][1],pdfPage=pp,showPlot=False,\
                 showStars=True,givenAge=const.CLUSTER_AGES[i],\
                 title= const.CLUSTER_NAMES[i])
         #print("True: %.3g BAFFLES: %.3g Mama: %.3g" % (const.CLUSTER_AGES[i],p.stats[2],mamaProductAge)
@@ -145,6 +151,85 @@ def combined_validation():
     printName(name)
     pp.close()
 
+def combined_validation_subplots():
+    const = utils.init_constants(METAL)
+    #Omitting each cluster
+    name = 'plots/' +METAL + '_combined_validation_subplots.pdf'
+    pp=PdfPages(name)
+    baf_default = baffles.age_estimator(METAL)
+
+    fig,ax = plt.subplots(3,2,figsize=(14,15))
+    cmap = plt.cm.get_cmap('RdYlBu_r')
+    norm = mpl.colors.Normalize(vmin=const.BV_RANGE[0], vmax=const.BV_RANGE[1])
+    sc = plt.scatter([],[],c=[],norm=norm,cmap=cmap)
+
+    fig.tight_layout(pad=.4,w_pad=1, h_pad=2)
+    fig.subplots_adjust(left=0.06)
+    fig.subplots_adjust(bottom=0.06)
+    fig.subplots_adjust(top=.95)
+    fig.subplots_adjust(right=0.9)
+    #cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    cbar_ax = fig.add_axes([0.92, 0.25, 0.02, 0.5])
+    fig.colorbar(sc, cax=cbar_ax)
+
+    for index,i in enumerate([0,4,5,6,7,8]):        #[1,4,5,6]):
+        print(const.CLUSTER_NAMES[i])
+        baf = baffles.age_estimator(METAL,default_grids=False)
+        baf.make_grids(bv_m,fits,omit_cluster=i)
+        p_val = baf.posterior_product(bv_m[i][0],bv_m[i][1])
+
+        pl = ax[int(index/2),index%2]
+        pl.plot(const.AGE,p_val.array,linewidth=2,linestyle='--',label='Posterior with removal')
+        pl.set_title(const.CLUSTER_NAMES[i],size=my_plot.TITLE_SIZE)
+
+        bv_arr = bv_m[i][0]
+        p = baf_default.posterior_product(bv_m[i][0],bv_m[i][1],upperLim_arr=None,showStars=True)
+        #print(p.stars_posteriors)
+        age,y = const.AGE,p.array
+        givenAge=const.CLUSTER_AGES[i]
+
+        for star,post in enumerate(p.stars_posteriors):
+            color = cmap(norm(bv_arr[star]))
+            prob.scale_to_height(post,np.max(y))
+            pl.plot(const.AGE,post,alpha = 1,linewidth=1,color=color,zorder=0)
+
+        if (givenAge):
+            print('Isochronal age exists within %f %% CI' % prob.get_percentile(age,y,givenAge))
+            pl.axvline(x=givenAge,color='r',label='Isochronal age: %d Myr' % givenAge)
+            #if (givenErr):
+            #    if (type(givenErr) == float or type(givenErr) == int):
+            #        givenErr = [-1*givenErr,givenErr]
+            #    pl.axvspan(givenAge+givenErr[0], givenAge+givenErr[1], alpha=0.2, color='r',zorder=0)
+        #if (mamajekAge):
+        #    plt.axvline(x=mamajekAge,color='C2',label='MH08 age: %d' % mamajekAge)
+
+
+        pl.plot(age,y,color = 'C0',linewidth=2)
+        stat = p.stats
+        age2 = np.linspace(stat[0],stat[-1],500)
+        interp = my_fits.piecewise(age,y)
+        y2 = interp(age2)
+        pl.vlines(x=stat[2],ymin= 0,ymax= interp(stat[2]), \
+                label='BAFFLES median age: %.3g Myr' % stat[2] ,color = 'orange')
+        pl.fill_between(age2,y2, where= (age2 >= stat[1]) & (age2 <= stat[3]),color='.3', \
+                label='68%% CI: %.2g - %.2g' % (stat[1],stat[-2]))
+        pl.fill_between(age2,y2, where= (age2 >= stat[0]) & (age2 <= stat[-1]),color='.6',\
+                alpha=0.5, label='95%% CI: %.2g - %.2g' % (stat[0],stat[-1]))
+        pl.set_ylim([0,np.max(y)*1.5])
+        r = my_plot.getAgeRange(p.stats,p.stars_posteriors,givenAge)
+        pl.set_xlim(r)
+        pl.legend()
+        pl.minorticks_on()
+        pl.tick_params(axis='both',which='both',right=True,top=True)
+
+    # Set common labels
+    fig.text(0.5, 0.02, 'Age (Myr)',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center')
+    fig.text(0.01, 0.5, 'Probability',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
+    fig.text(0.99, 0.5, 'B-V',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
+    pp.savefig()
+    plt.close()
+    printName(name)
+    pp.close()
 
 
 def posteriors():
@@ -196,26 +281,11 @@ def nearest_stars_hist():
 
     #plt.show()
 
-
-
-
         #pp.close()
         #prob.normalize(const.AGE,array)
         #plt.plot(const.AGE,array)
         #plt.show()
 
 
-
-
-
-
-
-
-
-
-
-
-    
-   
 if  __name__ == "__main__":
     main()

@@ -2,7 +2,6 @@ import numpy as np
 from scipy import integrate
 import bisect
 from scipy.stats import norm
-import fitting as my_fits
 import matplotlib.pyplot as plt
 
 FIVE_SIGMAS = 9.02e-07
@@ -46,8 +45,22 @@ def polyspace(start,stop,num,power=2):
     a = (stop - start)/(num-1)**power
     return a*x**power + c
 
+def gaussian_cdf_space(mu,sig,num,sig_lim=5):
+    import fitting as my_fits
+    x = np.linspace(mu - sig_lim*sig,mu + sig_lim*sig,300)
+    cdf = gaussian_cdf(x,mu,sig)
+    fit = my_fits.piecewise(cdf,x)
+    temp = np.linspace(0,1,num+1)
+    y = (temp[1:] + temp[:-1])/2
+    arr = fit(y)
+    #plt.plot(x,gaussian(x,mu,sig))
+    #plt.scatter(arr,gaussian(arr,mu,sig))
+    #plt.show()
+    return arr
+
 # takes in densely sampled x,y and returns num sampled x
 def desample(x,y,num):
+    import fitting as my_fits
     ddy = np.abs(np.gradient(np.gradient(y)))
     f_arr = cdf(x,ddy)
     f_arr = f_arr*(x[-1] - x[0]) + x[0]
@@ -87,6 +100,7 @@ def mode(x,y):
 #finds median age,ranges for 1,2 sigma as [-2 sigma,-1 sigma, median,+1 sigma,+2 sigma]
 #finds ages from cdf values
 def stats(age,y,upperLim=False): 
+    import fitting as my_fits
     c = cdf(age,y)
     probs = UL_PROBS if upperLim else GAUSS_PROBS
     fit = my_fits.piecewise(c,age)
@@ -105,6 +119,7 @@ def stats(age,y,upperLim=False):
 # takes in a PDF given by age,y and a given age to compare to
 # returns the percentile X such that given Age is within X %
 def get_percentile(age,y,givenAge):
+    import fitting as my_fits
     c = cdf(age,y)
     fit = my_fits.piecewise(age,c)
     return np.abs(fit(givenAge) - .5)*2*100

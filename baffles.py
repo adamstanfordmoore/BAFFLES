@@ -37,7 +37,7 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
     if (rhk):
         baf = age_estimator('calcium')
         p = baf.get_posterior(bv,rhk,pdfPage,showPlots,bv_err,li_err,
-                upperLim=upperLim,maxAge=maxAge,mamajekAge=utils.getMamaAge(rhk))
+                upperLim=None,maxAge=maxAge,mamajekAge=utils.getMamaAge(rhk))
         if (savePostAsText):
             np.savetxt(fileName + "_calcium.csv", list(zip(const.AGE,p.array)), delimiter=",")
         print("Ca Median Age: %.3g Myr, 68%% CI: %.3g - %.3g Myr, 95%% CI: %.3g - %.3g Myr" \
@@ -56,12 +56,15 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
         else: print("Li Median Age: %.3g Myr, 68%% CI: %.3g - %.3g Myr, 95%% CI: \
         %.3g - %.3g Myr" % (p2.stats[2],p2.stats[1],p2.stats[3],p2.stats[0],p2.stats[4]))
 
+    p3 = None
     if (p and p2):
-        title = ' Calcium/Lithium Posterior Product'
+        title = 'Final Posterior'
         y = p.array * p2.array
         prob.normalize(const.AGE,y)
         stats = prob.stats(const.AGE,y)
         my_plot.posterior(const.AGE,y,prob.stats(const.AGE,y),title,pdfPage,showPlots)
+        p3 = posterior()
+        p3.array,p3.stats = y,stats
         print("Final Median Age: %.3g Myr, 68%% CI: %.3g - %.3g, 95%% CI: %.3g - %.3g" \
                % (stats[2],stats[1],stats[3],stats[0],stats[4]))
 
@@ -71,11 +74,16 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
     if pdfPage:
         pdfPage.close()
 
+    if p3 is not None: return p3
+    return p if p is not None else p2
+
+
 class posterior:
     def __init__(self):
         self.stats = None  #holds age at different CDF values
         self.array = None  # posterior array
         self.upperLim = False  # if its an upper-limit
+        self.stars_posteriors = None #array of individual stellar posteriors if array is a product
 
 
 class age_estimator:
@@ -136,7 +144,7 @@ class age_estimator:
         p_struct.upperLim = upperLim
         if (showPlot or pdfPage):
             if (title == None):
-                title = 'Posterior Age Probabilty for (B-V)o = '+'%.2f' % bv \
+                title = '(B-V)o = '+'%.2f' % bv \
                         +', ' + self.metal + ' = %.2f' % metallicity
             my_plot.posterior(self.const.AGE, p_struct.array, p_struct.stats,title,pdfPage,\
                     showPlot,givenAge=givenAge,givenErr=givenErr, mamajekAge=mamajekAge,logPlot=logPlot) 
@@ -173,6 +181,7 @@ class age_estimator:
             title = title if title else 'Resampled Posterior Product Age Distribution'
             my_plot.posterior(self.const.AGE, p_struct.array, p_struct.stats,title,\
                     pdfPage,showPlot,star_post,givenAge,givenErr=givenErr)
+
         return p_struct
     
     def posterior_product(self,bv_arr,metallicity_arr,bv_errs=None,measure_err_arr=None,\
@@ -218,6 +227,7 @@ class age_estimator:
         p_struct = posterior()
         p_struct.array = post
         p_struct.stats = prob.stats(self.const.AGE,post)
+        p_struct.stars_posteriors = star_post
 
         if (showPlot or pdfPage):
             my_plot.posterior(self.const.AGE, p_struct.array, p_struct.stats,title,\
@@ -252,12 +262,14 @@ class age_estimator:
         #pdf_fit = lambda x: norm.pdf(x,loc=0,scale=0.17)
         #cdf_fit = lambda x: norm.cdf(x,loc=0,scale=0.17)
         
-        BV = np.linspace(max(bv - 4*bv_uncertainty,self.const.BV_RANGE[0]),\
-                min(bv + 4*bv_uncertainty,self.const.BV_RANGE[1]),300)
-        bv_gauss = prob.gaussian(BV,bv,bv_uncertainty)
-        BV,bv_gauss = prob.desample(BV,bv_gauss,self.const.NUM_BV_POINTS)
+        #BV = np.linspace(max(bv - 3*bv_uncertainty,self.const.BV_RANGE[0]),\
+        #        min(bv + 3*bv_uncertainty,self.const.BV_RANGE[1]),300)
+        num_points = self.const.NUM_BV_POINTS if bv_uncertainty <= 0.03 else self.const.NUM_BV_POINTS * (bv_uncertainty/0.03)
+        BV = prob.gaussian_cdf_space(bv,bv_uncertainty,num_points, sig_lim=3)
+        #bv_gauss = prob.gaussian(BV,bv,bv_uncertainty)
+        #BV,bv_weight = prob.desample(BV,bv_gauss,self.const.NUM_BV_POINTS)
         
-        bv_gauss = bv_gauss.reshape(len(bv_gauss),1,1)
+        #bv_weight = bv_weight.reshape(len(bv_weight),1)
 
         f = interpolate.interp2d(self.const.AGE,self.const.BV_S,self.grid_median)
         mu = f(self.const.AGE,BV)
@@ -279,7 +291,7 @@ class age_estimator:
         
         astro_gauss = pdf_fit(np.log10(METAL) - mu)/METAL
         product = li_gauss*astro_gauss
-        integral = np.trapz(product,METAL,axis=2)
+        integral = np.trapz(product,METAL,axis=2) # now 2d matrix
         final_sum = np.sum(integral,axis=0)
         return final_sum
 

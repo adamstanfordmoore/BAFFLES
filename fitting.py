@@ -20,6 +20,7 @@ from astropy.io import ascii
 import probability as prob
 import utils
 import readData
+import plotting as my_plot
 
 BIN_SIZE = 10
 MIN_PER_BIN = 4
@@ -105,18 +106,22 @@ def bldb_fit(fits,plot=False):
         return np.power(10,fit(x))
     
     if (plot):
-        pp = PdfPages('bldb_vs_age.pdf')
-        plt.xlabel('B-V',size=18)
-        plt.ylabel('Age (Myr)',size=18)
+        pp = PdfPages('plots/bldb_vs_age.pdf')
+        plt.xlabel('B-V',size=my_plot.AXIS_LABEL_SIZE)
+        plt.ylabel('Age (Myr)',size=my_plot.AXIS_LABEL_SIZE)
         plt.yscale('log')
         for c in range(len(ages)):
             plt.scatter(bv_at_zero_li[c],ages[c],s=60,label=cluster_names[c],color=const.COLORS[c+1],marker=const.MARKERS[c+1])
         plt.plot(BV,ldb_age(BV))
         plt.fill_between(BV,ldb_age(BV),color='C0',alpha=.2,label="valid ages")
-        plt.legend()
+        plt.legend()        
+        plt.minorticks_on()
+        plt.tick_params(axis='both',which='both',right=True,top=True)
+        plt.tight_layout()
         pp.savefig()
-        plt.show()
+        #plt.show()
         pp.close()
+        plt.close()
     
     return ldb_age
 
@@ -581,7 +586,7 @@ def get_valid_metal(bv,fits,const,primordial_li_fit=None,ldb_fit=None,omit_clust
             primordial_li_fit = MIST_primordial_li()#fits[0][0],fromFile=False,saveToFile=True)
         CLUSTER_AGES.append(const.PRIMORDIAL_LI_AGE)
         rhk.append(float(primordial_li_fit(bv)))
-        CLUSTER_NAMES.append("Primordial EWLi")
+        CLUSTER_NAMES.append("Primordial LiEW")
         scatter.append(0.05)
     for i in range(len(fits)):
         if (omit_cluster is not None and i == omit_cluster and const.METAL_NAME=='lithium'):

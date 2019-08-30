@@ -182,7 +182,7 @@ def mentuch2008_betaPic():
     lim_bp = []
     names = []
     bp_err = []
-    t = ascii.read('data/beta_pic_updated_err_2MASS.txt', delimiter='\t')
+    t = np.genfromtxt('data/beta_pic_updated_err_2MASS.txt', delimiter='\t',dtype=str,skip_header=2)
     for line in t:
         if line[11] != '': continue
         if in_bounds(float(line[4]),float(line[5]),li_const):
@@ -200,13 +200,31 @@ def merged_betaPic():
     combined_err = [None]*len(names2)
     for i in range(len(names)):
         if names[i] in names2:
-            #print names[i]
+            j = names2.index(names[i])
+            #print(names[i],bp_c[i],bp_c2[j],bp_l[i],bp_l2[j],lim_bp[i],lim_bp2[j])
+            bv = (bp_c[i]+bp_c2[j])/2
+            bp_c2[j] = bv
+            ew = None
+            if lim_bp[i] and lim_bp2[j]:
+                ew = min(bp_l[i],bp_l2[j])
+                lim_bp2[j] = True
+                #print("1")
+            elif not lim_bp[i] and not lim_bp2[j]:
+                ew = (bp_l[i] + bp_l2[j])/2
+                lim_bp2[j] = False
+                #print("2")
+            else:
+                ew = bp_l[i] if lim_bp2[j] else bp_l[i]
+                lim_bp2[j] = False
+                #print("3")
+            bp_l2[j] = ew
             continue
-        bp_c2.append(bp_c[i])
-        bp_l2.append(bp_l[i])
-        lim_bp2.append(lim_bp[i])
-        names2.append(names[i])
-        combined_err.append(bp_err[i])
+        else:
+            bp_c2.append(bp_c[i])
+            bp_l2.append(bp_l[i])
+            lim_bp2.append(lim_bp[i])
+            names2.append(names[i])
+            combined_err.append(bp_err[i])
     return bp_c2,bp_l2,lim_bp2,combined_err,names2
 
 def alpha_per_lithium():
