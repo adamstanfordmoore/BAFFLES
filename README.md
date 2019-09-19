@@ -7,6 +7,7 @@ log(R'HK) between -3.7 and -5.  For lithium we have calibrated BAFFLES to stars 
 ### Downloading
 
 ```git clone --depth=1 https://github.com/adamstanfordmoore/BAFFLES.git```
+
 Currently there are still some large files in the git history. Size is 8MB with depth of 1.
 
 ### Requirements
