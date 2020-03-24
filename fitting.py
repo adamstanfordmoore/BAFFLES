@@ -631,6 +631,15 @@ def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,omit_cluster=None):
         segs = [2,3,2,1]
         s = segs[bisect.bisect_left(bv_cut,bv)]
         
+        # hardcode fit to go through hyades during the lithium fit
+        if 0.41 < bv < 0.51:
+            const = utils.init_constants('lithium')
+            scatter[const.CLUSTER_NAMES.index("Hyades") + 1] = 0.01
+            scatter = scatter[:-1] #del scatter[const.CLUSTER_NAMES.index("M67") + 1]
+            cluster_ages = cluster_ages[:-1]#[const.CLUSTER_NAMES.index("M67") + 1]
+            rhk = rhk[:-1] # [const.CLUSTER_NAMES.index("M67") + 1]
+            #s += 1
+
         metal_fit = general_piecewise(cluster_ages,rhk,s,\
                 n_pin=2,monotonic=-1,min_length=.2,sigma=scatter)
             
@@ -682,6 +691,27 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
         pickle.dump(final_li,open('data/mist_primordial_li.p','wb+'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
 
+
+
+def get_fit_BIC(bv_m,fits,dof):
+    # Mamajek: Typical errors ... ∼0.1 dex (e.g. Henry et al. 1996; Paulson et al. 2002; White, Gabor, & Hillenbrand 2007)
+    SIG = 0.1  
+    num_stars = sum([len(bv_m[i][0]) for i in range(len(bv_m))])
+    print("num stars", num_stars)
+    
+    log_L_hat = 0
+    chi2_sum = 0
+    
+    for i in range(len(bv_m)):
+        chi2 = prob.chi_sqr(bv_m[i][1],fits[i][0](bv_m[i][0]),SIG)
+        chi2_sum += np.sum(chi2)
+        log_L_hat += np.sum(-chi2/2)
+    
+    #print("log_L_hat= ", L_hat)
+    print("chi2= ", chi2_sum)
+    
+    return np.log(num_stars)*dof - 2*log_L_hat
+    
 
 # refreshes everything saved to files
 def main():

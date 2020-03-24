@@ -18,23 +18,39 @@ import utils
 METAL = "calcium"
 upper_lim = None
 bv_m,fits = readData.read_calcium()#fromFile=False,saveToFile=False,fit_degree=0)
-print([len(x[0]) for x in bv_m])
+#print([len(x[0]) for x in bv_m])
 
 def main():
 
 
-    plot_fits()
-    metal_vs_bv()
-    metal_vs_age()
-    scatter_vs_age()
-    fit_hist()
-    baffles_vs_mamajek()
+    #plot_fits()
+    #metal_vs_bv()
+    #metal_vs_age()
+    #scatter_vs_age()
+    #fit_hist()
+    #baffles_vs_mamajek()
     combined_validation_subplots()
-    combined_validation()
+    #combined_validation()
 
     #posteriors()
     #nearest_stars_hist()
+    #print_BIC()
 
+
+
+def print_BIC():
+    bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=0)
+    dof = len(bv_m) #1 parameter for each cluster
+    print("BIC constant fits = ", my_fits.get_fit_BIC(bv_m,fits,dof))
+    
+
+    dof = 2*len(bv_m) # 2 for each cluster
+    bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=1)
+    print("BIC linear fits = ", my_fits.get_fit_BIC(bv_m,fits,dof))
+    #for i in range(len(bv_m)):
+    #    plt.scatter(bv_m[i][0],bv_m[i][1])
+    #    plt.plot(bv_m[i][0],fits[i][0](bv_m[i][0]))
+    #    plt.show()
 
 
 def printName(n):
@@ -224,7 +240,7 @@ def combined_validation_subplots():
 
     # Set common labels
     fig.text(0.5, 0.02, 'Age (Myr)',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center')
-    fig.text(0.01, 0.5, 'Probability',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
+    fig.text(0.01, 0.5, 'Probability Density (Myr^-1)',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
     fig.text(0.99, 0.5, 'B-V',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
     pp.savefig()
     plt.close()

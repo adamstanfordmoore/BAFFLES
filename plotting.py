@@ -58,7 +58,7 @@ def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],\
         plt.plot(age,y,color = 'C0',linewidth=2)
     shadeStats(age,y,stat,isUpperLim)
     plt.xlabel(u'Age (Myr)',size=AXIS_LABEL_SIZE)
-    plt.ylabel('Probability',size=AXIS_LABEL_SIZE)
+    plt.ylabel('Probability Density (Myr^-1)',size=AXIS_LABEL_SIZE)
     plt.legend() #loc="upper right")
     if (not logPlot and not isUpperLim):
         r = getAgeRange(stat,starArray,givenAge)
@@ -169,6 +169,27 @@ def plot_fits(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,
             if (showPlots):
                 plt.show()
             plt.close()
+
+
+def plot_fits_subplot(plt,i,bv_m,fits,metal,upper_lim=None):
+    const = init_constants(metal)   
+
+    for j in range(len(bv_m[i][0])):
+        if (upper_lim is not None and upper_lim[i][j]):
+            plt.scatter(bv_m[i][0][j],bv_m[i][1][j],color=const.COLORS[i],marker=const.DOWN_ARROW)
+        else:
+            plt.scatter(bv_m[i][0][j],bv_m[i][1][j],color=const.COLORS[i],marker=const.MARKERS[i])
+
+    plt.plot(const.BV,fits[i][0](const.BV),dashes=[2,2], color=const.COLORS[i])
+    plt.scatter([],[],color=const.COLORS[i],marker=const.MARKERS[i],label=const.CLUSTER_NAMES[i])
+    plt.legend()
+    #plt.set_title(const.CLUSTER_NAMES[i],size=TITLE_SIZE)
+    plt.axis(const.BV_RANGE + const.METAL_RANGE)
+
+    plt.minorticks_on()
+    plt.tick_params(axis='both',which='both',right=True,top=True)
+
+
 
 def metal_vs_bv(bv_m,fits,metal,pdfPage=None,showPlots=False,upper_lim=None,
                 shadeScatter=False,title=None,primordial_li = False,fits_only=False,
@@ -501,16 +522,21 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
 
     if plot_cdf: plt.legend(['Numerical Fit'] + ['Best-fit Gaussian'] + ["Total CDF"] \
                             + const.CLUSTER_NAMES)
-    else: plt.legend(['Astrophysical PDF'] + ['Best-fit Gaussian'] + const.CLUSTER_NAMES)
+    elif metal == "calcium": 
+        plt.legend(['Empirical h(r|0,1)'] + ['Best-fit Gaussian'] + const.CLUSTER_NAMES)
+    elif metal == "lithium": 
+        plt.legend([r'Empirical k($\ell$|0)'] + ['Best-fit Gaussian'] + const.CLUSTER_NAMES)
 
     plt.xlim([-max_val,max_val])
     x_axis = 'Log(Li EW) - Li Fit'
+    y_axis = r'dp/dl (log(m$\AA$)^-1)'
     if (metal.lower()[0] == 'c'):
-        x_axis = "(Log(R'" + r'$_{HK})$' + ' - Ca Fit)/$\sigma(t)$'
+        x_axis = "(Log(R'" + r'$_{HK})$' + ' - Ca Fit)/g(t)'
+        y_axis = 'Probability density'
     plt.xlabel(x_axis,size=AXIS_LABEL_SIZE)
+    plt.ylabel(y_axis,size=AXIS_LABEL_SIZE)
 
     if plot_cdf: plt.ylabel('CDF',size=AXIS_LABEL_SIZE)
-    else: plt.ylabel('Frequency',size=AXIS_LABEL_SIZE)
     if (title):
         plt.title(title,size=TITLE_SIZE)
     plt.tight_layout()

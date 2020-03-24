@@ -41,8 +41,8 @@ NUM_BV_POINTS = 15 #Number of points to represent measurement gaussian in baffle
 MEASURE_ERR = 15 #mA
 
 #including new general piecewise li_vs_age 
-DEFAULT_MEDIAN_GRID = "grids/median_li_082919.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_li_082919.npy"
+DEFAULT_MEDIAN_GRID = "grids/median_li_032120.npy"
+DEFAULT_SIGMA_GRID = "grids/sigma_li_032120.npy"
 
 ZERO_LI = 0.5 #in log scale
 PRIMORDIAL_LI_AGE = 1 #Myr
