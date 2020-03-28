@@ -22,6 +22,7 @@ Python 3.7
 * Eric Nielsen
 * Rob De Rosa
 * Bruce Macintosh
+* Ian Czekala
 
 ## Command Line Usage Examples
 
