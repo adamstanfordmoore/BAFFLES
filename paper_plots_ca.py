@@ -18,7 +18,7 @@ import utils
 METAL = "calcium"
 upper_lim = None
 bv_m,fits = readData.read_calcium()#fromFile=False,saveToFile=False,fit_degree=0)
-#print([len(x[0]) for x in bv_m])
+print([len(x[0]) for x in bv_m])
 
 def main():
 
@@ -27,9 +27,9 @@ def main():
     #metal_vs_bv()
     #metal_vs_age()
     #scatter_vs_age()
-    #fit_hist()
+    fit_hist()
     #baffles_vs_mamajek()
-    combined_validation_subplots()
+    #combined_validation_subplots()
     #combined_validation()
 
     #posteriors()
@@ -159,11 +159,12 @@ def combined_validation():
         p_val = baf.posterior_product(bv_m[i][0],bv_m[i][1])
 
         plt.plot(const.AGE,p_val.array,linewidth=2,linestyle='--',label='Posterior with removal')
+        #Since given age provided, prints where isochronal age lies without removal
         p = baf_default.posterior_product(bv_m[i][0],bv_m[i][1],\
             pdfPage=pp,showPlot=False,\
             showStars=True,givenAge=const.CLUSTER_AGES[i],\
             title= const.CLUSTER_NAMES[i])
-        print(np.sum(p_val.array - p.array))
+        #print("Sum of difference between two posteriors: ", np.sum(p_val.array - p.array))
     printName(name)
     pp.close()
 

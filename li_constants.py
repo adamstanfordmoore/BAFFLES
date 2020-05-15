@@ -4,7 +4,7 @@ METAL_NAME = 'lithium'
 CLUSTER_AGES = [5.5,24,43.7,85,130,200,240,600,700,4000]
 CLUSTER_NAMES = ['NGC2264',r'$\beta$ Pic','IC2602',r'$\alpha$ Per','Pleiades',\
                  'M35','M34','Coma Ber','Hyades','M67']
-
+NUM_STARS = [123, 37, 27, 60, 128, 82, 49, 13, 50, 40]
 MARKERS = ['+','^','2','D','s','X','>','d','o','x']
 COLORS = ['C0','C1','C8','C2','C3','C9','cornflowerblue','darkgreen','C4','C5']
 PRIM_COLOR = 'lightcoral'
@@ -41,8 +41,8 @@ NUM_BV_POINTS = 15 #Number of points to represent measurement gaussian in baffle
 MEASURE_ERR = 15 #mA
 
 #including new general piecewise li_vs_age 
-DEFAULT_MEDIAN_GRID = "grids/median_li_032120.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_li_032120.npy"
+DEFAULT_MEDIAN_GRID = "grids/median_li_051420.npy"
+DEFAULT_SIGMA_GRID = "grids/sigma_li_051420.npy"
 
 ZERO_LI = 0.5 #in log scale
 PRIMORDIAL_LI_AGE = 1 #Myr

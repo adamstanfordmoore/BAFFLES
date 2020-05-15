@@ -22,7 +22,7 @@ METAL = "lithium"
 bv_m, upper_lim, fits = readData.read_lithium()#fromFile=False,saveToFile=False)
 #bv_m,upper_lim = np.array(bv_m),np.array(upper_lim)
 bv_ca, ca_fits = readData.read_calcium()#fromFile=False,saveToFile=False)
-#print([len(x[0]) for x in bv_m])
+print([len(x[0]) for x in bv_m])
 #exit()
 #CLUSTER_NAMES = ['NGC2264',r'$\beta$ Pic','IC2602',r'$\alpha$ Per','Pleiades',\
 #                 'M35','M34','Coma','Hyades','M67']
@@ -55,10 +55,10 @@ def main():
     #metal_vs_age()
     #metal_vs_age_subplots()
     #bldb()
-    #fit_hist()
+    fit_hist()
     #combined_validation()
     #get_CI()
-    combined_validation_subplots()
+    #combined_validation_subplots()
     #moving_group()
     #notable_stars()
     #plot_fits_subplots()
@@ -70,6 +70,7 @@ def main():
     #plot_fits()
     #posteriors()
     #bv_test()
+    return
 
 #def bv_test():
 #    np.random.seed(300)

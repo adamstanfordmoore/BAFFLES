@@ -245,7 +245,9 @@ class age_estimator:
     def calcium_likelihood(self,bv,rhk):
         mu = self.grid_median 
         pdf_fit,cdf_fit = my_fits.fit_histogram(metal='calcium',fromFile=True)
-        pdfs = pdf_fit((rhk - mu)/self.grid_sigma) / self.grid_sigma
+        #like gaussian likelihood, divide by std which scales height of function
+        pdfs = pdf_fit(rhk - mu)
+        #pdfs = pdf_fit((rhk - mu)/self.grid_sigma) / self.grid_sigma
         assert (pdfs >= 0).all(), "Error in numerical fit_histogram" + str(pdfs)
         return np.sum(pdfs,axis=0)
 

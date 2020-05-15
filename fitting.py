@@ -481,22 +481,37 @@ def cluster_scatter_from_stars(bv_m,fits):
         fits[c][1] = piecewise(const.BV,arr[c])
     return fits
 
-def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=None,linSpace=False,scale_by_std=False):
+def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=None,
+                      linSpace=False,scale_by_std=False,vs_age_fit=False,zero_center=False):
     const = utils.init_constants(metal)
     allClusters = []
     #residual_arr = []
+
+    ######
+    grid_median = np.load(const.DEFAULT_MEDIAN_GRID)
+    mu_interp = interpolate.interp2d(const.AGE,const.BV_S,grid_median) if metal == 'lithium' else \
+                      interpolate.interp1d(const.AGE,grid_median)
+    #####
 
     for c in range(len(fits)):
         if age_range is not None and not (age_range[0] <= const.CLUSTER_AGES[c]\
                 <= age_range[1]):
             allClusters.append([])
             continue
-        arr = []
+        arr = [] #holds non UL from cluster i
         resid = None
-        if linSpace:
+        if vs_age_fit:
+            resid = None
+            if metal == 'lithium':
+                resid = np.array(bv_m[c][1]) - mu_interp(const.CLUSTER_AGES[c],bv_m[c][0]).flatten()
+            else:        
+                resid = np.array(bv_m[c][1]) - mu_interp(const.CLUSTER_AGES[c])
+        elif linSpace:
             resid = np.power(10,bv_m[c][1]) - np.power(10,fits[c][0](bv_m[c][0]))
         else: #log space
             resid = residuals(bv_m[c][0],bv_m[c][1],fits[c][0])  #Log space
+        
+        #now filter out upper-limits from resid
         for i in range(len(resid)):
             if (upper_limits is not None and upper_limits[c][i]):
                 continue
@@ -509,6 +524,9 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
         allClusters.append(arr)
 
     residual_arr = np.concatenate(allClusters)
+    print("median,mean = ",np.median(residual_arr),np.mean(residual_arr) )
+    if zero_center:
+        residual_arr -= np.median(residual_arr)
     return allClusters,residual_arr
 
 def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
@@ -525,7 +543,8 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     x = np.linspace(np.min(residual_arr)-.5,np.max(residual_arr)+.5,1000) #1000 for linear?
     lim = 2
     if metal=='calcium':
-        lim = 5
+        #lim = 5
+        lim = 1
         x = np.linspace(np.min(residual_arr)-.5,np.max(residual_arr)+.1,800)
     before,after = np.linspace(-lim,min(x),50),np.linspace(max(x),lim,50)
     x = np.concatenate((before,x,after))

@@ -438,18 +438,25 @@ def scatter_vs_bv(fits,metal,pdfPage=None,showPlots=False,title=None):
         plt.close()
 
 
-def scatter_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,bv_m=None,upper_lim=None):
+def scatter_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,bv_m=None,upper_lim=None,errorbars=True):
     const = init_constants(metal)
     rhk,scatter,CLUSTER_AGES,CLUSTER_NAMES = my_fits.get_valid_metal(bv,fits,const)
     
+    N = np.array(const.NUM_STARS)
     for i in range(len(scatter)):
-        plt.scatter(CLUSTER_AGES[i], scatter[i],color=const.COLORS[i],\
+        if errorbars:            
+            err = scatter[i]/np.sqrt(2*N[i] - 2)
+            plt.errorbar(CLUSTER_AGES[i], scatter[i],yerr=err,color=const.COLORS[i],\
+                marker = const.MARKERS[i],markersize=8,capsize=4,zorder=10)
+            plt.scatter([], [], color=const.COLORS[i],marker=const.MARKERS[i],label=CLUSTER_NAMES[i])
+        else:
+            plt.scatter(CLUSTER_AGES[i], scatter[i],color=const.COLORS[i],\
                 marker = const.MARKERS[i],label=CLUSTER_NAMES[i],s=80,zorder=10)
     
     mu,sig,lbl = my_fits.vs_age_fits(bv,CLUSTER_AGES,rhk,scatter,metal)
    
-    lbl = 'gaussian fit' if metal=='calcium' else 'meas + astro' #r'constant $\sigma$ = %.3f' % fit(.65) 
-    plt.plot(const.AGE,sig(const.AGE),'--',label=lbl,color='orange')
+    #lbl = 'gaussian fit' if metal=='calcium' else 'meas + astro' #r'constant $\sigma$ = %.3f' % fit(.65) 
+    #plt.plot(const.AGE,sig(const.AGE),'--',label=lbl,color='orange')
 
     ax = plt.gca()
     ax.set_xscale('log')
@@ -493,8 +500,10 @@ def init_constants(metal):
 def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
                   upper_limits=None,li_range=None,age_range=None,plot_cdf=False):
     const = init_constants(metal)
+    
+
     allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,
-                                        li_range,age_range=age_range,scale_by_std= metal=='calcium')
+                            li_range,age_range=age_range,scale_by_std= False,vs_age_fit=True,zero_center=False)#metal=='calcium')
     pdf_fit,cdf_fit = my_fits.fit_histogram(metal,totalStars,fromFile=False,saveToFile=False)
 
     mu = np.mean(totalStars)
@@ -514,6 +523,11 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
         plt.plot(x,prob.gaussian_cdf(x,mu,sigma),linestyle = '--',color='gray',linewidth=2)
         cdf = np.array([(totalStars < n).sum() for n in x],dtype='float')
         cdf /= cdf[-1]
+        
+        print("stars",np.median(totalStars))
+        print("Originally",my_fits.piecewise(cdf,x)(0.5))
+        print("Numerical Fit",my_fits.piecewise(cdf_fit(x),x)(0.5))
+        
         plt.plot(x,cdf,linewidth=3)
         for c in range(len(allClusters)):
             cdf = np.array([(allClusters[c] < n).sum() for n in x],dtype='float')
@@ -523,20 +537,22 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
     if plot_cdf: plt.legend(['Numerical Fit'] + ['Best-fit Gaussian'] + ["Total CDF"] \
                             + const.CLUSTER_NAMES)
     elif metal == "calcium": 
-        plt.legend(['Empirical h(r|0,1)'] + ['Best-fit Gaussian'] + const.CLUSTER_NAMES)
+        plt.legend([r'Empirical ${\cal H}$(r|0)'] + ['Best-fit Gaussian'] + const.CLUSTER_NAMES)
     elif metal == "lithium": 
-        plt.legend([r'Empirical k($\ell$|0)'] + ['Best-fit Gaussian'] + const.CLUSTER_NAMES)
+        plt.legend([r'Empirical ${\cal K}$($\ell$|0)'] + ['Best-fit Gaussian'] + const.CLUSTER_NAMES)
 
     plt.xlim([-max_val,max_val])
-    x_axis = 'Log(Li EW) - Li Fit'
+    #x_axis = 'Log(Li EW) - Li Fit'
+    x_axis = 'Log(Li EW) - i(t,b)'
     y_axis = r'dp/dl (log(m$\AA$)^-1)'
     if (metal.lower()[0] == 'c'):
-        x_axis = "(Log(R'" + r'$_{HK})$' + ' - Ca Fit)/g(t)'
+        #x_axis = "Log(R'" + r'$_{HK})$' + ' - Ca Fit'
+        x_axis = "Log(R'" + r'$_{HK})$' + ' - f(t)'
         y_axis = 'Probability density'
     plt.xlabel(x_axis,size=AXIS_LABEL_SIZE)
     plt.ylabel(y_axis,size=AXIS_LABEL_SIZE)
 
-    if plot_cdf: plt.ylabel('CDF',size=AXIS_LABEL_SIZE)
+    if plot_cdf: plt.ylabel('Cumulative probability',size=AXIS_LABEL_SIZE)
     if (title):
         plt.title(title,size=TITLE_SIZE)
     plt.tight_layout()

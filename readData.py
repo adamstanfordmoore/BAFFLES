@@ -21,6 +21,61 @@ import utils
 import copy
 
 
+def abdor(annotate=False):
+    import li_constants as const
+    abdor_c = []
+    abdor_l = []
+    abdor_bverr = []
+    abdor_lerr = []
+    t = ascii.read('data/ab_dor_updated_err_bv_bib.csv',delimiter=',')
+    for i,line in enumerate(t[1:]):
+        if line[14] != '': continue 
+        if not utils.isFloat(line[13]): 
+            t[i+1,14] = 'OOR'
+            continue
+        bv = float(line[13])
+        ew = float(line[3])
+        if in_bounds(bv,ew,const):
+            abdor_c.append(bv)
+            abdor_l.append(ew)
+            abdor_lerr.append(float(line[4]))
+        else:
+            t[i+1,14] = 'OOR'
+            
+    if annotate:
+        np.savetxt("data/ab_dor_updated_err_bv_annotated.csv",t,delimiter=',',fmt='%s')
+    
+    
+    abdor_c,abdor_l = np.array(abdor_c),np.log10(np.array(abdor_l))
+    return abdor_c, abdor_l,abdor_lerr
+
+def tuchor(annotate=False):
+    import li_constants as const
+    tuchor_c = []
+    tuchor_l = []
+    tuchor_bverr,tuchor_lerr = [],[]
+    t = ascii.read('data/tuchor_updated_err_bv.csv',delimiter=',')
+    for i,line in enumerate(t[1:]):
+        if line[14] != '' : continue 
+        if not utils.isFloat(line[13]): 
+            t[i+1,14] = 'OOR'
+            continue
+        bv = float(line[13])
+        ew = float(line[3])
+        if in_bounds(bv,ew,const):
+            tuchor_c.append(bv)
+            tuchor_l.append(ew)
+            tuchor_lerr.append(float(line[4]))
+        else:
+            t[i+1,14] = 'OOR'
+    
+    if annotate:
+        np.savetxt("data/tuchor_updated_err_bv_annotated.csv",t,delimiter=',',fmt='%s')
+    
+    tuchor_c,tuchor_l = np.array(tuchor_c),np.log10(np.array(tuchor_l))
+    return tuchor_c,tuchor_l,tuchor_lerr
+
+"""    
 def abdor():
     import li_constants as const
     abdor_c = []
@@ -55,7 +110,7 @@ def tuchor():
             tuchor_lerr.append(float(line[4]))
     tuchor_c,tuchor_l = np.array(tuchor_c),np.log10(np.array(tuchor_l))
     return tuchor_c,tuchor_l,tuchor_lerr
-
+"""
 #reads in data and generates fits
 def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
     if (fromFile):
@@ -158,7 +213,7 @@ def undo_picklable(fits):
             fits[c][i] = my_fits.piecewise(const.BV,fits[c][i])
     return fits
 
-
+"""
 def schkolnik_betaPic():
     import li_constants as li_const
     t = np.genfromtxt("data/Shkolnik_2017_betaPic.csv",delimiter=',',dtype=str)
@@ -174,8 +229,33 @@ def schkolnik_betaPic():
         ul.append(row[4]=='<')
         names.append(row[0])
     return b,l,ul,names
+"""
+    
+def schkolnik_betaPic(annotate=False):
+    import li_constants as li_const
+    t = np.genfromtxt("data/Shkolnik_2017_betaPic.csv",delimiter=',',dtype=str)
+    
+    b,l,ul,names = [],[],[],[]
+    for i,row in enumerate(t[1:]):
+        if row[13] != '': continue
+        if not utils.isFloat(row[1]) or not utils.isFloat(row[5]) \
+                or row[12] != 'Y' or float(row[5]) <= 0: 
+            t[i+1,13] = 'OOR'
+            continue
+        bv,ew = float(row[1]),np.log10(float(row[5]))
+        if not li_const.inRange(bv,ew): 
+            t[i+1,13] = 'OOR'
+            continue
+        b.append(bv)
+        l.append(ew)
+        ul.append(row[4]=='<')
+        names.append(row[0])
+    
+    if annotate:
+        np.savetxt("data/Shkolnik_2017_betaPic_annotated.csv",t,delimiter=',',fmt='%s')
+    return b,l,ul,names
 
-def mentuch2008_betaPic():
+def mentuch2008_betaPic(annotate=False):
     import li_constants as li_const
     bp_c = []
     bp_l = []
@@ -183,7 +263,7 @@ def mentuch2008_betaPic():
     names = []
     bp_err = []
     t = np.genfromtxt('data/beta_pic_updated_err_2MASS.txt', delimiter='\t',dtype=str,skip_header=2)
-    for line in t:
+    for i,line in enumerate(t):
         if line[11] != '': continue
         if in_bounds(float(line[4]),float(line[5]),li_const):
             bp_c.append(float(line[4]))
@@ -191,7 +271,12 @@ def mentuch2008_betaPic():
             lim_bp.append(False)
             names.append(line[10])
             bp_err.append(float(line[6]))
+        else:
+            t[i,11] = 'OOR'
     bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
+    
+    if annotate:
+        np.savetxt("data/beta_pic_updated_err_2MASS_annotated.txt",t,delimiter='\t',fmt='%s')
     return bp_c,bp_l,lim_bp,bp_err,names
 
 def merged_betaPic():

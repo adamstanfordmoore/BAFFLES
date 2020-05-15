@@ -11,7 +11,8 @@ import datetime
 def main():
     date = datetime.datetime.now().strftime("%m%d%y")
     bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=True)
-    _,res_arr = my_fits.get_fit_residuals(bv_m,fits,'calcium',None,li_range=None,linSpace=False,scale_by_std= True)
+    _,res_arr = my_fits.get_fit_residuals(bv_m,fits,'calcium',None,li_range=None,
+                linSpace=False,scale_by_std= False,vs_age_fit=False)
     my_fits.fit_histogram('calcium',residual_arr=res_arr,fromFile=False,saveToFile=True)
    
     baf = baffles.age_estimator('calcium',default_grids=False)
@@ -21,7 +22,8 @@ def main():
     const = utils.init_constants('lithium')    
     bv_m, upper_lim, fits = readData.read_lithium(fromFile=False,saveToFile=True)
     my_fits.MIST_primordial_li(ngc2264_fit=fits[const.CLUSTER_NAMES.index('NGC2264')][0],fromFile=False, saveToFile=True)
-    _,res_arr= my_fits.get_fit_residuals(bv_m,fits,'lithium',upper_lim,li_range=None,linSpace=False)
+    _,res_arr= my_fits.get_fit_residuals(bv_m,fits,'lithium',upper_lim,li_range=None,linSpace=False,
+                                        vs_age_fit=False,zero_center=True)
     my_fits.fit_histogram('lithium',residual_arr=res_arr,fromFile=False,saveToFile=True)
     
     baf2 = baffles.age_estimator('lithium',default_grids=False)
