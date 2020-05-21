@@ -503,9 +503,10 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
     
 
     allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,
-                            li_range,age_range=age_range,scale_by_std= False,vs_age_fit=True,zero_center=True)#metal=='calcium')
+                            li_range,age_range=age_range,scale_by_std= False,vs_age_fit=True,zero_center=True)
     pdf_fit,cdf_fit = my_fits.fit_histogram(metal,totalStars,fromFile=False,saveToFile=False)
-
+    #pdf_fit,cdf_fit = my_fits.fit_student_t(metal,totalStars,fromFile=False,saveToFile=True)
+    
     mu = np.mean(totalStars)
     sigma = np.std(totalStars)
     
@@ -515,11 +516,9 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
     if not plot_cdf:
         plt.plot(x,pdf_fit(x),color='red',linewidth=2)
         plt.plot(x,prob.gaussian(x,mu,sigma),linestyle = '--',color='gray')
-        #plt.rcParams["figure.figsize"] = (8,6)
         plt.hist(allClusters,bins=30,stacked=True,density=True,color=const.COLORS)
     else:        
         plt.plot(x,cdf_fit(x),color='red',linewidth=2,zorder=10)
-        #plt.rcParams["figure.figsize"] = (4,3)
         plt.plot(x,prob.gaussian_cdf(x,mu,sigma),linestyle = '--',color='gray',linewidth=2)
         cdf = np.array([(totalStars < n).sum() for n in x],dtype='float')
         cdf /= cdf[-1]

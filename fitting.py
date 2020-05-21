@@ -9,6 +9,7 @@ from numpy import genfromtxt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy import interpolate,integrate
+from scipy.stats import t as scipy_t
 from scipy.stats import norm
 from scipy.optimize import minimize,curve_fit
 from scipy.signal import savgol_filter
@@ -485,13 +486,10 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
                       linSpace=False,scale_by_std=False,vs_age_fit=True,zero_center=True):
     const = utils.init_constants(metal)
     allClusters = []
-    #residual_arr = []
 
-    ######
     grid_median = np.load(const.DEFAULT_MEDIAN_GRID)
     mu_interp = interpolate.interp2d(const.AGE,const.BV_S,grid_median) if metal == 'lithium' else \
                       interpolate.interp1d(const.AGE,grid_median)
-    #####
 
     for c in range(len(fits)):
         if age_range is not None and not (age_range[0] <= const.CLUSTER_AGES[c]\
@@ -531,6 +529,49 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
         for i in range(len(allClusters)):
             allClusters[i] = np.array(allClusters[i]) - resid_mean
     return allClusters,residual_arr
+
+
+def lorentz_pdf(x,xo,gamma):
+    return gamma/((x-xo)**2 + gamma**2)/np.pi
+
+def lorentz_cdf(x,xo,gamma):
+    return np.arctan((x-xo)/gamma)/np.pi + 0.5
+ 
+def student_pdf(x,df, scale):
+    return scipy_t.pdf(x, df, 0, scale)
+   
+def student_cdf(x,df, scale):
+    return scipy_t.cdf(x, df, 0, scale)
+
+
+def fit_student_t(metal,residual_arr=None,fromFile=True,saveToFile=False):
+    assert residual_arr is not None or fromFile, "Must provide residuals if not \
+            reading from file"
+    popt = None
+    if fromFile:
+        popt = np.load('grids/' + metal + '_student_t_likelihood_params.npy')
+    else:
+        buf = 0.1
+        x = np.linspace(np.min(residual_arr)-buf,np.max(residual_arr)+buf,1000) #1000 for linear?
+        cdf = np.array([(residual_arr < n).sum() for n in x],dtype='float')
+        cdf /= cdf[-1]
+    
+        #popt,pcov = curve_fit(lorentz_cdf,x,cdf)
+        popt,pcov = curve_fit(student_cdf,x,cdf,p0=[1,.1])
+    
+        print("Optimal params=", popt)  
+    
+    def pdf_fit(input):
+        return student_pdf(input, *popt) 
+        #return lorentz_pdf(input,*popt)
+    def cdf_fit(input):
+        return student_cdf(input, *popt) 
+        #return lorentz_cdf(input,*popt)
+
+    if not fromFile and saveToFile:
+        np.save('grids/' + metal + '_student_t_likelihood_params',popt)
+    return pdf_fit,cdf_fit
+
 
 def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     if fromFile:

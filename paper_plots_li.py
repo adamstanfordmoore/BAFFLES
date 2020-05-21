@@ -55,8 +55,8 @@ def main():
     #metal_vs_age()
     #metal_vs_age_subplots()
     #bldb()
-    #fit_hist()
-    #combined_validation()
+    fit_hist()
+    combined_validation()
     #get_CI() #not actual plotting
     #combined_validation_subplots()
     #moving_group()
@@ -66,7 +66,7 @@ def main():
     
     
     
-    get_CI_hyades_no_dip()
+    #get_CI_hyades_no_dip()
     #plot_fits()
     #posteriors()
     #bv_test()

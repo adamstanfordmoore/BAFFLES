@@ -1,6 +1,8 @@
 """
 Adam Stanford-Moore
-2/11/19
+5/21/20
+This Script refreshes all stored fits including mean grids
+Run "python refresh.py" whenever changes are made to data files, or how the fits are done
 """
 import fitting as my_fits
 import baffles
@@ -20,8 +22,7 @@ def main():
     my_fits.fit_histogram('calcium',residual_arr=res_arr,fromFile=False,saveToFile=True)
     
     
-    
-    
+        
     const = utils.init_constants('lithium')    
     bv_m, upper_lim, fits = readData.read_lithium(fromFile=False,saveToFile=True)
     baf2 = baffles.age_estimator('lithium',default_grids=False)

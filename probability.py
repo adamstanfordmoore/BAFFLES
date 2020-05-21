@@ -45,13 +45,16 @@ def polyspace(start,stop,num,power=2):
     a = (stop - start)/(num-1)**power
     return a*x**power + c
 
+# Space points according to the area of a guassian
+# Divide gaussian into num equal area sections and put a point in the middle of each
+# The result is denser sampling near the mean and less near the tails 
 def gaussian_cdf_space(mu,sig,num,sig_lim=5):
     import fitting as my_fits
     x = np.linspace(mu - sig_lim*sig,mu + sig_lim*sig,300)
     cdf = gaussian_cdf(x,mu,sig)
     fit = my_fits.piecewise(cdf,x)
-    temp = np.linspace(0,1,num+1)
-    y = (temp[1:] + temp[:-1])/2
+    temp = np.linspace(0,1,num+1) #splitting into equal area sections
+    y = (temp[1:] + temp[:-1])/2 #making point the center of each section
     arr = fit(y)
     #plt.plot(x,gaussian(x,mu,sig))
     #plt.scatter(arr,gaussian(arr,mu,sig))

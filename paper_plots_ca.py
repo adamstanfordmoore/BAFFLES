@@ -27,9 +27,9 @@ def main():
     #metal_vs_bv()
     #metal_vs_age()
     #scatter_vs_age()
-    #fit_hist()
+    fit_hist()
     #baffles_vs_mamajek()
-    combined_validation_subplots()
+    #combined_validation_subplots()
     #combined_validation()
 
     #posteriors()

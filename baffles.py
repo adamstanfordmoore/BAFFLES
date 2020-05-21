@@ -98,6 +98,8 @@ class age_estimator:
             self.set_grids(grid_median,grid_sigma)
         elif (default_grids):
             self.set_grids(self.const.DEFAULT_MEDIAN_GRID,self.const.DEFAULT_SIGMA_GRID)
+        self.pdf_fit,self.cdf_fit = my_fits.fit_histogram(metal,fromFile=True)
+        #self.pdf_fit,self.cdf_fit = my_fits.fit_student_t(metal,fromFile=True)
     
     def set_grids(self,grid_median,grid_sigma):
         if (type(grid_median) == str and type(grid_median) == str):
@@ -244,9 +246,8 @@ class age_estimator:
     
     def calcium_likelihood(self,bv,rhk):
         mu = self.grid_median 
-        pdf_fit,cdf_fit = my_fits.fit_histogram(metal='calcium',fromFile=True)
         #like gaussian likelihood, divide by std which scales height of function
-        pdfs = pdf_fit(rhk - mu)
+        pdfs = self.pdf_fit(rhk - mu)
         #pdfs = pdf_fit((rhk - mu)/self.grid_sigma) / self.grid_sigma
         assert (pdfs >= 0).all(), "Error in numerical fit_histogram" + str(pdfs)
         return np.sum(pdfs,axis=0)
@@ -260,25 +261,18 @@ class age_estimator:
         if not measure_err:
             measure_err = self.const.MEASURE_ERR
         
-        pdf_fit,cdf_fit = my_fits.fit_histogram(metal=self.const.METAL_NAME,fromFile=True)
-        #pdf_fit = lambda x: norm.pdf(x,loc=0,scale=0.17)
-        #cdf_fit = lambda x: norm.cdf(x,loc=0,scale=0.17)
-        
-        #BV = np.linspace(max(bv - 3*bv_uncertainty,self.const.BV_RANGE[0]),\
-        #        min(bv + 3*bv_uncertainty,self.const.BV_RANGE[1]),300)
         num_points = self.const.NUM_BV_POINTS if bv_uncertainty <= 0.03 else self.const.NUM_BV_POINTS * (bv_uncertainty/0.03)
-        BV = prob.gaussian_cdf_space(bv,bv_uncertainty,num_points, sig_lim=3)
-        #bv_gauss = prob.gaussian(BV,bv,bv_uncertainty)
-        #BV,bv_weight = prob.desample(BV,bv_gauss,self.const.NUM_BV_POINTS)
         
-        #bv_weight = bv_weight.reshape(len(bv_weight),1)
-
+        # By spacing the points according to area, the weighting for each B-V point is 
+        #implicit.  More points are clustered near bv than farther
+        BV = prob.gaussian_cdf_space(bv,bv_uncertainty,num_points, sig_lim=3)
+        
         f = interpolate.interp2d(self.const.AGE,self.const.BV_S,self.grid_median)
         mu = f(self.const.AGE,BV)
 
         if isUpperLim:
             #integration done in logspace with log li and log mu
-            astro_gauss = cdf_fit(np.log10(li) - mu)
+            astro_gauss = self.cdf_fit(np.log10(li) - mu)
             final_sum = np.sum(astro_gauss,axis=0)
             return final_sum
 
@@ -291,7 +285,7 @@ class age_estimator:
         METAL = self.const.METAL[mask]
         METAL = METAL.reshape(1,1,len(METAL))
         
-        astro_gauss = pdf_fit(np.log10(METAL) - mu)/METAL
+        astro_gauss = self.pdf_fit(np.log10(METAL) - mu)/METAL
         product = li_gauss*astro_gauss
         integral = np.trapz(product,METAL,axis=2) # now 2d matrix
         final_sum = np.sum(integral,axis=0)
