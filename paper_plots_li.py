@@ -22,7 +22,7 @@ METAL = "lithium"
 bv_m, upper_lim, fits = readData.read_lithium()#fromFile=False,saveToFile=False)
 #bv_m,upper_lim = np.array(bv_m),np.array(upper_lim)
 bv_ca, ca_fits = readData.read_calcium()#fromFile=False,saveToFile=False)
-print([len(x[0]) for x in bv_m])
+print("Number of Li Stars= ",[len(x[0]) for x in bv_m])
 #exit()
 #CLUSTER_NAMES = ['NGC2264',r'$\beta$ Pic','IC2602',r'$\alpha$ Per','Pleiades',\
 #                 'M35','M34','Coma','Hyades','M67']
@@ -55,9 +55,9 @@ def main():
     #metal_vs_age()
     #metal_vs_age_subplots()
     #bldb()
-    fit_hist()
+    #fit_hist()
     #combined_validation()
-    #get_CI()
+    #get_CI() #not actual plotting
     #combined_validation_subplots()
     #moving_group()
     #notable_stars()
@@ -66,7 +66,7 @@ def main():
     
     
     
-    
+    get_CI_hyades_no_dip()
     #plot_fits()
     #posteriors()
     #bv_test()
@@ -336,7 +336,7 @@ def get_CI():
     baf_default = baffles.age_estimator(METAL)
 
     for index,i in enumerate([1,2,7,9]):  
-        print("/n", const.CLUSTER_NAMES[i])
+        print("\n", const.CLUSTER_NAMES[i])
         #baf = baffles.age_estimator(METAL,default_grids=False)
         #baf.make_grids(bv_m,fits,omit_cluster=i)
         #p_val = baf.posterior_product(bv_m[i][0],bv_m[i][1],upperLim_arr=upper_lim[i])
@@ -347,6 +347,22 @@ def get_CI():
         givenAge=const.CLUSTER_AGES[i]
 
         print('Isochronal age exists within %f %% CI' % prob.get_percentile(age,y,givenAge))
+
+def get_CI_hyades_no_dip():
+    const = utils.init_constants(METAL)
+    baf_default = baffles.age_estimator(METAL)
+
+    for index,i in enumerate([8]):  
+        print("\n", const.CLUSTER_NAMES[i])
+        bv_arr = np.array(bv_m[i][0])[np.array(bv_m[i][0]) > 0.55]
+        metal_array = np.array(bv_m[i][1])[np.array(bv_m[i][0]) > 0.55]
+        ul_arr = np.array(upper_lim[i])[np.array(bv_m[i][0]) > 0.55]
+        p = baf_default.posterior_product(bv_arr,metal_array,upperLim_arr=ul_arr,showStars=True)
+        age,y = const.AGE,p.array
+        givenAge=const.CLUSTER_AGES[i]
+
+        print('Isochronal age exists within %f %% CI' % prob.get_percentile(age,y,givenAge))
+
 
 
 def omitting(validation=False):

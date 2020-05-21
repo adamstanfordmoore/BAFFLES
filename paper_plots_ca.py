@@ -18,7 +18,7 @@ import utils
 METAL = "calcium"
 upper_lim = None
 bv_m,fits = readData.read_calcium()#fromFile=False,saveToFile=False,fit_degree=0)
-print([len(x[0]) for x in bv_m])
+print("Num Calcium Stars= ", [len(x[0]) for x in bv_m])
 
 def main():
 
@@ -27,9 +27,9 @@ def main():
     #metal_vs_bv()
     #metal_vs_age()
     #scatter_vs_age()
-    fit_hist()
+    #fit_hist()
     #baffles_vs_mamajek()
-    #combined_validation_subplots()
+    combined_validation_subplots()
     #combined_validation()
 
     #posteriors()
@@ -189,7 +189,7 @@ def combined_validation_subplots():
     cbar_ax = fig.add_axes([0.92, 0.25, 0.02, 0.5])
     fig.colorbar(sc, cax=cbar_ax)
 
-    for index,i in enumerate([0,4,5,6,7,8]):        #[1,4,5,6]):
+    for index,i in enumerate([1,3,5,6,7,8]):        #[0,4,5,6,7,8] for submission 2!
         print(const.CLUSTER_NAMES[i])
         baf = baffles.age_estimator(METAL,default_grids=False)
         baf.make_grids(bv_m,fits,omit_cluster=i)

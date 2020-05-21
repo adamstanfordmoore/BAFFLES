@@ -503,7 +503,7 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
     
 
     allClusters, totalStars = my_fits.get_fit_residuals(bv_m,fits,metal,upper_limits,
-                            li_range,age_range=age_range,scale_by_std= False,vs_age_fit=True,zero_center=False)#metal=='calcium')
+                            li_range,age_range=age_range,scale_by_std= False,vs_age_fit=True,zero_center=True)#metal=='calcium')
     pdf_fit,cdf_fit = my_fits.fit_histogram(metal,totalStars,fromFile=False,saveToFile=False)
 
     mu = np.mean(totalStars)
@@ -523,10 +523,6 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
         plt.plot(x,prob.gaussian_cdf(x,mu,sigma),linestyle = '--',color='gray',linewidth=2)
         cdf = np.array([(totalStars < n).sum() for n in x],dtype='float')
         cdf /= cdf[-1]
-        
-        print("stars",np.median(totalStars))
-        print("Originally",my_fits.piecewise(cdf,x)(0.5))
-        print("Numerical Fit",my_fits.piecewise(cdf_fit(x),x)(0.5))
         
         plt.plot(x,cdf,linewidth=3)
         for c in range(len(allClusters)):

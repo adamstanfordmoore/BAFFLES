@@ -482,7 +482,7 @@ def cluster_scatter_from_stars(bv_m,fits):
     return fits
 
 def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=None,
-                      linSpace=False,scale_by_std=False,vs_age_fit=False,zero_center=False):
+                      linSpace=False,scale_by_std=False,vs_age_fit=True,zero_center=True):
     const = utils.init_constants(metal)
     allClusters = []
     #residual_arr = []
@@ -524,9 +524,12 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
         allClusters.append(arr)
 
     residual_arr = np.concatenate(allClusters)
-    print("median,mean = ",np.median(residual_arr),np.mean(residual_arr) )
     if zero_center:
+        print("Subtracting off median of %.5f from residuals, (mean = %.5f)" % (np.median(residual_arr),np.mean(residual_arr)))
+        resid_mean = np.median(residual_arr) 
         residual_arr -= np.median(residual_arr)
+        for i in range(len(allClusters)):
+            allClusters[i] = np.array(allClusters[i]) - resid_mean
     return allClusters,residual_arr
 
 def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):

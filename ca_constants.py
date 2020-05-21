@@ -36,8 +36,8 @@ BV_UNCERTAINTY = None #B-V not incorporated into fits
 MEASURE_ERR = None #no default uncertainty in measurement 
 
 #Fits as a function of age
-DEFAULT_MEDIAN_GRID = "grids/median_rhk_051420.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_rhk_051420.npy"
+DEFAULT_MEDIAN_GRID = "grids/median_rhk_052120.npy"
+DEFAULT_SIGMA_GRID = "grids/sigma_rhk_052120.npy"
 
 #Previous submission 2
 #DEFAULT_MEDIAN_GRID = "grids/median_rhk_032120.npy"

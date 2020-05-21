@@ -156,60 +156,73 @@ def make_table(MR = False):
     final_table = np.load("final_table.npy")
 
 
-    delimiter = ',' if MR else ' & '
+    delimiterMR = ','
 
     baf_li = baffles.age_estimator('lithium')
     baf_ca = baffles.age_estimator('calcium')
     #[Object,RA,Dec,Sp Type,B-V,R'HK,Li EW,Source]
-    f = open("massive_table.txt",'w+') if not MR else open("baffles_table2_machine_readable.csv",'w+')
+    f = open("massive_table.txt",'w+') 
+    fMR = open("baffles_table2.csv",'w+') 
     cdf = ['2.5%','16%','50%','84%','97.5%']
     column_head = ['Name','RA','Dec','Sp. Type','B-V',"logR'HK",'Li EW','Ref.']
     column_head += ["R'HK Age at CDF="+x for x in cdf]
     column_head += ["Li EW Age at CDF="+x for x in cdf]
     column_head += ["Final Age at CDF="+x for x in cdf]
     units = ['','h m s','h m s','','mags'," ",'mA','','','','','','','','','','','','','','','','']
-    f.write(delimiter.join(column_head))
-    f.write('\n')
-    f.write(delimiter.join(units))
-    f.write('\n')
+    fMR.write(delimiterMR.join(column_head))
+    fMR.write('\n')
+    fMR.write(delimiterMR.join(units))
+    fMR.write('\n')
     
     for row in final_table:
         arr = []
-        arr += list(row[0:4]) if not MR else [x.replace('$','') for x in row[0:4]]
-        bv = float(row[4])
-        arr.append("%.2f" % bv) if not MR else arr.append("%.3g" % bv)
+        arrMR = []
+        arr += list(row[0:4]) 
+        arrMR += [x.replace('$','') for x in row[0:4]]
         
+        bv = float(row[4])
+        arr.append("%.2f" % bv) 
+        arrMR.append("%.3g" % bv)        
 
         p_ca,p_li = None,None
         if utils.isFloat(row[5]):
             rhk = float(row[5])
-            arr.append('$%.2f$' % rhk) if not MR else arr.append('%.3f' % rhk)
+            arr.append('$%.2f$' % rhk) 
+            arrMR.append('%.3f' % rhk)
             if ca_const.inRange(bv,rhk):
                 p_ca = baf_ca.get_posterior(bv,rhk,showPlot=False)
         else:
             arr.append(empty)
+            arrMR.append(empty)
        
         ew = None
         if utils.isFloat(row[6]):
             ew = float(row[6])
-            arr.append('%d' % ew) if not MR else arr.append('%g' % ew)
+            arr.append('%d' % ew)
+            arrMR.append('%g' % ew)
         else:
             arr.append(empty)
+            arrMR.append(empty)
         
-        arr.append(row[7]) if not MR else arr.append(row[7].replace(',',';'))
+        arr.append(row[7]) 
+        arrMR.append(row[7].replace(',',';'))
 
         if bv is not None and ew is not None and ew > 0 and li_const.inRange(bv,np.log10(ew)):
             p_li = baf_li.get_posterior(bv,ew,showPlot=False)
         
         if p_ca is not None:
-            arr += printStats(p_ca.stats,MR)
+            arr += printStats(p_ca.stats)
+            arrMR += printStats(p_ca.stats,MR=True)
         else:
             arr += [empty]*5
+            arrMR += [empty]*5
 
         if p_li is not None:
-            arr += printStats(p_li.stats,MR)
+            arr += printStats(p_li.stats)
+            arrMR += printStats(p_li.stats,MR=True)
         else:
             arr += [empty]*5
+            arrMR += [empty]*5
 
         
         if p_ca is None and p_li is None:
@@ -219,24 +232,30 @@ def make_table(MR = False):
             prod = p_ca.array * p_li.array
             prob.normalize(ca_const.AGE,prod)
             stats = prob.stats(ca_const.AGE,prod)
-            arr += printStats(stats,MR)
+            arr += printStats(stats)
+            arrMR += printStats(stats,MR=True)
         elif p_ca is not None:
-            arr += printStats(p_ca.stats,MR)
+            arr += printStats(p_ca.stats)
+            arrMR += printStats(p_ca.stats,MR=True)
         elif p_li is not None:
-            arr += printStats(p_li.stats,MR)
+            arr += printStats(p_li.stats)
+            arrMR += printStats(p_li.stats,MR=True)
         else:
             arr += [empty]*5
-        
-        f.write(' & '.join(arr) + " \\\\") if not MR else f.write(delimiter.join(arr))   
+            arrMR += [empty]*5
+            
+        f.write(' & '.join(arr) + " \\\\")
+        fMR.write(delimiterMR.join(arrMR))   
         f.write('\n')
+        fMR.write('\n')
     f.close()
+    fMR.close()
 
 
 def main():
-    argv = sys.argv
-    make_table(MR = ('MR' in argv))
-
-
+    #argv = sys.argv
+    #make_table(MR = ('MR' in argv))
+    make_table()
 
 
 
