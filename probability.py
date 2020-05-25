@@ -109,16 +109,6 @@ def stats(age,y,upperLim=False):
     fit = my_fits.piecewise(c,age)
     return fit(probs)
 
-    #ages = []
-    #for cum_prob in probs:
-    #    if cum_prob == 0: #handle edge case
-    #        ages.append(age[0])
-    #    else:
-    #        i = bisect.bisect_left(c,cum_prob)
-    #        a = (age[i] - age[i-1])/(c[i] - c[i-1]) * (cum_prob - c[i-1]) + age[i-1]
-    #        ages.append(a)
-    #return ages
-
 # takes in a PDF given by age,y and a given age to compare to
 # returns the percentile X such that given Age is within X %
 def get_percentile(age,y,givenAge):

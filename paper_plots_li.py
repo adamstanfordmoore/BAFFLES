@@ -1,6 +1,7 @@
 """
 Adam Stanford-Moore
-2/11/19
+5/22/20
+Code for plotting the lithium plots in the final BAFFLES paper
 """
 import warnings
 from matplotlib.backends.backend_pdf import PdfPages
@@ -17,77 +18,41 @@ import readData
 import fitting as my_fits
 import utils
 import bisect
+from os.path import join
+import os
+if not os.path.exists('plots'):
+    os.mkdir('plots')
 
 METAL = "lithium"
 bv_m, upper_lim, fits = readData.read_lithium()#fromFile=False,saveToFile=False)
-#bv_m,upper_lim = np.array(bv_m),np.array(upper_lim)
 bv_ca, ca_fits = readData.read_calcium()#fromFile=False,saveToFile=False)
 print("Number of Li Stars= ",[len(x[0]) for x in bv_m])
-#exit()
-#CLUSTER_NAMES = ['NGC2264',r'$\beta$ Pic','IC2602',r'$\alpha$ Per','Pleiades',\
-#                 'M35','M34','Coma','Hyades','M67']
 
 def printName(n):
     print(" \n")
-    #print("scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/")
-    #print "sips -s format png -s formatOptions best ~/Desktop/" + n[6:] + " --out ~/Desktop/"
 
   
 def main():
-    #baf = baffles.age_estimator(METAL)
-    #mask = bv_m[8][0] > 0.55
-    #b,l = bv_m[8][0][mask],bv_m[8][1][mask]
-    #baf.posterior_product(b,l,upperLim_arr=None,showPlot=True,title='Hyades B-V > .55',givenAge=700)
-
-
-    #pp=PdfPages('plots/lithium_grid_mean')
-    #for i in range(0,1000,200):
-    #    plt.imshow(baf.grid_median[:,i:i+200])
-    #    plt.xlabel("%d < Age < %d" % (const.AGE[i],const.AGE[i+199]))
-    #    plt.ylabel("%.2f < B-V < %.2f" % (.35,1.9))
-    #    plt.colorbar()
-    #    pp.savefig()
-    #    plt.show()
-    #pp.close()
-
-
     #metal_vs_bv()
     #metal_vs_age()
     #metal_vs_age_subplots()
     #bldb()
-    fit_hist()
-    combined_validation()
-    #get_CI() #not actual plotting
+    #fit_hist()
     #combined_validation_subplots()
     #moving_group()
     #notable_stars()
     #plot_fits_subplots()
     
-    
-    
-    
-    #get_CI_hyades_no_dip()
+    #---------Not in Paper-----------
+    #combined_validation() 
+    get_CI_hyades_no_ul()
     #plot_fits()
-    #posteriors()
-    #bv_test()
+
     return
 
-#def bv_test():
-#    np.random.seed(300)
-#    b = np.random.uniform(cont.BV_RANGE[0],const.BV_RANGE[1],50)
-#    l = np.random.uniform(cont.METAL_RANGE_LIN[0],const.METAL_RANGE_LIN[1],50)
-#    bv_err1,bv_err2 = [.01]*50,[.03]*50
-#    baf = baffles.age_estimator('lithium')
-#    means,means2 = [],[]
-#    for err in [bv_err1,bv_err2]:
-#    for i in range(len(b)): #,l,bv_err):
-#        p = p_li = baf_li.get_posterior(b[i],l[i],bv_uncertainty=bv_err[i])
-#        means.append(p.stats[2])
-#    plt.hist(means)
-#    plt.show()
 
 def moving_group():
-    name = 'plots/moving_group_age.pdf'
+    name = join('plots','moving_group_age.pdf')
     pp = PdfPages(name)
     baf = baffles.age_estimator('lithium')
     abdor = readData.abdor()
@@ -95,23 +60,15 @@ def moving_group():
     plt.title("AB Dor")
     #my_plot.plot_fits([abdor],[fit],METAL,pdfPage=pp,showPlots=False)
 
-    p = baf.posterior_product(abdor[0],abdor[1],None,abdor[2],pdfPage=pp,showPlot=False,showStars=True,title='AB Dor',givenAge=149,givenErr=[-19,51])
+    p = baf.posterior_product(abdor[0],abdor[1],None,abdor[2],pdfPage=pp,showPlot=False,
+                            showStars=True,title='AB Dor',givenAge=149,givenErr=[-19,51])
 
     tuc = readData.tuchor()
     fit = my_fits.poly_fit(tuc[0],tuc[1],2,scatter=True)
     plt.title("Tuc/Hor")
     #my_plot.plot_fits([tuc],[fit],METAL,pdfPage=pp,showPlots=False)
-    p2 = baf.posterior_product(tuc[0],tuc[1],None,tuc[2],pdfPage=pp,showPlot=False,showStars=True,title='Tuc/Hor',givenAge=45,givenErr=4)
-
-    #baf.make_grids(bv_m,fits,upper_lim,omit_cluster=1)
-    #bp_b,bp_l,bp_ul,bp_err,names = readData.merged_betaPic()
-    #print len(bp_b)
-    #for name,b,l,ul in zip(names,bp_b,bp_l,bp_ul):
-    #    print name,'\t',b,'\t',l,'\t',ul
-    #fit = my_fits.poly_fit(bp_b,bp_l,2,bp_ul)
-    #plt.title(r"$\beta$ Pic")
-    #my_plot.plot_fits([[bp_b,bp_l]],[fit],METAL,pdfPage=pp,showPlots=False,upper_lim=[bp_ul])
-    #baf.posterior_product(bp_b,bp_l,None,bp_err,bp_ul,pdfPage=pp,showPlot=False,showStars=True,givenAge=24,givenErr=3,title=r'$\beta$ Pic')
+    p2 = baf.posterior_product(tuc[0],tuc[1],None,tuc[2],pdfPage=pp,showPlot=False,
+                                showStars=True,title='Tuc/Hor',givenAge=45,givenErr=4)
 
     print("We derive ages for AB Dor: $%d_{%d}^{+%d}$ Myr, and Tuc/Hor: $%d_{%d}^{+%d}$ Myr" \
            % (p.stats[2],p.stats[1]-p.stats[2],p.stats[3]-p.stats[2],
@@ -124,15 +81,16 @@ def moving_group():
 
 def plot_fits(cluster=None):
     #Plot Fits
-    name = 'plots/' + METAL + '_fits.pdf'
+    name = join('plots', METAL + '_fits.pdf')
     pp=PdfPages(name)
-    my_plot.plot_fits(bv_m,fits,METAL,pdfPage=pp,showPlots=False,upper_lim=upper_lim,shadeScatter=True,specific_clusters=cluster)
+    my_plot.plot_fits(bv_m,fits,METAL,pdfPage=pp,showPlots=False,upper_lim=upper_lim,
+                    shadeScatter=True,specific_clusters=cluster)
     printName(name)
     pp.close()
 
 def plot_fits_subplots():
 
-    name = 'plots/' + METAL + '_fits_subplots.pdf'
+    name = join('plots', METAL + '_fits_subplots.pdf')
     pp=PdfPages(name)
     fig,ax = plt.subplots(5,2,sharex=True,sharey=True,figsize=(12,12))
 
@@ -145,7 +103,8 @@ def plot_fits_subplots():
     
     # Set common labels
     fig.text(0.5, 0.04, r'$(B-V)_o$',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center')
-    fig.text(0.06, 0.5, r'Log(Li EW/m$\AA$)',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
+    fig.text(0.06, 0.5, r'Log(Li EW/m$\AA$)',size=my_plot.AXIS_LABEL_SIZE, ha='center', 
+            va='center', rotation='vertical')
 
     pp.savefig()
     plt.close()    
@@ -156,19 +115,21 @@ def plot_fits_subplots():
 
 def metal_vs_bv():
     #Metal vs B-V
-    name = 'plots/' +METAL + '_metal_vs_bv.pdf'
+    name = join('plots',METAL + '_metal_vs_bv.pdf')
     pp=PdfPages(name)
     ###clusters = [0,4,6,7]
-    my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=False,upper_lim=upper_lim,primordial_li=True,specific_clusters = None,legend=False)
-    my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=False,upper_lim=upper_lim,primordial_li=True,fits_only=True,shadeScatter=False)
+    my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=False,upper_lim=upper_lim,primordial_li=True,
+                        specific_clusters = None,legend=False)
+    my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=False,upper_lim=upper_lim,primordial_li=True,
+                        fits_only=True,shadeScatter=False)
     printName(name)
     pp.close()
 
 def metal_vs_age():
     #Metal vs Age
-    name = 'plots/' + METAL + '_metal_v_age.pdf'
+    name = join('plots', METAL + '_metal_v_age.pdf')
     pp=PdfPages(name)
-    bvRange = const.BV_S #np.linspace(0.3,1.9,40) #np.arange(1.3,2,.1)#np.arange(0.3,2,.1) if METAL == 'lithium' else np.arange(.45,.9,.05) #np.arange(.35,1.9,.1)
+    bvRange = const.BV_S 
     for bv in bvRange:
         print("bv: ",bv)
         my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=False,shadeScatter=False,\
@@ -179,11 +140,11 @@ def metal_vs_age():
 
 def metal_vs_age_subplots():
     #Metal vs Age
-    name = 'plots/' + METAL + '_metal_v_age_subplots.pdf'
+    name = join('plots', METAL + '_metal_v_age_subplots.pdf')
     pp=PdfPages(name)
     fig,ax = plt.subplots(4,2,sharex=True,sharey=True,figsize=(10,12))
     #plt.tight_layout()
-    bvRange = [.448,.621,.768,.965,1.137,1.310,1.506,1.703]#const.BV_S #np.linspace(0.3,1.9,40) #np.arange(1.3,2,.1)#np.arange(0.3,2,.1) if METAL == 'lithium' else np.arange(.45,.9,.05) #np.arange(.35,1.9,.1)
+    bvRange = [.448,.621,.768,.965,1.137,1.310,1.506,1.703]
     for i,bv in enumerate(bvRange):
         print("bv: ",bv)
         my_plot.metal_vs_age_subplot(ax[int(i/2),i%2],fits,METAL,bv,pp,showPlots=False,shadeScatter=False,\
@@ -202,14 +163,14 @@ def metal_vs_age_subplots():
 
 def scatter_vs_bv():
     #Scatter vs B-V
-    pp=PdfPages('plots/' + METAL + '_scatter_vs_bv_with_offset.pdf')
+    pp=PdfPages(join('plots', METAL + '_scatter_vs_bv_with_offset.pdf'))
     my_plot.scatter_vs_bv(fits,METAL,pp,showPlots=True)
-    names.append('plots/' + METAL + '_scatter_vs_bv_with_offset.pdf')
+    names.append(join('plots', METAL + '_scatter_vs_bv_with_offset.pdf'))
     pp.close()
 
 def scatter_vs_age():
     #Scatter vs Age
-    name = 'plots/' +METAL + '_scatter_vs_age.pdf'
+    name = join('plots',METAL + '_scatter_vs_age.pdf')
     pp=PdfPages(name)
     my_plot.scatter_vs_age(fits,METAL,.65,pp,showPlots=True,bv_m=bv_m,upper_lim=upper_lim)
     pp.close()
@@ -217,7 +178,7 @@ def scatter_vs_age():
 
 def fit_hist():
     #Fit histogram
-    name = 'plots/' +METAL + '_hist_fit.pdf'
+    name = join('plots',METAL + '_hist_fit.pdf')
     pp=PdfPages(name)
     my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=False,upper_limits=upper_lim)
     my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=False,upper_limits=upper_lim,plot_cdf=True)
@@ -232,7 +193,7 @@ def bldb():
 
 def combined_validation():
     #Omitting each cluster
-    name = 'plots/' +METAL + '_combined_validation.pdf'
+    name = join('plots',METAL + '_combined_validation.pdf')
     pp=PdfPages(name)
     baf_default = baffles.age_estimator(METAL)
     for i in range(len(bv_m)):
@@ -253,7 +214,7 @@ def combined_validation():
 def combined_validation_subplots():
     const = utils.init_constants(METAL)
     #Omitting each cluster
-    name = 'plots/' +METAL + '_combined_validation_subplots.pdf'
+    name = join('plots',METAL + '_combined_validation_subplots.pdf')
     pp=PdfPages(name)
     baf_default = baffles.age_estimator(METAL)
 
@@ -324,7 +285,8 @@ def combined_validation_subplots():
 
     # Set common labels
     fig.text(0.5, 0.02, 'Age (Myr)',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center')
-    fig.text(0.01, 0.5, 'Probability Density (Myr^-1)',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
+    fig.text(0.01, 0.5, 'Probability Density (Myr^-1)',size=my_plot.AXIS_LABEL_SIZE, ha='center', 
+            va='center', rotation='vertical')
     fig.text(0.99, 0.5, 'B-V',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
     pp.savefig()
     plt.close()
@@ -337,9 +299,6 @@ def get_CI():
 
     for index,i in enumerate([1,2,7,9]):  
         print("\n", const.CLUSTER_NAMES[i])
-        #baf = baffles.age_estimator(METAL,default_grids=False)
-        #baf.make_grids(bv_m,fits,omit_cluster=i)
-        #p_val = baf.posterior_product(bv_m[i][0],bv_m[i][1],upperLim_arr=upper_lim[i])
 
         bv_arr = bv_m[i][0]
         p = baf_default.posterior_product(bv_m[i][0],bv_m[i][1],upperLim_arr=upper_lim[i],showStars=True)
@@ -348,28 +307,28 @@ def get_CI():
 
         print('Isochronal age exists within %f %% CI' % prob.get_percentile(age,y,givenAge))
 
-def get_CI_hyades_no_dip():
+def get_CI_hyades_no_ul():
     const = utils.init_constants(METAL)
     baf_default = baffles.age_estimator(METAL)
-
-    for index,i in enumerate([8]):  
-        print("\n", const.CLUSTER_NAMES[i])
-        bv_arr = np.array(bv_m[i][0])[np.array(bv_m[i][0]) > 0.55]
-        metal_array = np.array(bv_m[i][1])[np.array(bv_m[i][0]) > 0.55]
-        ul_arr = np.array(upper_lim[i])[np.array(bv_m[i][0]) > 0.55]
-        p = baf_default.posterior_product(bv_arr,metal_array,upperLim_arr=ul_arr,showStars=True)
-        age,y = const.AGE,p.array
-        givenAge=const.CLUSTER_AGES[i]
-
-        print('Isochronal age exists within %f %% CI' % prob.get_percentile(age,y,givenAge))
+ 
+    mask =  (bv_m[8][0] > 0.55) #(~np.array(upper_lim[8])) |
+    print("Total stars:",len(bv_m[8][0]))
+    print("Stars selsected=:",np.sum(mask))
+    b,l,ul = bv_m[8][0][mask],bv_m[8][1][mask],np.array(upper_lim[8])[mask]
+    baf_default.posterior_product(b,l,upperLim_arr=ul,showPlot=True,showStars=True,title='Hyades B-V > .55',givenAge=700)
+    
+    #bv_arr = bv_m[i][0][~np.array(upper_lim[i])]
+    #metal_array = bv_m[i][1][~np.array(upper_lim[i])]
+    #ul_arr = upper_lim[i][~np.array(upper_lim[i])] #np.array(upper_lim[i])[np.array(bv_m[i][0]) > 0.55]
+    #p = baf_default.posterior_product(bv_arr,metal_array,upperLim_arr=ul_arr,showPlot=True,title='Hyades B-V > .55',givenAge=700)
 
 
 
 def omitting(validation=False):
     #Omitting each cluster
-    #name = 'plots/' +METAL + '_self_validation.pdf'
-    name = 'plots/' +METAL + '_omit_clusters.pdf' if not validation else \
-           'plots/' +METAL + '_self_validation.pdf'
+    #name = join('plots',METAL + '_self_validation.pdf')
+    name = join('plots',METAL + '_omit_clusters.pdf') if not validation else \
+           join('plots',METAL + '_self_validation.pdf')
     pp=PdfPages(name)
     baf = baffles.age_estimator(METAL,default_grids=False)
     for i in range(len(bv_m)):
@@ -384,7 +343,7 @@ def omitting(validation=False):
 
 def notable_stars():
     li_const = utils.init_constants('lithium')
-    name = 'plots/notable_stars.pdf'
+    name = join('plots','notable_stars.pdf')
     names = ["HR 2562","HD 206893","TW PsA"]
     bv = [.45,.44,1.1]
     bv_err = [np.sqrt(.014**2+.01**2),np.sqrt(.02**2+.01**2),.03]   # .03 b-v error for TW PsA?
@@ -399,20 +358,23 @@ def notable_stars():
     age_range = [[300,900],[200,2100],[400,480]]
     pp=PdfPages(name)
 
-    my_plot.metal_vs_bv(bv_ca,ca_fits,'calcium',None,False,specific_clusters=[0,5,7,8],legend=False,textlabels=True)
+    my_plot.metal_vs_bv(bv_ca,ca_fits,'calcium',None,False,specific_clusters=[0,5,7,8],
+                        legend=False,textlabels=True)
     plt.plot(bv,rhk,marker='s',markersize=markerSize,color='w',linestyle='None',zorder=9)
     for i in [0,1]:
-        plt.plot(bv[i],rhk[i],marker=markers[i],markersize=markerSize,color=colors[i],linestyle='None',zorder=10,label=names[i])
+        plt.plot(bv[i],rhk[i],marker=markers[i],markersize=markerSize,color=colors[i],
+                linestyle='None',zorder=10,label=names[i])
     plt.legend()
     plt.xlim([.42,.9])
     pp.savefig()
     #plt.show()
     plt.close()
 
-    my_plot.metal_vs_bv(bv_m,fits,'lithium',None,False,upper_lim=upper_lim,specific_clusters=[0,1,4,6,8,9])#,legend=False)
+    my_plot.metal_vs_bv(bv_m,fits,'lithium',None,False,upper_lim=upper_lim,specific_clusters=[0,1,4,6,8,9])
     plt.plot(bv,li,marker='s',markersize=markerSize,color='w',linestyle='None',zorder=9)
     for i in [0,1,2]:
-        plt.plot(bv[i],np.log10(li[i]),marker=markers[i],markersize=markerSize,color=colors[i],linestyle='None',zorder=10,label=names[i])
+        plt.plot(bv[i],np.log10(li[i]),marker=markers[i],markersize=markerSize,color=colors[i],
+                linestyle='None',zorder=10,label=names[i])
     plt.legend()
     pp.savefig()
     #plt.show()
@@ -431,7 +393,8 @@ def notable_stars():
         my_plot.posterior(const.AGE, product, prod_stats,names[i],logPlot=False)
         plt.plot(const.AGE, p_ca.array,color='C3',label="Calcium Posterior")
         plt.plot(const.AGE, p_li.array,color='C2',label="Lithium Posterior")
-        plt.axvspan(age_range[i][0],age_range[i][1], alpha=0.2, color='r',label=r'Literature age: %d - %d Myr' % tuple(age_range[i]),zorder=0)
+        plt.axvspan(age_range[i][0],age_range[i][1], alpha=0.2, color='r',
+                    label=r'Literature age: %d - %d Myr' % tuple(age_range[i]),zorder=0)
         plt.axvline(x=mamaAge[i],color='C5',linestyle='--',label='MH08 age: %d' % mamaAge[i])
         #plt.xlim([0,490])
         plt.legend()
@@ -497,7 +460,7 @@ def notable_stars():
 def robs_fomalhaut():
     import astropy
     from scipy.signal import savgol_filter
-    t = astropy.io.fits.open('data/Fom-age-pdf.fits')
+    t = astropy.io.fits.open(join('data','Fom-age-pdf.fits'))
     data = t[0].data
     x = np.linspace(np.min(data)-10,np.max(data)+10,1000)
     cdf = np.array([(data < n).sum() for n in x],dtype='float')/len(x)
@@ -516,26 +479,6 @@ def robs_fomalhaut():
     pdf[0:2],pdf[-2:] = [0,0],[0,0]
     
     return my_fits.piecewise(x,pdf)
-
-
-def posteriors():
-    # Making posteriors
-    name = 'plots/' + METAL + '_posteriors_tail.pdf'
-    pp = PdfPages(name)
-    baf = baffles.age_estimator(METAL,default_grids=False)#,'grids/median_'+METAL[:2]+'_071119','grids/sigma_'+METAL[:2]+'_071119') #'grids/median_rhk_062719','grids/sigma_rhk_062719',default_grids=False)
-    baf.make_grids(bv_m,fits,upper_lim,'grids/median_'+METAL[:2]+'_072219','grids/sigma_'+METAL[:2]+'_072219',setAsDefaults=True)
-    for bv in [.6,1,1.4]:
-        for li in [10,10**1.5,100]:
-            my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=False,shadeScatter=False,errorbars=True,
-                                 title='B-V= %s' % bv, bv_m=bv_m,upper_lim=upper_lim,metal_val=li)
-            #baffles.baffles_age(bv,li=li,showPlots=True,pdfPage=pp)
-            p = baf.get_posterior(bv,li,pdfPage=pp,showPlot=True,logPlot=False,upperLim = False)
-    pp.close()
-    printName(name)
-    
-
-
-
 
 
 if  __name__ == "__main__":

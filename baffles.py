@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Adam Stanford-Moore,Eric Nielsen, Bruce Macintosh, Rob De Rosa
+Adam Stanford-Moore,Eric Nielsen, Bruce Macintosh, Rob De Rosa, Ian Czekala
 Stanford University Physics Department
-8/30/19
+5/22/20
 BAFFLES: Bayesian Ages for Field LowEr-mass Stars
 """
 
@@ -88,28 +88,26 @@ class posterior:
 
 class age_estimator:
     #takes in a metal idicator either 'calcium' or 'lithium' denoting which method to use
-    # option to input the grid_median and grid_sigma as arrays or as strings referencing saved .npy files
-    def __init__(self,metal,grid_median=None,grid_sigma=None,default_grids=True):
+    # option to input the grid_median as an array or as string referencing saved .npy files
+    def __init__(self,metal,grid_median=None,default_grids=True,load_pdf_fit=True):
         self.metal = metal
         self.grid_median = None
-        self.grid_sigma = None
         self.const = utils.init_constants(metal)
-        if (grid_median and grid_sigma):
-            self.set_grids(grid_median,grid_sigma)
+        if (grid_median):
+            self.set_grids(grid_median)
         elif (default_grids):
-            self.set_grids(self.const.DEFAULT_MEDIAN_GRID,self.const.DEFAULT_SIGMA_GRID)
-        self.pdf_fit,self.cdf_fit = my_fits.fit_histogram(metal,fromFile=True)
-        #self.pdf_fit,self.cdf_fit = my_fits.fit_student_t(metal,fromFile=True)
+            self.set_grids(self.const.DEFAULT_MEDIAN_GRID)
+        if load_pdf_fit: #allows refresh.py to make without needing these
+            self.pdf_fit,self.cdf_fit = my_fits.fit_histogram(metal,fromFile=True)
+            #self.pdf_fit,self.cdf_fit = my_fits.fit_student_t(metal,fromFile=True)
     
-    def set_grids(self,grid_median,grid_sigma):
+    def set_grids(self,grid_median):
         if (type(grid_median) == str and type(grid_median) == str):
             if (grid_median[-4:] != '.npy'):
                 grid_median += '.npy'
-            if (grid_sigma[-4:] != '.npy'):
-                grid_sigma += '.npy'
-            self.grid_median, self.grid_sigma = np.load(grid_median), np.load(grid_sigma)
+            self.grid_median = np.load(grid_median)
         elif (type(grid_median) == 'numpy.ndarray'):
-            self.grid_median, self.grid_sigma = grid_median, grid_sigma
+            self.grid_median = grid_median
 
     #Takes in bv the (B-V)o corrected color and the metallicity to return a posterior object.
     #Metallicity: log(R'HK) if refering to calcium. log equivalent width per mA if lithium.
@@ -248,7 +246,6 @@ class age_estimator:
         mu = self.grid_median 
         #like gaussian likelihood, divide by std which scales height of function
         pdfs = self.pdf_fit(rhk - mu)
-        #pdfs = pdf_fit((rhk - mu)/self.grid_sigma) / self.grid_sigma
         assert (pdfs >= 0).all(), "Error in numerical fit_histogram" + str(pdfs)
         return np.sum(pdfs,axis=0)
 
@@ -291,14 +288,12 @@ class age_estimator:
         final_sum = np.sum(integral,axis=0)
         return final_sum
 
-    #calculates and returns a 2D array of sigma b-v and age
+    #calculates and returns a 2D array of median b-v and age
     #omit_cluster specifies a cluster index to remove from the fits to make the grids without a cluster
-    def make_grids(self,bv_li,fits,upper_lim=None,medianSavefile=None,sigmaSavefile=None,\
+    def make_grids(self,bv_li,fits,upper_lim=None,medianSavefile=None,\
             setAsDefaults=False, omit_cluster=None):
         if (medianSavefile and medianSavefile[-4:] == '.npy'):
             medianSavefile = medianSavefile[:-4]
-        if (sigmaSavefile and sigmaSavefile[-4:] == '.npy'):
-            sigmaSavefile = sigmaSavefile[:-4]
 
         primordial_li_fit = None
         bldb_fit = None
@@ -313,18 +308,16 @@ class age_estimator:
             mu,sig,_ = my_fits.vs_age_fits(bv,CLUSTER_AGES,rhk,scatter,self.metal,
                                            omit_cluster)
             median_rhk.append(mu(self.const.AGE))
-            sigma.append(sig(self.const.AGE))
             
-        median_rhk,sigma = np.array(median_rhk),np.array(sigma)
+        median_rhk = np.array(median_rhk)
 
-        if (medianSavefile and sigmaSavefile):
+        if medianSavefile:
             np.save(medianSavefile, median_rhk)
-            np.save(sigmaSavefile, sigma)
 
         if (setAsDefaults):
-            self.set_default_grids(medianSavefile,sigmaSavefile)
+            self.set_default_grids(medianSavefile)
     
-        self.grid_median, self.grid_sigma = median_rhk, sigma
+        self.grid_median = median_rhk
 
     #given an x_value, which is the location to evaluate and an array of fits,
     #it calculates the y-value at x_val for each fit and returns an array of them
@@ -335,10 +328,10 @@ class age_estimator:
         return arr
 
     def get_grids(self):
-        return self.grid_median, self.grid_sigma
+        return self.grid_median
 
     #changes constant file to have these names as default grid names
-    def set_default_grids(self,grid_median,grid_sigma):
+    def set_default_grids(self,grid_median):
         filename = 'ca_constants.py'
         if (self.metal=='lithium'):
             filename = 'li_constants.py'
@@ -346,8 +339,6 @@ class age_estimator:
         for l in range(len(lines)):
             if (lines[l][:14] == 'DEFAULT_MEDIAN'):
                 lines[l] = 'DEFAULT_MEDIAN_GRID = "' + grid_median + '.npy"\n'
-            if (lines[l][:13] == 'DEFAULT_SIGMA'):
-                lines[l] = 'DEFAULT_SIGMA_GRID = "' + grid_sigma + '.npy"\n'
         out = open(filename,'w')
         out.writelines(lines)
         out.close()
@@ -438,4 +429,5 @@ if  __name__ == "__main__":
     except ValueError:
         print(err)
     
-    baffles_age(bv,rhk,li,bv_err,li_err,upperLim,maxAge,fileName,showPlots=showPlots,savePlots=savePlots, savePostAsText=save)
+    baffles_age(bv,rhk,li,bv_err,li_err,upperLim,maxAge,fileName,showPlots=showPlots,
+                savePlots=savePlots, savePostAsText=save)

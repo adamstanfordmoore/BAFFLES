@@ -1,6 +1,6 @@
 """
 Adam Stanford-Moore
-8/30/19
+5/22/20
 Module giving necessary fitting functions
 """
 
@@ -22,6 +22,7 @@ import probability as prob
 import utils
 import readData
 import plotting as my_plot
+from os.path import join
 
 BIN_SIZE = 10
 MIN_PER_BIN = 4
@@ -40,7 +41,7 @@ def constrained_poly_fit(x,y,x1=None,y1=None,lim=None,sigma=None):
     if (not res.success):
         print("Unsuccessful minimizing of constrained polynomial function, check initial guess")
         print(res.x)
-    #print(res.x
+
     return poly_constr_vert(res.x,x1,y1) if lim is None else np.poly1d(res.x)
 
 #def right_cubic_root(params):
@@ -225,7 +226,7 @@ def fit_gaussian(x,y):
         print(res.x)
 
     [mu,sig,A,c] = res.x
-    print(res.x)
+    #print("Gaussian fit params= ", res.x)
     def gauss_fit(x_coords):
         return prob.gaussian(np.log10(x_coords),mu,sig)*A + c
     
@@ -523,7 +524,7 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
 
     residual_arr = np.concatenate(allClusters)
     if zero_center:
-        print("Subtracting off median of %.5f from residuals, (mean = %.5f)" % (np.median(residual_arr),np.mean(residual_arr)))
+        #print("Subtracting off median of %.5f from residuals, (mean = %.5f)" % (np.median(residual_arr),np.mean(residual_arr)))
         resid_mean = np.median(residual_arr) 
         residual_arr -= np.median(residual_arr)
         for i in range(len(allClusters)):
@@ -549,7 +550,7 @@ def fit_student_t(metal,residual_arr=None,fromFile=True,saveToFile=False):
             reading from file"
     popt = None
     if fromFile:
-        popt = np.load('grids/' + metal + '_student_t_likelihood_params.npy')
+        popt = np.load(join('grids/',metal + '_student_t_likelihood_params.npy'))
     else:
         buf = 0.1
         x = np.linspace(np.min(residual_arr)-buf,np.max(residual_arr)+buf,1000) #1000 for linear?
@@ -569,13 +570,13 @@ def fit_student_t(metal,residual_arr=None,fromFile=True,saveToFile=False):
         #return lorentz_cdf(input,*popt)
 
     if not fromFile and saveToFile:
-        np.save('grids/' + metal + '_student_t_likelihood_params',popt)
+        np.save(join('grids', metal + '_student_t_likelihood_params'),popt)
     return pdf_fit,cdf_fit
 
 
 def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     if fromFile:
-        [x,pdf,cdf] = np.load('grids/' + metal + '_likelihood_fit.npy')
+        [x,pdf,cdf] = np.load(join('grids',metal + '_likelihood_fit.npy'))
         return piecewise(x,pdf),piecewise(x,cdf)
     const = utils.init_constants(metal)
     
@@ -632,7 +633,7 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     cdf /= cdf[-1]
 
     if saveToFile:
-        np.save('grids/' + metal + '_likelihood_fit',[x,pdf,cdf])
+        np.save(join('grids',metal + '_likelihood_fit'),[x,pdf,cdf])
     return piecewise(x,pdf),piecewise(x,cdf)
 
 
@@ -728,13 +729,13 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     assert (ngc2264_fit or fromFile),"primordial_li must take in ngc2264 fit if not reading from a file"
     import li_constants as const
     if (fromFile):
-       prim_li = pickle.load(open('data/mist_primordial_li.p','rb'))
+       prim_li = pickle.load(open(join('data','mist_primordial_li.p'),'rb'))
        return interpolate.interp1d(const.BV,prim_li, fill_value='extrapolate')
     
     teff = magic_table_convert('bv','teff')(const.BV) #convert B-V to Teff
    
-    t1 = ascii.read('data/MIST_iso_1Myr.txt')
-    t5 = ascii.read('data/MIST_iso_5Myr.txt')
+    t1 = ascii.read(join('data','MIST_iso_1Myr.txt'))
+    t5 = ascii.read(join('data','MIST_iso_5Myr.txt'))
     
     star_mass5 = interpolate.interp1d(t5['log_Teff'][0:275],t5['initial_mass'][0:275],\
             fill_value='extrapolate')(np.log10(teff))
@@ -751,7 +752,7 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     final_li = ngc2264_fit(const.BV) + deltaEW
 
     if (saveToFile):
-        pickle.dump(final_li,open('data/mist_primordial_li.p','wb+'))
+        pickle.dump(final_li,open(join('data','mist_primordial_li.p'),'wb+'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
 
 
@@ -778,16 +779,21 @@ def get_fit_BIC(bv_m,fits,dof):
 
 # refreshes everything saved to files
 def main():
-    upper_lim = None
-    bv_m,fits = readData.read_calcium()
-    _,res_arr = get_fit_residuals(bv_m,fits,'calcium',upper_lim,li_range=None,
-                                  linSpace=False,scale_by_std=True)
-    fit_histogram('calcium',residual_arr=res_arr,fromFile=False,saveToFile=True)
+    bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=True)
+    _,res_arr = my_fits.get_fit_residuals(bv_m,fits,'calcium',None,li_range=None,
+                linSpace=False,scale_by_std= False,vs_age_fit=True,zero_center=True)
+    my_fits.fit_histogram('calcium',residual_arr=res_arr,fromFile=False,saveToFile=True)
+    
+    
         
-    bv_m, upper_lim, fits = readData.read_lithium()
-    MIST_primordial_li(ngc2264_fit=fits[0][0],fromFile=False, saveToFile=True)
-    _,res_arr=get_fit_residuals(bv_m,fits,'lithium',upper_lim,li_range=None,linSpace=False)
-    fit_histogram('lithium',residual_arr=res_arr,fromFile=False,saveToFile=True)
+    const = utils.init_constants('lithium')    
+    bv_m, upper_lim, fits = readData.read_lithium(fromFile=False,saveToFile=True)
+    
+    my_fits.MIST_primordial_li(ngc2264_fit=fits[const.CLUSTER_NAMES.index('NGC2264')][0],fromFile=False, saveToFile=True)
+    _,res_arr= my_fits.get_fit_residuals(bv_m,fits,'lithium',upper_lim,li_range=None,linSpace=False,
+                                        vs_age_fit=True,zero_center=True)
+    my_fits.fit_histogram('lithium',residual_arr=res_arr,fromFile=False,saveToFile=True)
+    
     
 
 if  __name__ == "__main__":

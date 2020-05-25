@@ -35,10 +35,7 @@ AGE = np.logspace(0,np.log10(GALAXY_AGE),1000) #in units of Myr
 BV_UNCERTAINTY = None #B-V not incorporated into fits
 MEASURE_ERR = None #no default uncertainty in measurement 
 
-#Fits as a function of age
-DEFAULT_MEDIAN_GRID = "grids/median_rhk_052120.npy"
-DEFAULT_SIGMA_GRID = "grids/sigma_rhk_052120.npy"
+#Fits as a function of age. 
+#If path dividers are different on your operating system, run "python refresh.py"
+DEFAULT_MEDIAN_GRID = "grids/median_rhk_052220.npy"
 
-#Previous submission 2
-#DEFAULT_MEDIAN_GRID = "grids/median_rhk_032120.npy"
-#DEFAULT_SIGMA_GRID = "grids/sigma_rhk_032120.npy"

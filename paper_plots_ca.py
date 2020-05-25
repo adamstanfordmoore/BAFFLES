@@ -1,6 +1,7 @@
 """
 Adam Stanford-Moore
-2/11/19
+5/22/20
+Code for plotting the calcium plots in the final BAFFLES paper
 """
 import warnings
 from matplotlib.backends.backend_pdf import PdfPages
@@ -15,23 +16,28 @@ import ca_constants as const
 import plotting as my_plot
 import readData
 import utils
+from os.path import join
+import os
+if not os.path.exists('plots'):
+    os.mkdir('plots')
+
 METAL = "calcium"
 upper_lim = None
 bv_m,fits = readData.read_calcium()#fromFile=False,saveToFile=False,fit_degree=0)
 print("Num Calcium Stars= ", [len(x[0]) for x in bv_m])
 
-def main():
-
-
-    #plot_fits()
-    #metal_vs_bv()
-    #metal_vs_age()
-    #scatter_vs_age()
+def main(): 
+    metal_vs_bv()
+    metal_vs_age()
+    scatter_vs_age()
     fit_hist()
-    #baffles_vs_mamajek()
-    #combined_validation_subplots()
-    #combined_validation()
+    baffles_vs_mamajek()
+    combined_validation_subplots()
+    
 
+    #---------Not in Paper-----------
+    #plot_fits()
+    combined_validation()
     #posteriors()
     #nearest_stars_hist()
     #print_BIC()
@@ -55,35 +61,32 @@ def print_BIC():
 
 def printName(n):
     print("-----\n")
-    #print("scp sasm@gpicruncher.stanford.edu:~/BAFFLES/" + n + "  ~/Desktop/")
-    #print("\n")
-    #print("sips -s format png -s formatOptions best ~/Desktop/" + n[6:] + " --out ~/Desktop/"
+
 
 def plot_fits(cluster_indices=None):
     #Plot Fits
-    name = 'plots/' + METAL + '_fits.pdf'
+    name = join('plots', METAL + '_fits.pdf')
     pp=PdfPages(name)
-    my_plot.plot_fits(bv_m,fits,METAL,pdfPage=pp,showPlots=False,upper_lim=upper_lim,specific_clusters=cluster_indices)
+    my_plot.plot_fits(bv_m,fits,METAL,pdfPage=pp,showPlots=False,upper_lim=upper_lim,
+                        specific_clusters=cluster_indices)
     pp.close()
     printName(name)
 
 def metal_vs_bv():
     #Metal vs B-V
-    name = 'plots/' +METAL + '_metal_vs_bv.pdf'
+    name = join('plots',METAL + '_metal_vs_bv.pdf')
     pp=PdfPages(name)
     ##clusters = [0,4,6,7]
     my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=False,legend=False)#,specific_clusters = clusters)
-    #my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=True,upper_lim=upper_lim,primordial_li=True,fits_only=True,shadeScatter=False)
     
     bv_m_linear,fits_linear = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=1)
     my_plot.metal_vs_bv(bv_m_linear,fits_linear,METAL,pp,showPlots=False)#,specific_clusters = clusters)
-    #my_plot.metal_vs_bv(bv_m_linear,fits_linear,METAL,pp,showPlots=True,upper_lim=upper_lim,primordial_li=True,fits_only=True,shadeScatter=False)
     printName(name)
     pp.close()
 
 def metal_vs_age():
     #Metal vs Age
-    name = 'plots/' + METAL + '_metal_v_age.pdf'
+    name = join('plots', METAL + '_metal_v_age.pdf')
     pp=PdfPages(name)
     bvRange = const.BV_S 
     for bv in bvRange:
@@ -96,14 +99,14 @@ def metal_vs_age():
 
 def scatter_vs_bv():
     #Scatter vs B-V
-    pp=PdfPages('plots/' + METAL + '_scatter_vs_bv_with_offset.pdf')
+    pp=PdfPages(join('plots', METAL + '_scatter_vs_bv_with_offset.pdf'))
     my_plot.scatter_vs_bv(fits,METAL,pp,showPlots=True)
-    names.append('plots/' + METAL + '_scatter_vs_bv_with_offset.pdf')
+    names.append(join('plots', METAL + '_scatter_vs_bv_with_offset.pdf'))
     pp.close()
 
 def scatter_vs_age():
     #Scatter vs Age
-    name = 'plots/' +METAL + '_scatter_vs_age.pdf'
+    name = join('plots',METAL + '_scatter_vs_age.pdf')
     pp=PdfPages(name)
     my_plot.scatter_vs_age(fits,METAL,.65,pp,showPlots=False,bv_m=bv_m,upper_lim=upper_lim)
     pp.close()
@@ -111,7 +114,7 @@ def scatter_vs_age():
 
 def fit_hist():
     #Fit histogram
-    name = 'plots/' +METAL + '_hist_fit.pdf'
+    name = join('plots',METAL + '_hist_fit.pdf')
     pp=PdfPages(name)
     my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=False)
     my_plot.fit_histogram(bv_m,fits,METAL,pp,showPlots=False,plot_cdf=True)
@@ -120,7 +123,7 @@ def fit_hist():
 
 def baffles_vs_mamajek():
     # BAFFLES vs Mamajek
-    name = 'plots/baffles_vs_mamajek.pdf'
+    name = join('plots','baffles_vs_mamajek.pdf')
     pp = PdfPages(name)
     for i in range(len(bv_m)):
         my_plot.baffles_vs_mamajek(bv_m,fits,i,pdfPage=pp,showPlots=False,title=None,mamaProduct=False)
@@ -129,9 +132,9 @@ def baffles_vs_mamajek():
 
 def omitting(validation=False):
     #Omitting each cluster
-    #name = 'plots/' +METAL + '_self_validation.pdf'
-    name = 'plots/' +METAL + '_omit_clusters.pdf' if not validation else \
-            'plots/' +METAL + '_self_validation.pdf'
+    #name = join('plots',METAL + '_self_validation.pdf')
+    name = join('plots',METAL + '_omit_clusters.pdf') if not validation else \
+            join('plots',METAL + '_self_validation.pdf')
     pp = PdfPages(name)
     baf = baffles.age_estimator(METAL,default_grids=validation)
     for i in range(len(bv_m)):
@@ -149,7 +152,7 @@ def omitting(validation=False):
 
 def combined_validation():
     #Omitting each cluster
-    name = 'plots/' +METAL + '_combined_validation.pdf'
+    name = join('plots',METAL + '_combined_validation.pdf')
     pp=PdfPages(name)
     baf_default = baffles.age_estimator(METAL)
     for i in range(len(bv_m)):
@@ -164,14 +167,13 @@ def combined_validation():
             pdfPage=pp,showPlot=False,\
             showStars=True,givenAge=const.CLUSTER_AGES[i],\
             title= const.CLUSTER_NAMES[i])
-        #print("Sum of difference between two posteriors: ", np.sum(p_val.array - p.array))
     printName(name)
     pp.close()
 
 def combined_validation_subplots():
     const = utils.init_constants(METAL)
     #Omitting each cluster
-    name = 'plots/' +METAL + '_combined_validation_subplots.pdf'
+    name = join('plots',METAL + '_combined_validation_subplots.pdf')
     pp=PdfPages(name)
     baf_default = baffles.age_estimator(METAL)
 
@@ -241,8 +243,10 @@ def combined_validation_subplots():
 
     # Set common labels
     fig.text(0.5, 0.02, 'Age (Myr)',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center')
-    fig.text(0.01, 0.5, 'Probability Density (Myr^-1)',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
-    fig.text(0.99, 0.5, 'B-V',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', rotation='vertical')
+    fig.text(0.01, 0.5, 'Probability Density (Myr^-1)',size=my_plot.AXIS_LABEL_SIZE, 
+            ha='center', va='center', rotation='vertical')
+    fig.text(0.99, 0.5, 'B-V',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', 
+            rotation='vertical')
     pp.savefig()
     plt.close()
     printName(name)
@@ -251,16 +255,12 @@ def combined_validation_subplots():
 
 def posteriors():
     #Making posteriors
-    name = 'plots/' + METAL + '_posteriors.pdf'
+    name = join('plots', METAL + '_posteriors.pdf')
     pp = PdfPages(name)
     baf = baffles.age_estimator(METAL,default_grids=False)
     baf.make_grids(bv_m,fits,upper_lim)#,omit_cluster=0)
     for bv in [0.65]:
         for li in np.linspace(-3.8,-5,5):
-            #my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=True,shadeScatter=False,
-            #                     errorbars=True,title='B-V= %s' % bv, bv_m=bv_m,
-            #                     upper_lim=upper_lim,metal_val=li)
-            #baffles.baffles_age(bv,li=li,showPlots=True,pdfPage=pp)
             p = baf.get_posterior(bv,li,pdfPage=pp,showPlot=True,logPlot=False,upperLim = False,
                                   mamajekAge=True)
     printName(name)
@@ -268,7 +268,7 @@ def posteriors():
 
 
 def nearest_stars_hist():
-    t = np.genfromtxt("data/MH08_table13.txt",delimiter=';',dtype=str,skip_header=75)
+    t = np.genfromtxt(join("data","MH08_table13.txt"),delimiter=';',dtype=str,skip_header=75)
     bv,rhk = t[:,6].astype(np.float),t[:,8].astype(np.float)
     #mask = (const.BV_RANGE[0] <= bv) & (bv <= const.BV_RANGE[1]) & \
     mask = (.8 <= bv) & (bv <= .9) & \

@@ -1,6 +1,6 @@
 """
 Adam Stanford-Moore
-08/30/19
+5/22/20
 Functions creating useful plots for visualizing posteriors and fits
 """
 
