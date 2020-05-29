@@ -174,11 +174,12 @@ def make_table(MR = False):
     fMR.write(delimiterMR.join(units))
     fMR.write('\n')
     
+    done = False
     for row in final_table:
         arr = []
         arrMR = []
-        arr += list(row[0:4]) 
-        arrMR += [x.replace('$','') for x in row[0:4]]
+        arr += [x.replace('V* ','') for x in row[0:4]] 
+        arrMR += [x.replace('$','').replace('V* ','') for x in row[0:4]]
         
         bv = float(row[4])
         arr.append("%.2f" % bv) 
@@ -244,9 +245,11 @@ def make_table(MR = False):
             arr += [empty]*5
             arrMR += [empty]*5
             
-        f.write(' & '.join(arr) + " \\\\")
+        if not done: 
+            f.write(' & '.join(arr) + " \\\\")
+            f.write('\n')
+        if 'HD 1108' in arr: done = True
         fMR.write(delimiterMR.join(arrMR))   
-        f.write('\n')
         fMR.write('\n')
     f.close()
     fMR.close()

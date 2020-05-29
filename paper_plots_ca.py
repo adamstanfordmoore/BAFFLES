@@ -27,37 +27,39 @@ bv_m,fits = readData.read_calcium()#fromFile=False,saveToFile=False,fit_degree=0
 print("Num Calcium Stars= ", [len(x[0]) for x in bv_m])
 
 def main(): 
-    metal_vs_bv()
-    metal_vs_age()
-    scatter_vs_age()
-    fit_hist()
-    baffles_vs_mamajek()
-    combined_validation_subplots()
+    #metal_vs_bv()
+    #metal_vs_age()
+    #scatter_vs_age()
+    #fit_hist()
+    #baffles_vs_mamajek()
+    #combined_validation_subplots()
     
 
     #---------Not in Paper-----------
     #plot_fits()
-    combined_validation()
+    #combined_validation()
     #posteriors()
     #nearest_stars_hist()
     #print_BIC()
-
+    return
 
 
 def print_BIC():
     bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=0)
     dof = len(bv_m) #1 parameter for each cluster
-    print("BIC constant fits = ", my_fits.get_fit_BIC(bv_m,fits,dof))
+    BIC1 = my_fits.get_fit_BIC(bv_m,fits,dof)
+    print("BIC constant fits = ", BIC1)
     
 
     dof = 2*len(bv_m) # 2 for each cluster
     bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=1)
-    print("BIC linear fits = ", my_fits.get_fit_BIC(bv_m,fits,dof))
+    BIC2 = my_fits.get_fit_BIC(bv_m,fits,dof)
+    print("BIC linear fits = ", BIC2)
     #for i in range(len(bv_m)):
     #    plt.scatter(bv_m[i][0],bv_m[i][1])
     #    plt.plot(bv_m[i][0],fits[i][0](bv_m[i][0]))
     #    plt.show()
-
+    print("Delta BIC = ", BIC2 - BIC1)
 
 def printName(n):
     print("-----\n")

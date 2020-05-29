@@ -225,7 +225,7 @@ def main():
     Name = np.concatenate((ab_Name,t_Name,Name2))
     GROUP = np.concatenate((["AB Dor"]*len(ab_c),["Tuc/Hor"]*len(t_c),["$\\beta$ Pic"]*len(bp_c2)))
     
-    Name = [x.strip() for x in Name]
+    Name = [x.strip().replace('V* ','') for x in Name]
     SPT = [x.strip() for x in SPT]
 
 
@@ -234,7 +234,7 @@ def main():
     headers = ["Name","SpT","Moving Group","B-V","ref"]
     
     
-    f = open("B_V_table.txt",'w+')
+    f = open("baffles_table3_latex.txt",'w+')
     
     f.write(' & '.join(headers) + " \\\\")
     f.write('\n')
@@ -246,7 +246,6 @@ def main():
         f.write('\n')
     
     f.write('# ' + latex_refs)
-
     f.close()
     
 

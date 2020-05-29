@@ -526,7 +526,7 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
     if zero_center:
         #print("Subtracting off median of %.5f from residuals, (mean = %.5f)" % (np.median(residual_arr),np.mean(residual_arr)))
         resid_mean = np.median(residual_arr) 
-        residual_arr -= np.median(residual_arr)
+        residual_arr -= resid_mean
         for i in range(len(allClusters)):
             allClusters[i] = np.array(allClusters[i]) - resid_mean
     return allClusters,residual_arr

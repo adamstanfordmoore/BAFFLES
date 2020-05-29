@@ -37,5 +37,5 @@ MEASURE_ERR = None #no default uncertainty in measurement
 
 #Fits as a function of age. 
 #If path dividers are different on your operating system, run "python refresh.py"
-DEFAULT_MEDIAN_GRID = "grids/median_rhk_052220.npy"
+DEFAULT_MEDIAN_GRID = "grids/median_rhk_052920.npy"
 

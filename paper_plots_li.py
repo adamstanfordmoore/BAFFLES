@@ -37,15 +37,15 @@ def main():
     #metal_vs_age()
     #metal_vs_age_subplots()
     #bldb()
-    #fit_hist()
-    #combined_validation_subplots()
+    fit_hist()
+    combined_validation_subplots()
     #moving_group()
     #notable_stars()
     #plot_fits_subplots()
     
     #---------Not in Paper-----------
     #combined_validation() 
-    get_CI_hyades_no_ul()
+    #get_CI_hyades_no_ul()
     #plot_fits()
 
     return
@@ -311,7 +311,7 @@ def get_CI_hyades_no_ul():
     const = utils.init_constants(METAL)
     baf_default = baffles.age_estimator(METAL)
  
-    mask =  (bv_m[8][0] > 0.55) #(~np.array(upper_lim[8])) |
+    mask =  (~np.array(upper_lim[8])) | (bv_m[8][0] > 0.55) 
     print("Total stars:",len(bv_m[8][0]))
     print("Stars selsected=:",np.sum(mask))
     b,l,ul = bv_m[8][0][mask],bv_m[8][1][mask],np.array(upper_lim[8])[mask]
@@ -441,7 +441,7 @@ def notable_stars():
     plt.vlines(x=stat[2],ymin= 0,ymax= y[bisect.bisect_left(const.AGE,stat[2])], \
                     label='Final median age: %.3g Myr' % stat[2] ,color = 'orange')
     plt.fill_between(const.AGE,y, where= (const.AGE >= stat[1]) & (const.AGE <= stat[3]),color='.4', \
-                        label='68\\%% CI: %.2g - %.2g' % (stat[1],stat[-2]))
+                        label='68%% CI: %.2g - %.2g' % (stat[1],stat[-2]))
     plt.title(names[2],size=my_plot.TITLE_SIZE)
     plt.xlim([0,1200])
     plt.legend()
