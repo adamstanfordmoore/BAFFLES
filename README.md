@@ -2,19 +2,24 @@
 # BAFFLES: Bayesian Ages for Lower-mass Field Stars
 
 This package computes age posteriors for field stars from measurements of R'HK calcium emission and/or B-V color and lithium equivalent width absorption (Li EW).  For calcium emission our method is calibrated to stars with B-V between 0.45 and 0.9 (~ F6-K2) and 
-log(R'HK) between -3.7 and -5.  For lithium we have calibrated BAFFLES to stars with B-V between 0.35 and 1.9 (~F2-M5) and Li EW between 3.2 and 1500 mA.  See the paper Stanford-Moore et al. 2019.      
+log(R'HK) between -3.7 and -5.  For lithium we have calibrated BAFFLES to stars with B-V between 0.35 and 1.9 (~F2-M5) and Li EW between 3.2 and 1500 mA.  See the paper [Stanford-Moore et al. 2020](https://arxiv.org/abs/2006.04811).      
 
-### Downloading
+### Downloading (Size ~8MB)
+
+Download the zipped file from GitHub or [Zenodo](https://doi.org/10.5281/zenodo.3840244).
+
+Or
 
 ```git clone --depth=1 https://github.com/adamstanfordmoore/BAFFLES.git```
 
-Currently there are still some large files in the git history. Size is 8MB with depth of 1.
+Currently there are still some large files in the git history, so clone with depth 1 to avoid all 256MB of history.
 
 ### Requirements
 
 Python 3.7
 
 [astropy](https://docs.astropy.org/en/stable/install.html#installing-astropy)
+(if not already included in Python environment)
 
 ## Authors
 
