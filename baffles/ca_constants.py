@@ -25,7 +25,7 @@ def inRange(bv,rhk):
         return False
     return True
 
-GALAXY_AGE = 13000 #Myr 
+GALAXY_AGE = 13000 #Myr
 BIN_SIZE = 10
 
 FIVE_SIGMAS = 9.02e-07
@@ -36,8 +36,8 @@ BV_S = np.array([.65]) #lower sampling
 METAL = prob.polyspace(METAL_RANGE[0],METAL_RANGE[1],1000) #the axis of the 2D arrays
 AGE = np.logspace(0,np.log10(GALAXY_AGE),1000) #in units of Myr
 BV_UNCERTAINTY = None #B-V not incorporated into fits
-MEASURE_ERR = None #no default uncertainty in measurement 
+MEASURE_ERR = None #no default uncertainty in measurement
 
-#Fits as a function of age. 
+#Fits as a function of age.
 #If path dividers are different on your operating system, run "python refresh.py"
 DEFAULT_MEDIAN_GRID = join(GRIDDIR, "median_rhk_061620.npy")
