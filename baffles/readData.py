@@ -18,8 +18,8 @@ from astropy.utils.exceptions import AstropyWarning
 import warnings
 import numpy as np
 import pickle
-import fitting as my_fits
-import utils
+import baffles.fitting as my_fits
+import baffles.utils as utils
 import copy
 from os.path import join
 

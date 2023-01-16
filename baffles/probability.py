@@ -103,7 +103,7 @@ def mode(x,y):
 #finds median age,ranges for 1,2 sigma as [-2 sigma,-1 sigma, median,+1 sigma,+2 sigma]
 #finds ages from cdf values
 def stats(age,y,upperLim=False): 
-    import fitting as my_fits
+    import baffles.fitting as my_fits
     c = cdf(age,y)
     probs = UL_PROBS if upperLim else GAUSS_PROBS
     fit = my_fits.piecewise(c,age)
@@ -112,7 +112,7 @@ def stats(age,y,upperLim=False):
 # takes in a PDF given by age,y and a given age to compare to
 # returns the percentile X such that given Age is within X %
 def get_percentile(age,y,givenAge):
-    import fitting as my_fits
+    import baffles.fitting as my_fits
     c = cdf(age,y)
     fit = my_fits.piecewise(age,c)
     return np.abs(fit(givenAge) - .5)*2*100

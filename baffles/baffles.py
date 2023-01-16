@@ -6,19 +6,19 @@ Stanford University Physics Department
 BAFFLES: Bayesian Ages for Field LowEr-mass Stars
 """
 
-import ca_constants as const
+import baffles.ca_constants as const
 from scipy import interpolate
 from scipy.stats import norm,lognorm
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
-import probability as prob
-import fitting as my_fits
+import baffles.probability as prob
+import baffles.fitting as my_fits
 import numpy as np
-import plotting as my_plot
+import baffles.plotting as my_plot
 import bisect
 import sys
 import copy
-import utils
+import baffles.utils as utils
 import time
 
 # shortcut to quickly computing using default grids the posteriors for calcium and/or lithium

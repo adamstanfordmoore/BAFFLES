@@ -1,5 +1,8 @@
+from os.path import join
 import numpy as np
-import probability as prob
+import baffles.probability as prob
+from baffles.paths import GRIDDIR
+
 METAL_NAME = 'calcium'
 CLUSTER_INDEX = [[0,9],[15,25],[9,15],[25,33],[33,46],[46,95],[181,198],[95,181],[198,274]]
 CLUSTER_AGES = [10,16,24,45,85,130,500,700,4000]
@@ -37,5 +40,4 @@ MEASURE_ERR = None #no default uncertainty in measurement
 
 #Fits as a function of age. 
 #If path dividers are different on your operating system, run "python refresh.py"
-DEFAULT_MEDIAN_GRID = "grids/median_rhk_061620.npy"
-
+DEFAULT_MEDIAN_GRID = join(GRIDDIR, "median_rhk_061620.npy")

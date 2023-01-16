@@ -18,11 +18,12 @@ import copy
 import bisect
 import pickle
 from astropy.io import ascii
-import probability as prob
-import utils
-import readData
-import plotting as my_plot
+import baffles.probability as prob
+import baffles.utils as utils
+import baffles.readData as readData
+import baffles.plotting as my_plot
 from os.path import join
+from baffles.paths import GRIDDIR, DATADIR
 
 BIN_SIZE = 10
 MIN_PER_BIN = 4
@@ -364,7 +365,7 @@ def magic_table_convert(in_column,out_column):
         elif (out_column.lower() == "bv" or out_column.lower() == "b-v"):
             out_column = 6
     
-    t = ascii.read('data/mamajek_magic_table.txt')
+    t = ascii.read(join(DATADIR, 'mamajek_magic_table.txt'))
     x,y = [],[] #x is input and y is output like a function
     for row in t:
         try:
@@ -378,7 +379,7 @@ def magic_table_convert(in_column,out_column):
     return interpolate.interp1d(x,y, fill_value='extrapolate') 
 
 def spt_bv():
-    t = ascii.read('data/mamajek_magic_table.txt')
+    t = ascii.read(join(DATADIR, 'mamajek_magic_table.txt'))
     letters = ['O','B','A','F','G','K','M']
     spt = [row[0][:-1] for row in t[0:90]]
     sp = []
@@ -398,7 +399,7 @@ def spt_bv():
 # PRIMORDIAL_NLI = 3.2
 # returns an array
 def teff_to_primli(teff):
-    t = genfromtxt('data/NLi_to_LiEW.csv', delimiter=',')
+    t = genfromtxt(join(DATADIR, 'NLi_to_LiEW.csv', delimiter=','))
     logEW = [row[0] for row in t[1:]]
     arr = []
     for temp in teff:
@@ -414,8 +415,8 @@ def teff_to_primli(teff):
 #At every T,nli it uses the soderblom 1993 Pleiades table to find the log(EW)
 # returns an array
 def teff_nli_to_li(teff,NLI):
-    t = genfromtxt('data/NLi_to_LiEW.csv', delimiter=',')
-    t2 = genfromtxt('data/zapatero_osorio_teff_nli_ewli.txt')
+    t = genfromtxt(join(DATADIR, 'NLi_to_LiEW.csv', delimiter=','))
+    t2 = genfromtxt(join(DATADIR, 'zapatero_osorio_teff_nli_ewli.txt'))
     t2[1:,1:] = np.log10(1000*t2[1:,1:]) #convert to logEW
     logEW = [row[0] for row in t[1:]]
     temp_axis = [row[0] for row in t2[1:]]
@@ -435,7 +436,7 @@ def teff_nli_to_li(teff,NLI):
     return np.array(arr)
 
 def VI_to_teff(in_column=2,out_column=6):
-    t = ascii.read('data/Teff_to_V-I.csv')
+    t = ascii.read(join(DATADIR, 'Teff_to_V-I.csv'))
     x,y = [],[] #x is input and y is output like a function
     for row in t:
         try:
@@ -550,7 +551,7 @@ def fit_student_t(metal,residual_arr=None,fromFile=True,saveToFile=False):
             reading from file"
     popt = None
     if fromFile:
-        popt = np.load(join('grids/',metal + '_student_t_likelihood_params.npy'))
+        popt = np.load(join(GRIDDIR ,metal + '_student_t_likelihood_params.npy'))
     else:
         buf = 0.1
         x = np.linspace(np.min(residual_arr)-buf,np.max(residual_arr)+buf,1000) #1000 for linear?

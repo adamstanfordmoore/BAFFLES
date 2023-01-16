@@ -10,11 +10,11 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 from scipy import interpolate
 import bisect
-import ca_constants as const
-import probability as prob
-import fitting as my_fits
-import baffles
-import utils
+import baffles.ca_constants as const
+import baffles.probability as prob
+import baffles.fitting as my_fits
+import baffles.baffles as baffles
+import baffles.utils as utils
 TITLE_SIZE = 16
 AXIS_LABEL_SIZE = 16
 
@@ -489,9 +489,9 @@ def set_ylabel(metal):
 
 def init_constants(metal):
     if (metal[0].lower() == 'c'):
-        import ca_constants as const
+        import baffles.ca_constants as const
     elif (metal[0].lower() == 'l'):
-        import li_constants as const
+        import baffles.li_constants as const
     else:
         raise RuntimeError("No metal specified. Please enter lithium or calcium")
     return const

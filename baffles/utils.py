@@ -39,9 +39,9 @@ def getMamaRHK(age):
 
 def init_constants(metal):
     if (metal[0].lower() == 'c'):
-        import ca_constants as const
+        import baffles.ca_constants as const
     elif (metal[0].lower() == 'l'):
-        import li_constants as const
+        import baffles.li_constants as const
     else:
         raise RuntimeError("No metal specified. Please enter lithium or calcium")
     return const

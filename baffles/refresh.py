@@ -5,9 +5,9 @@ This Script refreshes all stored fits including mean grids
 Run "python refresh.py" whenever changes are made to data files, or how the fits are done
 """
 import fitting as my_fits
-import baffles
-import readData
-import utils
+import baffles.baffles as baffles
+import baffles.readData as readData
+import baffles.utils as utils
 import datetime
 from os.path import join
 
