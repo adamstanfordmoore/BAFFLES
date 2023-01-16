@@ -25,7 +25,7 @@ from os.path import join
 
 
 def abdor(annotate=False):
-    import li_constants as const
+    import baffles.li_constants as const
     abdor_c = []
     abdor_l = []
     abdor_bverr = []
@@ -53,7 +53,7 @@ def abdor(annotate=False):
     return abdor_c, abdor_l,abdor_lerr
 
 def tuchor(annotate=False):
-    import li_constants as const
+    import baffles.li_constants as const
     tuchor_c = []
     tuchor_l = []
     tuchor_bverr,tuchor_lerr = [],[]
@@ -85,7 +85,7 @@ def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
         bv_rhk = pickle.load(open(join('data','bv_rhk.p'),'rb'))
         fits = pickle.load(open(join('data','ca_fits.p'),'rb'))
         return bv_rhk,fits
-    import ca_constants as const
+    import baffles.ca_constants as const
     warnings.simplefilter('ignore', category=AstropyWarning)
     t = Table.read(join('data','mamajek_table_5.fits'))
     fits = []
@@ -141,7 +141,7 @@ def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
     return bv_rhk,fits
 
 def get_li_fits(bv_li,upper_lim_all):
-    import li_constants as const
+    import baffles.li_constants as const
     fits = []
     for i in range(len(bv_li)):
         fit = None
@@ -183,7 +183,7 @@ def undo_picklable(fits):
 
     
 def schkolnik_betaPic(annotate=False):
-    import li_constants as li_const
+    import baffles.li_constants as li_const
     t = np.genfromtxt(join("data","Shkolnik_2017_betaPic_bib.csv"),delimiter=',',dtype=str)
     
     b,l,ul,names = [],[],[],[]
@@ -207,7 +207,7 @@ def schkolnik_betaPic(annotate=False):
     return b,l,ul,names
 
 def mentuch2008_betaPic(annotate=False):
-    import li_constants as li_const
+    import baffles.li_constants as li_const
     bp_c = []
     bp_l = []
     lim_bp = []
@@ -264,7 +264,7 @@ def merged_betaPic():
     return bp_c2,bp_l2,lim_bp2,combined_err,names2
 
 def alpha_per_lithium():
-    import li_constants as const
+    import baffles.li_constants as const
     c = []
     l = []
     teff_to_bv = my_fits.magic_table_convert('teff','bv')
@@ -287,7 +287,7 @@ def read_lithium(fromFile=True,saveToFile=False):
         fits = undo_picklable(fits)
         return bv_li,upper_lim,fits
     
-    import li_constants as const
+    import baffles.li_constants as const
     warnings.simplefilter('ignore', category=AstropyWarning)
     bv_li = []
     upper_lim = []

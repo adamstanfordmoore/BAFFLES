@@ -1,5 +1,5 @@
 import numpy as np
-import probability as prob
+import baffles.probability as prob
 from baffles.paths import GRIDDIR
 from os.path import join
 

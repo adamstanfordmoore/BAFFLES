@@ -49,7 +49,7 @@ def polyspace(start,stop,num,power=2):
 # Divide gaussian into num equal area sections and put a point in the middle of each
 # The result is denser sampling near the mean and less near the tails 
 def gaussian_cdf_space(mu,sig,num,sig_lim=5):
-    import fitting as my_fits
+    import baffles.fitting as my_fits
     x = np.linspace(mu - sig_lim*sig,mu + sig_lim*sig,300)
     cdf = gaussian_cdf(x,mu,sig)
     fit = my_fits.piecewise(cdf,x)
@@ -63,7 +63,7 @@ def gaussian_cdf_space(mu,sig,num,sig_lim=5):
 
 # takes in densely sampled x,y and returns num sampled x
 def desample(x,y,num):
-    import fitting as my_fits
+    import baffles.fitting as my_fits
     ddy = np.abs(np.gradient(np.gradient(y)))
     f_arr = cdf(x,ddy)
     f_arr = f_arr*(x[-1] - x[0]) + x[0]
