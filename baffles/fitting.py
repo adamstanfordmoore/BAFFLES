@@ -571,13 +571,13 @@ def fit_student_t(metal,residual_arr=None,fromFile=True,saveToFile=False):
         #return lorentz_cdf(input,*popt)
 
     if not fromFile and saveToFile:
-        np.save(join('grids', metal + '_student_t_likelihood_params'),popt)
+        np.save(join(GRIDDIR, metal + '_student_t_likelihood_params'),popt)
     return pdf_fit,cdf_fit
 
 
 def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     if fromFile:
-        [x,pdf,cdf] = np.load(join('grids',metal + '_likelihood_fit.npy'))
+        [x,pdf,cdf] = np.load(join(GRIDDIR, metal + '_likelihood_fit.npy'))
         return piecewise(x,pdf),piecewise(x,cdf)
     const = utils.init_constants(metal)
 
@@ -634,7 +634,7 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     cdf /= cdf[-1]
 
     if saveToFile:
-        np.save(join('grids',metal + '_likelihood_fit'),[x,pdf,cdf])
+        np.save(join(GRIDDIR ,metal + '_likelihood_fit'),[x,pdf,cdf])
     return piecewise(x,pdf),piecewise(x,cdf)
 
 
@@ -730,13 +730,13 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     assert (ngc2264_fit or fromFile),"primordial_li must take in ngc2264 fit if not reading from a file"
     import li_constants as const
     if (fromFile):
-       prim_li = pickle.load(open(join('data','mist_primordial_li.p'),'rb'))
+       prim_li = pickle.load(open(join(DATADIR,'mist_primordial_li.p'),'rb'))
        return interpolate.interp1d(const.BV,prim_li, fill_value='extrapolate')
 
     teff = magic_table_convert('bv','teff')(const.BV) #convert B-V to Teff
 
-    t1 = ascii.read(join('data','MIST_iso_1Myr.txt'))
-    t5 = ascii.read(join('data','MIST_iso_5Myr.txt'))
+    t1 = ascii.read(join(DATADIR,'MIST_iso_1Myr.txt'))
+    t5 = ascii.read(join(DATADIR,'MIST_iso_5Myr.txt'))
 
     star_mass5 = interpolate.interp1d(t5['log_Teff'][0:275],t5['initial_mass'][0:275],\
             fill_value='extrapolate')(np.log10(teff))
@@ -753,7 +753,7 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     final_li = ngc2264_fit(const.BV) + deltaEW
 
     if (saveToFile):
-        pickle.dump(final_li,open(join('data','mist_primordial_li.p'),'wb+'))
+        pickle.dump(final_li,open(join(DATADIR,'mist_primordial_li.p'),'wb+'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
 
 
