@@ -1,0 +1,12 @@
+*egg-info*
+*pycache*
+*ipynb_check*
+*aux
+*.log
+*.out
+*.synctex.gz
+results*
+*secret*
+docs/build*
+*csv
+*pdf

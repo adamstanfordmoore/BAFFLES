@@ -7,13 +7,13 @@ Uncomment each example before running it
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import ca_constants as ca_const
-import fitting as my_fits
-import probability as prob
-import baffles
-import plotting as my_plot
-import readData
-import utils
+import baffles.ca_constants as ca_const
+import baffles.fitting as my_fits
+import baffles.probability as prob
+import baffles.baffles as baffles
+import baffles.plotting as my_plot
+import baffles.readData as readData
+import baffles.utils as utils
 
 def main():
     # Example 1: Single line to find the age of the sun. very similar to command line usage
@@ -22,8 +22,7 @@ def main():
     #    stats : array of ages at CDF [.02,.16,.5,.84,.97],
     #            or if an upperLimit at CDF [0.0027,0.046,0.32,1]
     #    upperLim : boolean if posterior is from upper-limit LiEW
-    posterior = baffles.baffles_age(bv=0.65,rhk=-4.906)
-
+    #posterior = baffles.baffles_age(bv=0.65,rhk=-4.906)
 
 
     # Example 2: Longer line to find age of HD 206893 and save
@@ -49,13 +48,13 @@ def main():
 
 
     # Exmple 4: Lets compute a posterior product and save it as a pdf
-    #tuchor_bmv, tuchor_li,tuchor_li_err = readData.tuchor()
-    #baffles_li = baffles.age_estimator('lithium')
-    #pp = PdfPages("tuchor_example_product.pdf")
-    #product = baffles_li.posterior_product(tuchor_bmv,tuchor_li,bv_errs=None,
-    #                             measure_err_arr=tuchor_li_err,pdfPage=pp,showPlot=True,
-    #                             showStars=True,title='Tuc/Hor',givenAge=45,givenErr=4)
-    #pp.close()
+    tuchor_bmv, tuchor_li,tuchor_li_err = readData.tuchor()
+    baffles_li = baffles.age_estimator('lithium')
+    pp = PdfPages("tuchor_example_product.pdf")
+    product = baffles_li.posterior_product(tuchor_bmv,tuchor_li,bv_errs=None,
+                                 measure_err_arr=tuchor_li_err,pdfPage=pp,showPlot=True,
+                                 showStars=True,title='Tuc/Hor',givenAge=45,givenErr=4)
+    pp.close()
     # product.array contains posterior product as before
 
 

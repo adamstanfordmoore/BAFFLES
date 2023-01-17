@@ -1,5 +1,8 @@
+from os.path import join
 import numpy as np
-import probability as prob
+import baffles.probability as prob
+from baffles.paths import GRIDDIR
+
 METAL_NAME = 'calcium'
 CLUSTER_INDEX = [[0,9],[15,25],[9,15],[25,33],[33,46],[46,95],[181,198],[95,181],[198,274]]
 CLUSTER_AGES = [10,16,24,45,85,130,500,700,4000]
@@ -22,7 +25,7 @@ def inRange(bv,rhk):
         return False
     return True
 
-GALAXY_AGE = 13000 #Myr 
+GALAXY_AGE = 13000 #Myr
 BIN_SIZE = 10
 
 FIVE_SIGMAS = 9.02e-07
@@ -33,9 +36,8 @@ BV_S = np.array([.65]) #lower sampling
 METAL = prob.polyspace(METAL_RANGE[0],METAL_RANGE[1],1000) #the axis of the 2D arrays
 AGE = np.logspace(0,np.log10(GALAXY_AGE),1000) #in units of Myr
 BV_UNCERTAINTY = None #B-V not incorporated into fits
-MEASURE_ERR = None #no default uncertainty in measurement 
+MEASURE_ERR = None #no default uncertainty in measurement
 
-#Fits as a function of age. 
+#Fits as a function of age.
 #If path dividers are different on your operating system, run "python refresh.py"
-DEFAULT_MEDIAN_GRID = "grids/median_rhk_061620.npy"
-
+DEFAULT_MEDIAN_GRID = join(GRIDDIR, "median_rhk_061620.npy")

@@ -6,19 +6,19 @@ Stanford University Physics Department
 BAFFLES: Bayesian Ages for Field LowEr-mass Stars
 """
 
-import ca_constants as const
+import baffles.ca_constants as const
 from scipy import interpolate
 from scipy.stats import norm,lognorm
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
-import probability as prob
-import fitting as my_fits
+import baffles.probability as prob
+import baffles.fitting as my_fits
 import numpy as np
-import plotting as my_plot
+import baffles.plotting as my_plot
 import bisect
 import sys
 import copy
-import utils
+import baffles.utils as utils
 import time
 
 # shortcut to quickly computing using default grids the posteriors for calcium and/or lithium
@@ -29,10 +29,10 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
         raise RuntimeError("Must provide at least one of calcium logR'HK or lithium EW")
     if (li and not bv):
         raise RuntimeError("Must provide B-V value with lithium EW")
-    
+
     if (not pdfPage and savePlots):
         pdfPage = PdfPages(fileName + '.pdf')
-        
+
     p = None
     if (rhk):
         baf = age_estimator('calcium')
@@ -50,7 +50,7 @@ def baffles_age(bv=None,rhk=None,li=None,bv_err=None,li_err = None,upperLim=Fals
         if (savePostAsText):
             np.savetxt(fileName + "_lithium.csv", list(zip(const.AGE,p2.array)),
                        delimiter=",")
-        
+
         if p2.upperLim: print("1 sig lower-lim: %.3g Myr, 2 sig lower-lim: \
             %.3g Myr, 3 sig: %.3g Myr" % (p2.stats[2],p2.stats[1],p2.stats[0]))
         else: print("Li Median Age: %.3g Myr, 68%% CI: %.3g - %.3g Myr, 95%% CI: \
@@ -100,7 +100,7 @@ class age_estimator:
         if load_pdf_fit: #allows refresh.py to make without needing these
             self.pdf_fit,self.cdf_fit = my_fits.fit_histogram(metal,fromFile=True)
             #self.pdf_fit,self.cdf_fit = my_fits.fit_student_t(metal,fromFile=True)
-    
+
     def set_grids(self,grid_median):
         if (type(grid_median) == str and type(grid_median) == str):
             if (grid_median[-4:] != '.npy'):
@@ -125,7 +125,7 @@ class age_estimator:
             assert self.const.METAL_RANGE_LIN[0] <= metallicity <= self.const.METAL_RANGE_LIN[1], \
                 "Indicator value %.2f out of range. Valid range: " \
                 % metallicity + str(self.const.METAL_RANGE_LIN) + " mA"
-        
+
         if mamajekAge == True and self.const.METAL_RANGE[0] <= metallicity <= \
                 self.const.METAL_RANGE[1]:
             mamajekAge = utils.getMamaAge(metallicity)
@@ -135,9 +135,9 @@ class age_estimator:
         if all(posterior_arr == 0):
             print("Posterior not well defined. Area is zero so adding constant")
             posterior_arr += 1
-        
+
         prob.normalize(self.const.AGE,posterior_arr)
-        
+
         p_struct = posterior()
         p_struct.array = posterior_arr
         p_struct.stats = prob.stats(self.const.AGE,posterior_arr,upperLim)
@@ -147,9 +147,9 @@ class age_estimator:
                 title = '(B-V)o = '+'%.2f' % bv \
                         +', ' + self.metal + ' = %.2f' % metallicity
             my_plot.posterior(self.const.AGE, p_struct.array, p_struct.stats,title,pdfPage,\
-                    showPlot,givenAge=givenAge,givenErr=givenErr, mamajekAge=mamajekAge,logPlot=logPlot) 
+                    showPlot,givenAge=givenAge,givenErr=givenErr, mamajekAge=mamajekAge,logPlot=logPlot)
         return p_struct
-    
+
     def resample_posterior_product(self,bv_arr,metallicity_arr,bv_errs=None,measure_err_arr=None,\
             upperLim_arr=None,maxAge_arr = None, \
             pdfPage=None,showPlot=False,showStars=False,title=None,givenAge=None,givenErr = None,
@@ -166,7 +166,7 @@ class age_estimator:
 
         ln_prob = np.zeros(len(self.const.AGE))
         star_post = []
-        
+
         resample_args = (bv_arr,metallicity_arr,bv_errs,measure_err_arr,upperLim_arr,maxAge_arr)
         args = (pdfPage,showPlot,showStars,title,givenAge,givenErr)
 
@@ -183,7 +183,7 @@ class age_estimator:
                     pdfPage,showPlot,star_post,givenAge,givenErr=givenErr)
 
         return p_struct
-    
+
     def posterior_product(self,bv_arr,metallicity_arr,bv_errs=None,measure_err_arr=None,\
             upperLim_arr=None,maxAge_arr = None, \
             pdfPage=None,showPlot=False,showStars=False,title=None,givenAge=None,givenErr = None):
@@ -197,11 +197,11 @@ class age_estimator:
             measure_err_arr = [self.const.MEASURE_ERR]*len(metallicity_arr)
         ln_prob = np.zeros(len(self.const.AGE))
         star_post = []
-        
+
         np.seterr(divide = 'ignore')
-        
-        if self.metal == 'lithium' and np.mean(metallicity_arr) < 3: 
-            metallicity_arr = np.power(10,metallicity_arr) 
+
+        if self.metal == 'lithium' and np.mean(metallicity_arr) < 3:
+            metallicity_arr = np.power(10,metallicity_arr)
 
         sec_per_star = 0.5
         start=time.time()
@@ -234,16 +234,16 @@ class age_estimator:
                               pdfPage,showPlot,star_post,givenAge,givenErr=givenErr,\
                               bv_arr = bv_arr,metal=self.metal)
         return p_struct
-   
+
     # Prior on age
     def prior(self,maxAge=None):
         agePrior = 1
         if maxAge is not None and maxAge < self.const.GALAXY_AGE:
             agePrior = self.const.AGE <= maxAge
         return agePrior
-    
+
     def calcium_likelihood(self,bv,rhk):
-        mu = self.grid_median 
+        mu = self.grid_median
         #like gaussian likelihood, divide by std which scales height of function
         pdfs = self.pdf_fit(rhk - mu)
         assert (pdfs >= 0).all(), "Error in numerical fit_histogram" + str(pdfs)
@@ -257,13 +257,16 @@ class age_estimator:
             bv_uncertainty = self.const.BV_UNCERTAINTY
         if not measure_err:
             measure_err = self.const.MEASURE_ERR
-        
-        num_points = self.const.NUM_BV_POINTS if bv_uncertainty <= 0.03 else self.const.NUM_BV_POINTS * (bv_uncertainty/0.03)
-        
-        # By spacing the points according to area, the weighting for each B-V point is 
+
+        num_points = int(
+            self.const.NUM_BV_POINTS if bv_uncertainty <= 0.03 else
+            self.const.NUM_BV_POINTS * (bv_uncertainty/0.03)
+        )
+
+        # By spacing the points according to area, the weighting for each B-V point is
         #implicit.  More points are clustered near bv than farther
         BV = prob.gaussian_cdf_space(bv,bv_uncertainty,num_points, sig_lim=3)
-        
+
         f = interpolate.interp2d(self.const.AGE,self.const.BV_S,self.grid_median)
         mu = f(self.const.AGE,BV)
 
@@ -281,7 +284,7 @@ class age_estimator:
         li_gauss = li_gauss.reshape(1,1,len(li_gauss))
         METAL = self.const.METAL[mask]
         METAL = METAL.reshape(1,1,len(METAL))
-        
+
         astro_gauss = self.pdf_fit(np.log10(METAL) - mu)/METAL
         product = li_gauss*astro_gauss
         integral = np.trapz(product,METAL,axis=2) # now 2d matrix
@@ -300,7 +303,7 @@ class age_estimator:
         if (self.metal == 'lithium'):
             primordial_li_fit = my_fits.MIST_primordial_li()
             bldb_fit = my_fits.bldb_fit(fits)
-        
+
         median_rhk, sigma = [],[]
         for bv in self.const.BV_S:
             rhk,scatter,CLUSTER_AGES,_ = my_fits.get_valid_metal(bv,fits,self.const,
@@ -308,7 +311,7 @@ class age_estimator:
             mu,sig,_ = my_fits.vs_age_fits(bv,CLUSTER_AGES,rhk,scatter,self.metal,
                                            omit_cluster)
             median_rhk.append(mu(self.const.AGE))
-            
+
         median_rhk = np.array(median_rhk)
 
         if medianSavefile:
@@ -316,7 +319,7 @@ class age_estimator:
 
         if (setAsDefaults):
             self.set_default_grids(medianSavefile)
-    
+
         self.grid_median = median_rhk
 
     #given an x_value, which is the location to evaluate and an array of fits,
@@ -346,7 +349,7 @@ class age_estimator:
 if  __name__ == "__main__":
     const = utils.init_constants('lithium')
     err = "Usage:  python baffles.py -bmv <B-V> -rhk <Log10(R\'HK)> -li <EWLi> [-bmv_err <> -li_err <> -ul -maxAge <13000> -plot -s -savePlot -filename <> -help]"
-    
+
     help_msg = "\n\
     -bmv corrected (B-V)o of the star (optional for calcium)\n\
     -rhk <> log base 10 of the R'HK value \n\
@@ -361,7 +364,7 @@ if  __name__ == "__main__":
     -savePlot saves the plotted posteriors to a pdf. \n\
     -filename <name of file w/o extension> name of files to be saved: name.pdf is graphs, name_calcium.csv/name_lithium.csv/name_product.csv are posterior csv files for calcium/lithium/product respectively.  \n\
     -help prints this message \n" % (const.GALAXY_AGE,const.BV_UNCERTAINTY, const.MEASURE_ERR)
-    
+
     argv = sys.argv #starts with 'baffles.py'
     if (len(argv) < 3 or '-help' in argv):
         print(err,help_msg)
@@ -401,7 +404,7 @@ if  __name__ == "__main__":
             if 0 < li < 3:
                 print("Interpretting LiEW as log(LiEW)")
                 li = 10**li
-            
+
             if (not (const.BV_RANGE[0] <= bv <= const.BV_RANGE[1])):
                 print("B-V out of range. Must be in range " + str(const.BV_RANGE))
                 sys.exit()
@@ -428,6 +431,6 @@ if  __name__ == "__main__":
         print(err)
     except ValueError:
         print(err)
-    
+
     baffles_age(bv,rhk,li,bv_err,li_err,upperLim,maxAge,fileName,showPlots=showPlots,
                 savePlots=savePlots, savePostAsText=save)

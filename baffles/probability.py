@@ -47,9 +47,9 @@ def polyspace(start,stop,num,power=2):
 
 # Space points according to the area of a guassian
 # Divide gaussian into num equal area sections and put a point in the middle of each
-# The result is denser sampling near the mean and less near the tails 
+# The result is denser sampling near the mean and less near the tails
 def gaussian_cdf_space(mu,sig,num,sig_lim=5):
-    import fitting as my_fits
+    import baffles.fitting as my_fits
     x = np.linspace(mu - sig_lim*sig,mu + sig_lim*sig,300)
     cdf = gaussian_cdf(x,mu,sig)
     fit = my_fits.piecewise(cdf,x)
@@ -63,7 +63,7 @@ def gaussian_cdf_space(mu,sig,num,sig_lim=5):
 
 # takes in densely sampled x,y and returns num sampled x
 def desample(x,y,num):
-    import fitting as my_fits
+    import baffles.fitting as my_fits
     ddy = np.abs(np.gradient(np.gradient(y)))
     f_arr = cdf(x,ddy)
     f_arr = f_arr*(x[-1] - x[0]) + x[0]
@@ -74,7 +74,7 @@ def desample(x,y,num):
 
 #normalizes in-place
 def normalize(x,y):
-    area = np.trapz(y,x) 
+    area = np.trapz(y,x)
     assert area > 0, "Invalid function to Normalize. Integral=%f" % area
     if area == 1: return y
     y[:] = y / area
@@ -85,9 +85,9 @@ def scale_to_height(y,height):
     scale = height/np.max(y)
     y[:] = y*scale
 
-#Cumulative Distribution Function 
+#Cumulative Distribution Function
 def cdf(x,y): #depends on spacing 1 between age
-    cum = integrate.cumtrapz(y,x,initial=0) 
+    cum = integrate.cumtrapz(y,x,initial=0)
     return cum / cum[-1]
 def hist_cdf(vals):
     a,b = min(vals),max(vals)
@@ -102,8 +102,8 @@ def mode(x,y):
 
 #finds median age,ranges for 1,2 sigma as [-2 sigma,-1 sigma, median,+1 sigma,+2 sigma]
 #finds ages from cdf values
-def stats(age,y,upperLim=False): 
-    import fitting as my_fits
+def stats(age,y,upperLim=False):
+    import baffles.fitting as my_fits
     c = cdf(age,y)
     probs = UL_PROBS if upperLim else GAUSS_PROBS
     fit = my_fits.piecewise(c,age)
@@ -112,7 +112,7 @@ def stats(age,y,upperLim=False):
 # takes in a PDF given by age,y and a given age to compare to
 # returns the percentile X such that given Age is within X %
 def get_percentile(age,y,givenAge):
-    import fitting as my_fits
+    import baffles.fitting as my_fits
     c = cdf(age,y)
     fit = my_fits.piecewise(age,c)
     return np.abs(fit(givenAge) - .5)*2*100
@@ -120,7 +120,7 @@ def get_percentile(age,y,givenAge):
 #calls func many times changing resample_args, keeping args constant
 # returns product of calls
 def resample(func,resample_args,args, sample_num=10,numIter=4):
-    indices = np.arange(len(resample_args[0]))    
+    indices = np.arange(len(resample_args[0]))
     log_sum = 0
     for _ in range(numIter):
         inds = np.random.choice(indices,size=sample_num,replace=False)

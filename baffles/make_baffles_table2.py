@@ -161,8 +161,8 @@ def make_table(MR = False):
     baf_li = baffles.age_estimator('lithium')
     baf_ca = baffles.age_estimator('calcium')
     #[Object,RA,Dec,Sp Type,B-V,R'HK,Li EW,Source]
-    f = open("baffles_table2_latex.txt",'w+') 
-    fMR = open("baffles_table2.csv",'w+') 
+    f = open("baffles_table2_latex.txt",'w+')
+    fMR = open("baffles_table2.csv",'w+')
     cdf = ['2.5%','16%','50%','84%','97.5%']
     column_head = ['Name','RA','Dec','Sp. Type','B-V',"logR'HK",'Li EW','Ref.']
     column_head += ["R'HK Age at CDF="+x for x in cdf]
@@ -173,28 +173,28 @@ def make_table(MR = False):
     fMR.write('\n')
     fMR.write(delimiterMR.join(units))
     fMR.write('\n')
-    
+
     for row in final_table:
         arr = []
         arrMR = []
-        arr += [x.replace('V* ','').replace('_','-') for x in row[0:4]] 
+        arr += [x.replace('V* ','').replace('_','-') for x in row[0:4]]
         arrMR += [x.replace('$','').replace('V* ','') for x in row[0:4]]
-        
+
         bv = float(row[4])
-        arr.append("%.2f" % bv) 
-        arrMR.append("%.3g" % bv)        
+        arr.append("%.2f" % bv)
+        arrMR.append("%.3g" % bv)
 
         p_ca,p_li = None,None
         if utils.isFloat(row[5]):
             rhk = float(row[5])
-            arr.append('$%.2f$' % rhk) 
+            arr.append('$%.2f$' % rhk)
             arrMR.append('%.3f' % rhk)
             if ca_const.inRange(bv,rhk):
                 p_ca = baf_ca.get_posterior(bv,rhk,showPlot=False)
         else:
             arr.append(empty)
             arrMR.append(empty)
-       
+
         ew = None
         if utils.isFloat(row[6]):
             ew = float(row[6])
@@ -203,13 +203,13 @@ def make_table(MR = False):
         else:
             arr.append(empty)
             arrMR.append(empty)
-        
-        arr.append(row[7]) 
+
+        arr.append(row[7])
         arrMR.append(row[7].replace(',',';'))
 
         if bv is not None and ew is not None and ew > 0 and li_const.inRange(bv,np.log10(ew)):
             p_li = baf_li.get_posterior(bv,ew,showPlot=False)
-        
+
         if p_ca is not None:
             arr += printStats(p_ca.stats)
             arrMR += printStats(p_ca.stats,MR=True)
@@ -224,7 +224,7 @@ def make_table(MR = False):
             arr += [empty]*5
             arrMR += [empty]*5
 
-        
+
         if p_ca is None and p_li is None:
             continue
 
@@ -243,10 +243,10 @@ def make_table(MR = False):
         else:
             arr += [empty]*5
             arrMR += [empty]*5
-             
+
         f.write(' & '.join(arr) + " \\\\")
         f.write('\n')
-        fMR.write(delimiterMR.join(arrMR))   
+        fMR.write(delimiterMR.join(arrMR))
         fMR.write('\n')
     f.close()
     fMR.close()
@@ -260,6 +260,6 @@ def main():
 
 
 
-    
+
 if __name__ == '__main__':
     main()

@@ -18,11 +18,12 @@ import copy
 import bisect
 import pickle
 from astropy.io import ascii
-import probability as prob
-import utils
-import readData
-import plotting as my_plot
+import baffles.probability as prob
+import baffles.utils as utils
+import baffles.readData as readData
+import baffles.plotting as my_plot
 from os.path import join
+from baffles.paths import GRIDDIR, DATADIR
 
 BIN_SIZE = 10
 MIN_PER_BIN = 4
@@ -54,7 +55,7 @@ def constrained_poly_fit(x,y,x1=None,y1=None,lim=None,sigma=None):
 #    if (a >= b):
 #        return a
 #    return b
-    
+
 def poly_constr_vert(param,x1,y1):
     a = param[0]
     b = -2*a*x1
@@ -85,11 +86,11 @@ def constrained_poly_minimizer(params,x,y,scatter,lim):
 """
 
 #computes fit of age and lithium depletion boundary (well bv at which lithium goes to zero)
-# returns function such that giving it a b-v value returns oldest age it could be.  
-def bldb_fit(fits,plot=False): 
+# returns function such that giving it a b-v value returns oldest age it could be.
+def bldb_fit(fits,plot=False):
     bv_at_zero_li,ages,cluster_names = [],[],[]
     import li_constants as const
-    
+
     BV = np.linspace(0.6,2.2,300) #picked to include M35
     for c in range(1,len(fits)): #omitting NGC2264
         li = fits[c][0](BV)
@@ -98,15 +99,15 @@ def bldb_fit(fits,plot=False):
             bv_at_zero_li.append(BV[i])
             ages.append(const.CLUSTER_AGES[c])
             cluster_names.append(const.CLUSTER_NAMES[c])
-   
+
     upper_clusters = ['M67','Hyades','M34','M35']
     upper_ages = [ages[cluster_names.index(name)] for name in upper_clusters]
     upper_bv = [bv_at_zero_li[cluster_names.index(name)] for name in upper_clusters]
     fit = piecewise(upper_bv,np.log10(upper_ages))
-    
+
     def ldb_age(x):
         return np.power(10,fit(x))
-    
+
     if (plot):
         pp = PdfPages('plots/bldb_vs_age.pdf')
         plt.xlabel('B-V',size=my_plot.AXIS_LABEL_SIZE)
@@ -116,7 +117,7 @@ def bldb_fit(fits,plot=False):
             plt.scatter(bv_at_zero_li[c],ages[c],s=60,label=cluster_names[c],color=const.COLORS[c+1],marker=const.MARKERS[c+1])
         plt.plot(BV,ldb_age(BV))
         plt.fill_between(BV,ldb_age(BV),color='C0',alpha=.2,label="valid ages")
-        plt.legend()        
+        plt.legend()
         plt.minorticks_on()
         plt.tick_params(axis='both',which='both',right=True,top=True)
         plt.tight_layout()
@@ -124,7 +125,7 @@ def bldb_fit(fits,plot=False):
         #plt.show()
         pp.close()
         plt.close()
-    
+
     return ldb_age
 
 #returns the 1d polynomial
@@ -154,12 +155,12 @@ def li_dip_fit(bv,li,upper_lim,dip_bv_range,dip_li_range,dip_fit_range,edge_box)
                (li <= dip_li_range[1]) & (li >= dip_li_range[0])
     mask = np.invert(dip_mask)
     dip_mask = (dip_mask) | ((bv <= dip_fit_range[1]) & (bv >= dip_fit_range[0]))
-    
+
     bv_dip,li_dip,upper_lim_dip = bv[dip_mask],li[dip_mask],upper_lim[dip_mask]
     bv_,li_,upper_lim_ = bv[mask],li[mask],upper_lim[mask]
 
     no_dip_fit,no_dip_sig_fit = poly_fit(bv_,li_,2,upper_lim_)
-    
+
     edge_mask = (bv_dip > edge_box[0]) & (bv_dip < edge_box[1]) & \
             (li_dip > edge_box[2]) & (li_dip < edge_box[3])
 
@@ -177,10 +178,10 @@ def li_dip_fit(bv,li,upper_lim,dip_bv_range,dip_li_range,dip_fit_range,edge_box)
 
     final_fit = lambda x : np.where((np.array(x) <= dip_bv_range[1]) & \
             (np.array(x) >= dip_bv_range[0]),dip_fit(x),no_dip_fit(x))
-    
+
     final_sig_fit = lambda x: np.where((np.array(x) <= dip_bv_range[1]) & \
             (np.array(x) >= dip_bv_range[0]),dip_sig_fit(x),no_dip_sig_fit(x))
-    
+
     return [final_fit,final_sig_fit]
 
 
@@ -197,7 +198,7 @@ def poly_fit(x,y,n=2,upper_lim=None,scatter=False,weight = None):
 
 def minimize_polynomial(x,y,n,upper_lim):
     guess_poly = poly_fit(x,y,n,scatter=True)
-    guess = np.append(guess_poly[0],guess_poly[1])  
+    guess = np.append(guess_poly[0],guess_poly[1])
     res = minimize(poly_minimizer,guess,args=(x,y,upper_lim), method='Nelder-Mead')
     if (not res.success):
         print("Unsuccessful minimizing of polynomial function, check initial guess")
@@ -213,7 +214,7 @@ def poly_minimizer(params,c,r,upper_lim):
     if (utils.negative_sig(sig)):
         return np.inf
     r_model = np.poly1d(params[0:-1])(c)
-    sig_model = constant_fit(sig)[0](c)       
+    sig_model = constant_fit(sig)[0](c)
     return inverse_log_likelihood(r_model,sig_model,r,upper_lim)
 
 # 4 params = mu,sig,amplitude,vertical_offset
@@ -229,12 +230,12 @@ def fit_gaussian(x,y):
     #print("Gaussian fit params= ", res.x)
     def gauss_fit(x_coords):
         return prob.gaussian(np.log10(x_coords),mu,sig)*A + c
-    
+
     if not res.success:
         import ca_constants as const
         plt.semilogx(const.AGE,gauss_fit(np.log10(const.AGE)))
         plt.show()
-    
+
     return gauss_fit
 
 def gaussian_scatter_minimizer(params,x,y):
@@ -250,17 +251,17 @@ def gaussian_scatter_minimizer(params,x,y):
 #x_method: determines how x_coordinates are selected.
 #   'even' means evenly spaced in the x dimension from min(x) to max(x)
 #   'bin' means spaced evenly with number per bin at least 'bins' (the next parameter) in size
-#   'free' means the x_coordinates are free parameters with only the min and max fixed by the range of x 
+#   'free' means the x_coordinates are free parameters with only the min and max fixed by the range of x
 #returns piecewise function
 def general_piecewise(X,Y,segments=3,guess_fit=None, sigma=None,x_method='even', min_bin_size=2,min_length=0,monotonic=None,n_pin = 0):
     if (segments == 0): #uses a constant fit
         return np.poly1d(np.polyfit(X,Y,segments))
     if (guess_fit is None):
         guess_fit = linear_fit(X,Y)
-   
+
     #if n_pin is 1 still starts at first point
     # x_coords defines x-locs of segment junctions starting from last pinned or start
-    x_coords = np.linspace(X[max(0,n_pin-1)],X[-1],segments+1) 
+    x_coords = np.linspace(X[max(0,n_pin-1)],X[-1],segments+1)
     x_param = x_coords[1:-1]  # these are the free x-coordinates of the junctions
     #y_param = guess_fit(x_coords[n_pin:])
     y_param = guess_fit(x_coords) if n_pin == 0 else guess_fit(x_coords[1:])
@@ -280,10 +281,10 @@ def general_piecewise(X,Y,segments=3,guess_fit=None, sigma=None,x_method='even',
 
     def minimizer(params):
         x_temp,y_temp = params_to_xy(params,X,Y,n_pin,segments)
-        if not all(a + min_length <= b for a,b in zip(x_temp[:-1], x_temp[1:])): 
+        if not all(a + min_length <= b for a,b in zip(x_temp[:-1], x_temp[1:])):
             return np.inf
         if (monotonic == -1):#decreasing
-            if not all(a >= b for a,b in zip(y_temp[max(0,n_pin-1):-1], y_temp[max(1,n_pin):])): 
+            if not all(a >= b for a,b in zip(y_temp[max(0,n_pin-1):-1], y_temp[max(1,n_pin):])):
                 return np.inf
         if (monotonic == 1):#increasing
             if not all(a <= b for a,b in zip(y_temp[max(0,n_pin-1):-1], y_temp[max(1,n_pin):])):
@@ -292,7 +293,7 @@ def general_piecewise(X,Y,segments=3,guess_fit=None, sigma=None,x_method='even',
         if sigma is None:
             return prob.chi_sqr(Y,y_model,total=True)
         return prob.chi_sqr(Y,y_model,sigma,total=True)
-    
+
     res = minimize(minimizer,params0, method='Nelder-Mead')
     if (not res.success):
         print("Unsuccessful minimizing of %d segment piecewise function" % segments)
@@ -301,7 +302,7 @@ def general_piecewise(X,Y,segments=3,guess_fit=None, sigma=None,x_method='even',
             print("Trying %d segment fit instead" % (segments - 1))
             return general_piecewise(X,Y,segments - 1,guess_fit,sigma,x_method, min_bin_size, \
                                      min_length,monotonic,n_pin)
-    
+
     x_val,y_val = params_to_xy(res.x,X,Y,n_pin,segments)
     return piecewise(x_val,y_val)
 
@@ -312,7 +313,7 @@ def inverse_log_likelihood(r_model,sig_model,r,upper_lim):
     for i in range(len(r)):
         total_sum += norm.logpdf(r[i],loc=r_model[i],scale=sig_model[i])   ########### CHECK
         continue
-        
+
         if (upper_lim[i]):
             total_sum += norm.logcdf(r[i],loc=r_model[i],scale=sig_model[i])
         else:
@@ -350,7 +351,7 @@ def residuals(x,y,trend):
         detrend(x,b,trend)
         return b
 
-#creates a function that interpolates between input and output.  
+#creates a function that interpolates between input and output.
 #returns a function
 def magic_table_convert(in_column,out_column):
     if (type(in_column) == str):
@@ -363,8 +364,8 @@ def magic_table_convert(in_column,out_column):
             out_column = 1
         elif (out_column.lower() == "bv" or out_column.lower() == "b-v"):
             out_column = 6
-    
-    t = ascii.read('data/mamajek_magic_table.txt')
+
+    t = ascii.read(join(DATADIR, 'mamajek_magic_table.txt'))
     x,y = [],[] #x is input and y is output like a function
     for row in t:
         try:
@@ -374,11 +375,11 @@ def magic_table_convert(in_column,out_column):
             y.append(b)
         except:
             continue
-    
-    return interpolate.interp1d(x,y, fill_value='extrapolate') 
+
+    return interpolate.interp1d(x,y, fill_value='extrapolate')
 
 def spt_bv():
-    t = ascii.read('data/mamajek_magic_table.txt')
+    t = ascii.read(join(DATADIR, 'mamajek_magic_table.txt'))
     letters = ['O','B','A','F','G','K','M']
     spt = [row[0][:-1] for row in t[0:90]]
     sp = []
@@ -386,9 +387,9 @@ def spt_bv():
     for i in range(len(spt)):
         sp.append(float(spt[i][1:]) + 10*letters.index(spt[i][0]))
         bv.append(float(t[i][6]))
-    
-    interp = interpolate.interp1d(sp,bv, fill_value='extrapolate')    
-    #plt.plot(bv,sp)    
+
+    interp = interpolate.interp1d(sp,bv, fill_value='extrapolate')
+    #plt.plot(bv,sp)
     def f(x):
         return interp(utils.float_sptype(x))
     return f
@@ -398,7 +399,7 @@ def spt_bv():
 # PRIMORDIAL_NLI = 3.2
 # returns an array
 def teff_to_primli(teff):
-    t = genfromtxt('data/NLi_to_LiEW.csv', delimiter=',')
+    t = genfromtxt(join(DATADIR, 'NLi_to_LiEW.csv', delimiter=','))
     logEW = [row[0] for row in t[1:]]
     arr = []
     for temp in teff:
@@ -407,15 +408,15 @@ def teff_to_primli(teff):
         for row in t[1:]:
             col.append(interpolate.interp1d(t[0][1:], row[1:],fill_value='extrapolate')(temp))
         arr.append(interpolate.interp1d(col,logEW, fill_value='extrapolate')(PRIMORDIAL_NLI).tolist())
-            
+
     return arr
 
 #teff is an array
 #At every T,nli it uses the soderblom 1993 Pleiades table to find the log(EW)
 # returns an array
 def teff_nli_to_li(teff,NLI):
-    t = genfromtxt('data/NLi_to_LiEW.csv', delimiter=',')
-    t2 = genfromtxt('data/zapatero_osorio_teff_nli_ewli.txt')
+    t = genfromtxt(join(DATADIR, 'NLi_to_LiEW.csv', delimiter=','))
+    t2 = genfromtxt(join(DATADIR, 'zapatero_osorio_teff_nli_ewli.txt'))
     t2[1:,1:] = np.log10(1000*t2[1:,1:]) #convert to logEW
     logEW = [row[0] for row in t[1:]]
     temp_axis = [row[0] for row in t2[1:]]
@@ -435,7 +436,7 @@ def teff_nli_to_li(teff,NLI):
     return np.array(arr)
 
 def VI_to_teff(in_column=2,out_column=6):
-    t = ascii.read('data/Teff_to_V-I.csv')
+    t = ascii.read(join(DATADIR, 'Teff_to_V-I.csv'))
     x,y = [],[] #x is input and y is output like a function
     for row in t:
         try:
@@ -447,7 +448,7 @@ def VI_to_teff(in_column=2,out_column=6):
             y.append(b)
         except:
             continue
-    VI = interpolate.interp1d(x,y, fill_value='extrapolate') 
+    VI = interpolate.interp1d(x,y, fill_value='extrapolate')
     VI2 = lambda x: 9581.1 + -14264*x + 40759*x**2 - 74141*x**3 + 60932*x**4 - 18021*x**5
     return lambda vi: (vi < 1.2) * VI2(vi) + (vi >= 1.2) * VI(vi)
 
@@ -464,10 +465,10 @@ def cluster_scatter_from_stars(bv_m,fits):
             num_stars.append(np.sum(mask))
         arr.append(num_stars)
     arr = np.array(arr)
-    
+
     arr = arr / (np.sum(arr,axis=0) + .001)
     #arr holds % of stars each cluster has at each B-V slice
-    
+
     arr = (1 - arr)*.35 + 0.05
 
     for c in range(len(arr)):
@@ -478,7 +479,7 @@ def cluster_scatter_from_stars(bv_m,fits):
         arr[c] += range_offset
 
     arr = savgol_filter(arr, 51, 3)
-    
+
     for c in range(len(fits)):
         fits[c][1] = piecewise(const.BV,arr[c])
     return fits
@@ -503,13 +504,13 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
             resid = None
             if metal == 'lithium':
                 resid = np.array(bv_m[c][1]) - mu_interp(const.CLUSTER_AGES[c],bv_m[c][0]).flatten()
-            else:        
+            else:
                 resid = np.array(bv_m[c][1]) - mu_interp(const.CLUSTER_AGES[c])
         elif linSpace:
             resid = np.power(10,bv_m[c][1]) - np.power(10,fits[c][0](bv_m[c][0]))
         else: #log space
             resid = residuals(bv_m[c][0],bv_m[c][1],fits[c][0])  #Log space
-        
+
         #now filter out upper-limits from resid
         for i in range(len(resid)):
             if (upper_limits is not None and upper_limits[c][i]):
@@ -525,7 +526,7 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
     residual_arr = np.concatenate(allClusters)
     if zero_center:
         #print("Subtracting off median of %.5f from residuals, (mean = %.5f)" % (np.median(residual_arr),np.mean(residual_arr)))
-        resid_mean = np.median(residual_arr) 
+        resid_mean = np.median(residual_arr)
         residual_arr -= resid_mean
         for i in range(len(allClusters)):
             allClusters[i] = np.array(allClusters[i]) - resid_mean
@@ -537,10 +538,10 @@ def lorentz_pdf(x,xo,gamma):
 
 def lorentz_cdf(x,xo,gamma):
     return np.arctan((x-xo)/gamma)/np.pi + 0.5
- 
+
 def student_pdf(x,df, scale):
     return scipy_t.pdf(x, df, 0, scale)
-   
+
 def student_cdf(x,df, scale):
     return scipy_t.cdf(x, df, 0, scale)
 
@@ -550,36 +551,36 @@ def fit_student_t(metal,residual_arr=None,fromFile=True,saveToFile=False):
             reading from file"
     popt = None
     if fromFile:
-        popt = np.load(join('grids/',metal + '_student_t_likelihood_params.npy'))
+        popt = np.load(join(GRIDDIR ,metal + '_student_t_likelihood_params.npy'))
     else:
         buf = 0.1
         x = np.linspace(np.min(residual_arr)-buf,np.max(residual_arr)+buf,1000) #1000 for linear?
         cdf = np.array([(residual_arr < n).sum() for n in x],dtype='float')
         cdf /= cdf[-1]
-    
+
         #popt,pcov = curve_fit(lorentz_cdf,x,cdf)
         popt,pcov = curve_fit(student_cdf,x,cdf,p0=[1,.1])
-    
-        print("Optimal params=", popt)  
-    
+
+        print("Optimal params=", popt)
+
     def pdf_fit(input):
-        return student_pdf(input, *popt) 
+        return student_pdf(input, *popt)
         #return lorentz_pdf(input,*popt)
     def cdf_fit(input):
-        return student_cdf(input, *popt) 
+        return student_cdf(input, *popt)
         #return lorentz_cdf(input,*popt)
 
     if not fromFile and saveToFile:
-        np.save(join('grids', metal + '_student_t_likelihood_params'),popt)
+        np.save(join(GRIDDIR, metal + '_student_t_likelihood_params'),popt)
     return pdf_fit,cdf_fit
 
 
 def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     if fromFile:
-        [x,pdf,cdf] = np.load(join('grids',metal + '_likelihood_fit.npy'))
+        [x,pdf,cdf] = np.load(join(GRIDDIR, metal + '_likelihood_fit.npy'))
         return piecewise(x,pdf),piecewise(x,cdf)
     const = utils.init_constants(metal)
-    
+
     assert residual_arr is not None or fromFile, "Must provide residuals if not \
             reading from file"
     mu = np.mean(residual_arr)
@@ -605,7 +606,7 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
         #smoothed = savgol_filter(cdf, 55, 3)
         #smoothed = savgol_filter(smoothed, 25, 3)
         #smoothed = savgol_filter(smoothed, 9, 3)
-   
+
     pdf = np.gradient(smoothed)
     prob.normalize(x,pdf)
 
@@ -623,17 +624,17 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
 
     if metal=='calcium':
         m,n = np.nonzero(pdf >= 0.32)[0][0],np.nonzero(pdf >= 0.45)[0][0]
-        pdf[m:n] = piecewise([x[m],x[n]],[pdf[m],pdf[n]])(x[m:n])        
+        pdf[m:n] = piecewise([x[m],x[n]],[pdf[m],pdf[n]])(x[m:n])
         pdf = savgol_filter(pdf,21,3)
-    
+
     pdf [:2] = [0,0]
     pdf[-2:] = [0,0]
-    prob.normalize(x,pdf)    
+    prob.normalize(x,pdf)
     cdf = integrate.cumtrapz(pdf, x=x, initial=0)
     cdf /= cdf[-1]
 
     if saveToFile:
-        np.save(join('grids',metal + '_likelihood_fit'),[x,pdf,cdf])
+        np.save(join(GRIDDIR ,metal + '_likelihood_fit'),[x,pdf,cdf])
     return piecewise(x,pdf),piecewise(x,cdf)
 
 
@@ -674,7 +675,7 @@ def get_valid_metal(bv,fits,const,primordial_li_fit=None,ldb_fit=None,omit_clust
 #returns functions that take in age to get metal,sigma
 def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,omit_cluster=None):
     cluster_ages_og,scatter_og = copy.deepcopy(cluster_ages),copy.deepcopy(scatter)
-    if omit_cluster is not None and metal == 'calcium': 
+    if omit_cluster is not None and metal == 'calcium':
         del cluster_ages[omit_cluster]
         del rhk[omit_cluster]
         del scatter[omit_cluster]
@@ -694,7 +695,7 @@ def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,omit_cluster=None):
         bv_cut = [0.65,1,1.6]
         segs = [2,3,2,1]
         s = segs[bisect.bisect_left(bv_cut,bv)]
-        
+
         # hardcode fit to go through hyades during the lithium fit
         if 0.41 < bv < 0.51:
             const = utils.init_constants('lithium')
@@ -706,7 +707,7 @@ def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,omit_cluster=None):
 
         metal_fit = general_piecewise(cluster_ages,rhk,s,\
                 n_pin=2,monotonic=-1,min_length=.2,sigma=scatter)
-            
+
     def mu(age):
         return metal_fit(np.log10(age))
 
@@ -716,7 +717,7 @@ def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,omit_cluster=None):
     # gaussian fit,total detrended mean, mean clusters, best-fit, linear interp
     if (metal == 'calcium'):
         sig = fit_gaussian(np.log10(cluster_ages_og),scatter_og)
-    elif (metal == 'lithium'):  
+    elif (metal == 'lithium'):
         sig = np.poly1d([np.mean(scatter)]) #placeholder--isn't used
 
     return mu,sig,mu_lbl
@@ -729,53 +730,53 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     assert (ngc2264_fit or fromFile),"primordial_li must take in ngc2264 fit if not reading from a file"
     import li_constants as const
     if (fromFile):
-       prim_li = pickle.load(open(join('data','mist_primordial_li.p'),'rb'))
+       prim_li = pickle.load(open(join(DATADIR,'mist_primordial_li.p'),'rb'))
        return interpolate.interp1d(const.BV,prim_li, fill_value='extrapolate')
-    
+
     teff = magic_table_convert('bv','teff')(const.BV) #convert B-V to Teff
-   
-    t1 = ascii.read(join('data','MIST_iso_1Myr.txt'))
-    t5 = ascii.read(join('data','MIST_iso_5Myr.txt'))
-    
+
+    t1 = ascii.read(join(DATADIR,'MIST_iso_1Myr.txt'))
+    t5 = ascii.read(join(DATADIR,'MIST_iso_5Myr.txt'))
+
     star_mass5 = interpolate.interp1d(t5['log_Teff'][0:275],t5['initial_mass'][0:275],\
             fill_value='extrapolate')(np.log10(teff))
     Nli5 = 12 + np.log10(interpolate.interp1d(t5['log_Teff'][0:275],t5['surface_li7'][0:275],\
             fill_value='extrapolate')(np.log10(teff)))
-    
+
     Nli1 = 12 + np.log10(interpolate.interp1d(t1['initial_mass'],t1['surface_li7'],\
             fill_value='extrapolate')(star_mass5))
-   
-    #convert teff and nli to EW   
+
+    #convert teff and nli to EW
     deltaEW = teff_nli_to_li(teff,Nli1) - teff_nli_to_li(teff,Nli5)
     deltaEW = np.clip(deltaEW,0,None)
     assert all(deltaEW >= 0), "EW must decrease monotonically"
     final_li = ngc2264_fit(const.BV) + deltaEW
 
     if (saveToFile):
-        pickle.dump(final_li,open(join('data','mist_primordial_li.p'),'wb+'))
+        pickle.dump(final_li,open(join(DATADIR,'mist_primordial_li.p'),'wb+'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
 
 
 
 def get_fit_BIC(bv_m,fits,dof):
     # Mamajek: Typical errors ... ∼0.1 dex (e.g. Henry et al. 1996; Paulson et al. 2002; White, Gabor, & Hillenbrand 2007)
-    SIG = 0.1  
+    SIG = 0.1
     num_stars = sum([len(bv_m[i][0]) for i in range(len(bv_m))])
     print("num stars", num_stars)
-    
+
     log_L_hat = 0
     chi2_sum = 0
-    
+
     for i in range(len(bv_m)):
         chi2 = prob.chi_sqr(bv_m[i][1],fits[i][0](bv_m[i][0]),SIG)
         chi2_sum += np.sum(chi2)
         log_L_hat += np.sum(-chi2/2)
-    
+
     #print("log_L_hat= ", L_hat)
     print("chi2= ", chi2_sum)
-    
+
     return np.log(num_stars)*dof - 2*log_L_hat
-    
+
 
 # refreshes everything saved to files
 def main():
@@ -783,18 +784,18 @@ def main():
     _,res_arr = my_fits.get_fit_residuals(bv_m,fits,'calcium',None,li_range=None,
                 linSpace=False,scale_by_std= False,vs_age_fit=True,zero_center=True)
     my_fits.fit_histogram('calcium',residual_arr=res_arr,fromFile=False,saveToFile=True)
-    
-    
-        
-    const = utils.init_constants('lithium')    
+
+
+
+    const = utils.init_constants('lithium')
     bv_m, upper_lim, fits = readData.read_lithium(fromFile=False,saveToFile=True)
-    
+
     my_fits.MIST_primordial_li(ngc2264_fit=fits[const.CLUSTER_NAMES.index('NGC2264')][0],fromFile=False, saveToFile=True)
     _,res_arr= my_fits.get_fit_residuals(bv_m,fits,'lithium',upper_lim,li_range=None,linSpace=False,
                                         vs_age_fit=True,zero_center=True)
     my_fits.fit_histogram('lithium',residual_arr=res_arr,fromFile=False,saveToFile=True)
-    
-    
+
+
 
 if  __name__ == "__main__":
     main()

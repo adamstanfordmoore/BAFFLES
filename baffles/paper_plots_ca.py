@@ -26,14 +26,14 @@ upper_lim = None
 bv_m,fits = readData.read_calcium()#fromFile=False,saveToFile=False,fit_degree=0)
 print("Num Calcium Stars= ", [len(x[0]) for x in bv_m])
 
-def main(): 
+def main():
     #metal_vs_bv()
     #metal_vs_age()
     #scatter_vs_age()
     #fit_hist()
     #baffles_vs_mamajek()
     #combined_validation_subplots()
-    
+
 
     #---------Not in Paper-----------
     #plot_fits()
@@ -49,7 +49,7 @@ def print_BIC():
     dof = len(bv_m) #1 parameter for each cluster
     BIC1 = my_fits.get_fit_BIC(bv_m,fits,dof)
     print("BIC constant fits = ", BIC1)
-    
+
 
     dof = 2*len(bv_m) # 2 for each cluster
     bv_m,fits = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=1)
@@ -80,7 +80,7 @@ def metal_vs_bv():
     pp=PdfPages(name)
     ##clusters = [0,4,6,7]
     my_plot.metal_vs_bv(bv_m,fits,METAL,pp,showPlots=False,legend=False)#,specific_clusters = clusters)
-    
+
     bv_m_linear,fits_linear = readData.read_calcium(fromFile=False,saveToFile=False,fit_degree=1)
     my_plot.metal_vs_bv(bv_m_linear,fits_linear,METAL,pp,showPlots=False)#,specific_clusters = clusters)
     printName(name)
@@ -90,7 +90,7 @@ def metal_vs_age():
     #Metal vs Age
     name = join('plots', METAL + '_metal_v_age.pdf')
     pp=PdfPages(name)
-    bvRange = const.BV_S 
+    bvRange = const.BV_S
     for bv in bvRange:
         print("bv: ",bv)
         my_plot.metal_vs_age(fits,METAL,bv,pp,showPlots=False,shadeScatter=False,\
@@ -245,9 +245,9 @@ def combined_validation_subplots():
 
     # Set common labels
     fig.text(0.5, 0.02, 'Age (Myr)',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center')
-    fig.text(0.01, 0.5, 'Probability Density (Myr^-1)',size=my_plot.AXIS_LABEL_SIZE, 
+    fig.text(0.01, 0.5, 'Probability Density (Myr^-1)',size=my_plot.AXIS_LABEL_SIZE,
             ha='center', va='center', rotation='vertical')
-    fig.text(0.99, 0.5, 'B-V',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center', 
+    fig.text(0.99, 0.5, 'B-V',size=my_plot.AXIS_LABEL_SIZE, ha='center', va='center',
             rotation='vertical')
     pp.savefig()
     plt.close()
