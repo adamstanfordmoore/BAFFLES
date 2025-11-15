@@ -258,7 +258,7 @@ class age_estimator:
         if not measure_err:
             measure_err = self.const.MEASURE_ERR
         
-        num_points = self.const.NUM_BV_POINTS if bv_uncertainty <= 0.03 else self.const.NUM_BV_POINTS * (bv_uncertainty/0.03)
+        num_points = self.const.NUM_BV_POINTS if bv_uncertainty <= 0.03 else int(self.const.NUM_BV_POINTS * (bv_uncertainty/0.03))
         
         # By spacing the points according to area, the weighting for each B-V point is 
         #implicit.  More points are clustered near bv than farther
