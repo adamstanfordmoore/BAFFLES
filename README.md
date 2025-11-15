@@ -15,7 +15,7 @@ Currently there are still some large files in the git history, so clone with dep
 
 ### Installation
 
-#### Option 1: Using Conda (Recommended)
+#### Using Conda (Recommended)
 
 Create a conda environment with all dependencies:
 
@@ -26,7 +26,7 @@ conda activate baffles
 
 ### Requirements
 
-- Python 3.9+ (3.7+ may work but not tested)
+- Python 3.9+
 - numpy >= 1.20, < 2.0
 - scipy >= 1.7, < 1.13 (constrained to avoid deprecated `interp2d`)
 - matplotlib >= 3.3
