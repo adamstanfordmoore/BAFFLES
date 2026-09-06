@@ -3,19 +3,19 @@
 This package computes age posteriors for field stars from measurements of R'HK calcium emission and/or B-V color and lithium equivalent width absorption (Li EW). For calcium emission our method is calibrated to stars with B-V between 0.45 and 0.9 (~ F6-K2) and
 log(R'HK) between -3.7 and -5. For lithium we have calibrated BAFFLES to stars with B-V between 0.35 and 1.9 (~F2-M5) and Li EW between 3.2 and 1500 mA. See the paper [Stanford-Moore et al. 2020](https://arxiv.org/abs/2006.04811).
 
-### Downloading (Size ~8MB)
+## Downloading (Size ~12MB)
 
-Download the zipped file from GitHub or [Zenodo](https://doi.org/10.5281/zenodo.3840244).
+```bash
+git clone --filter=blob:none https://github.com/adamstanfordmoore/BAFFLES.git
+```
 
-Or
+The `--filter=blob:none` option is recommended because the git history contains large grid files (about 770MB) that were deleted long ago. A blobless clone downloads all current files and the full commit history, but skips old file contents unless you check out an old commit, so the download is only a few MB. A plain `git clone` also works but downloads the whole history.
 
-`git clone --depth=1 https://github.com/adamstanfordmoore/BAFFLES.git`
+Alternatively, download the zipped file from GitHub or [Zenodo](https://doi.org/10.5281/zenodo.3840244).
 
-Currently there are still some large files in the git history, so clone with depth 1 to avoid all 256MB of history.
+## Installation
 
-### Installation
-
-#### Using Conda (Recommended)
+### Using Conda (Recommended)
 
 Create a conda environment with all dependencies:
 
@@ -24,15 +24,25 @@ conda env create -f environment.yml
 conda activate baffles
 ```
 
-### Requirements
+### Using pip
 
-- Python 3.9+
-- numpy >= 1.20, < 2.0
-- scipy >= 1.7, < 1.13 (constrained to avoid deprecated `interp2d`)
+```bash
+pip install -r requirements.txt
+```
+
+## Requirements
+
+- Python 3.9+ (3.12 recommended)
+- numpy >= 1.20 (NumPy 2.x supported)
+- scipy >= 1.7
 - matplotlib >= 3.3
 - astropy >= 4.0
 
-**Note:** scipy versions >= 1.13 have removed `interp2d` which is used in `fitting.py`. The environment files ensure a compatible version is installed.
+Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree to machine precision across both stacks.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for details of changes since publication, the testing performed, and their impact on derived ages. The code and grids used in the published paper are at commit `d2ce435`; after cloning as described above, run `git checkout d2ce435` to view them.
 
 ## Authors
 
@@ -52,7 +62,7 @@ To save this probability density function in a csv file as 1000 lines of age,pro
 
 `python baffles.py -bmv 0.65 -rhk -4.906 -plot -s -filename suns_age`
 
-Now lets find the age of HR 2562 using B-V=.45 ± .02, log(R'HK) = -4.55 (Gray 2006), and lithium EW of 21 ± 5 (Mesa el al 2018). "-ul" would denote an upper limit. "-s" will save a csv file of the posterior. "-plot" will show a plot of the posterior. -maxAge 10000 will constrain the prior on age to be uniform out to 10 Gyr. "-li_err" allows input of uncertainty
+Now let's find the age of HR 2562 using B-V=.45 ± .02, log(R'HK) = -4.55 (Gray 2006), and lithium EW of 21 ± 5 (Mesa et al. 2018). "-ul" would denote an upper limit. "-s" will save a csv file of the posterior. "-plot" will show a plot of the posterior. -maxAge 10000 will constrain the prior on age to be uniform out to 10 Gyr. "-li_err" allows input of uncertainty
 on Li EW, and "-bv_err" uncertainty on B-V. The following command will determine the age using calcium and lithium separately and then find the combined posterior product.
 
 `python baffles.py -bmv 0.45 -bmv_err .02 -rhk -4.55 -li 21 -li_err 5 -plot`
@@ -73,7 +83,7 @@ To directly import baffles and use the module in a python script see "usage_exam
 
 **li_constants.py** : constants related to lithium
 
-**fitting.py** : various fitting functions used to compute grids in baffles.py, inlcuding for mean R'HK as a function of age and mean LiEW as a function of age and B-V
+**fitting.py** : various fitting functions used to compute grids in baffles.py, including for mean R'HK as a function of age and mean LiEW as a function of age and B-V
 
 **plotting.py** : plotting functions to display posteriors, data, and fits
 
@@ -83,7 +93,7 @@ To directly import baffles and use the module in a python script see "usage_exam
 
 **utils.py** : extra helper functions
 
-**paper_plots_li.py** : more advanced plotting examples for lithium used to create the plots in stanford_moore et al 2019.
+**paper_plots_li.py** : more advanced plotting examples for lithium used to create the plots in Stanford-Moore et al. 2020.
 
 **paper_plots_ca.py** : more advanced plotting for calcium
 

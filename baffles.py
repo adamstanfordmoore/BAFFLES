@@ -7,7 +7,7 @@ BAFFLES: Bayesian Ages for Field LowEr-mass Stars
 """
 
 import ca_constants as const
-from scipy import interpolate
+from scipy.integrate import trapezoid
 from scipy.stats import norm,lognorm
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
@@ -264,8 +264,8 @@ class age_estimator:
         #implicit.  More points are clustered near bv than farther
         BV = prob.gaussian_cdf_space(bv,bv_uncertainty,num_points, sig_lim=3)
         
-        f = interpolate.interp2d(self.const.AGE,self.const.BV_S,self.grid_median)
-        mu = f(self.const.AGE,BV)
+        f = my_fits.median_grid_interpolator(self.const,self.grid_median)
+        mu = f(BV,self.const.AGE) # shape (len(BV), len(AGE))
 
         if isUpperLim:
             #integration done in logspace with log li and log mu
@@ -284,7 +284,7 @@ class age_estimator:
         
         astro_gauss = self.pdf_fit(np.log10(METAL) - mu)/METAL
         product = li_gauss*astro_gauss
-        integral = np.trapz(product,METAL,axis=2) # now 2d matrix
+        integral = trapezoid(product,METAL,axis=2) # now 2d matrix
         final_sum = np.sum(integral,axis=0)
         return final_sum
 

@@ -219,7 +219,7 @@ def combined_validation_subplots():
     baf_default = baffles.age_estimator(METAL)
 
     fig,ax = plt.subplots(3,2,figsize=(14,15))
-    cmap = plt.cm.get_cmap('RdYlBu_r')
+    cmap = plt.get_cmap('RdYlBu_r')
     norm = mpl.colors.Normalize(vmin=const.BV_RANGE[0], vmax=const.BV_RANGE[1])
     sc = plt.scatter([],[],c=[],norm=norm,cmap=cmap)
     #cbar = fig.colorbar(sc)
@@ -415,7 +415,7 @@ def notable_stars():
     p_li = baf_li.get_posterior(bv[2],li[2],bv_uncertainty=bv_err[2],measure_err=li_err[2],upperLim=False)
     print("we report an age of %d Myr with a 68\\%% confidence interval between %d Myr - %d Myr\
           (third panel of Fig. \\ref{fig:notable_stars}), consistent with Mamajek's lithium age,\
-           but a factor of $\sim$%.1f too young for his final adopted age." % (p_li.stats[2],p_li.stats[1],p_li.stats[3],
+           but a factor of $\\sim$%.1f too young for his final adopted age." % (p_li.stats[2],p_li.stats[1],p_li.stats[3],
           440/p_li.stats[2]))
     my_plot.posterior(const.AGE, p_li.array, p_li.stats,names[2],None,False, logPlot=False)
     plt.axvline(x=age[-1],color='r',label=r'Literature age: %d $\pm$ 40 Myr' % age[-1])

@@ -28,7 +28,7 @@ def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],\
     
     cmap,norm,sc = None,None,None
     if bv_arr is not None:
-        cmap = plt.cm.get_cmap('RdYlBu_r')
+        cmap = plt.get_cmap('RdYlBu_r')
         norm = mpl.colors.Normalize(vmin=const.BV_RANGE[0], vmax=const.BV_RANGE[1])
     for i,post in enumerate(starArray):
         color = '.5'
@@ -418,7 +418,7 @@ def scatter_vs_bv(fits,metal,pdfPage=None,showPlots=False,title=None):
     const = init_constants(metal)
     plt.xlabel(r'$(B-V)_0$',size=AXIS_LABEL_SIZE)
     #plt.ylabel(r'Li EW (m$\AA$)',size=AXIS_LABEL_SIZE)
-    m = 'Log(LiEW/m$\AA$)'
+    m = 'Log(LiEW/m$\\AA$)'
     plt.ylabel('Scatter in ' + m,size=AXIS_LABEL_SIZE)
     for c in range(len(fits)):
         ax = plt.gca()
@@ -462,7 +462,7 @@ def scatter_vs_age(fits,metal,bv =.65,pdfPage=None,showPlots=False,title=None,bv
     ax.set_xscale('log')
     plt.legend()
     plt.xlabel('Age (Myr)',size=AXIS_LABEL_SIZE)
-    y_axis  = 'Log(LiEW/m$\AA$)'
+    y_axis  = 'Log(LiEW/m$\\AA$)'
     if (metal.lower()[0] == 'c'):
         y_axis = "Log(R'" + r'$_{HK})$'
     plt.ylabel('Std. Dev. of ' + y_axis ,size=AXIS_LABEL_SIZE)
