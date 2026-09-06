@@ -7,14 +7,13 @@ Uncomment each example before running it
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import ca_constants as ca_const
-import fitting as my_fits
-import probability as prob
+from baffles import ca_constants as ca_const
+from baffles import fitting as my_fits
+from baffles import probability as prob
 import baffles
-import plotting as my_plot
-import readData
-import utils
-
+from baffles import plotting as my_plot
+from baffles import readData
+from baffles import utils
 def main():
     # Example 1: Single line to find the age of the sun. very similar to command line usage
     # posterior is a struct with

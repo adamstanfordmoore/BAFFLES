@@ -9,17 +9,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
-import fitting as my_fits
-import probability as prob
+from baffles import fitting as my_fits
+from baffles import probability as prob
 import baffles
-import li_constants as const
-import plotting as my_plot
-import readData
-import fitting as my_fits
-import utils
+from baffles import li_constants as const
+from baffles import plotting as my_plot
+from baffles import readData
+from baffles import fitting as my_fits
+from baffles import utils
 import bisect
 from os.path import join
 import os
+from baffles.paths import DATA_DIR
 if not os.path.exists('plots'):
     os.mkdir('plots')
 
@@ -460,7 +461,7 @@ def notable_stars():
 def robs_fomalhaut():
     import astropy
     from scipy.signal import savgol_filter
-    t = astropy.io.fits.open(join('data','Fom-age-pdf.fits'))
+    t = astropy.io.fits.open(join(DATA_DIR,'Fom-age-pdf.fits'))
     data = t[0].data
     x = np.linspace(np.min(data)-10,np.max(data)+10,1000)
     cdf = np.array([(data < n).sum() for n in x],dtype='float')/len(x)

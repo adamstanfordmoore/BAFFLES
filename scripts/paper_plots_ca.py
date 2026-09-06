@@ -9,15 +9,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
-import fitting as my_fits
-import probability as prob
+from baffles import fitting as my_fits
+from baffles import probability as prob
 import baffles
-import ca_constants as const
-import plotting as my_plot
-import readData
-import utils
+from baffles import ca_constants as const
+from baffles import plotting as my_plot
+from baffles import readData
+from baffles import utils
 from os.path import join
 import os
+from baffles.paths import DATA_DIR
 if not os.path.exists('plots'):
     os.mkdir('plots')
 
@@ -270,7 +271,7 @@ def posteriors():
 
 
 def nearest_stars_hist():
-    t = np.genfromtxt(join("data","MH08_table13.txt"),delimiter=';',dtype=str,skip_header=75)
+    t = np.genfromtxt(join(DATA_DIR,"MH08_table13.txt"),delimiter=';',dtype=str,skip_header=75)
     bv,rhk = t[:,6].astype(float),t[:,8].astype(float)
     #mask = (const.BV_RANGE[0] <= bv) & (bv <= const.BV_RANGE[1]) & \
     mask = (.8 <= bv) & (bv <= .9) & \

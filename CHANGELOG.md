@@ -2,6 +2,30 @@
 
 Newest first. The code and grids used in the published paper are at commit `d2ce435` (see the 2020-06-16 entry at the bottom for how to check it out).
 
+## Unreleased: installable Python package (v1.1.0)
+
+Pull request: https://github.com/adamstanfordmoore/BAFFLES/pull/4 (inspired by Luke Bouma's [PR #2](https://github.com/adamstanfordmoore/BAFFLES/pull/2))
+
+### Layout
+
+- All modules moved into a `baffles/` package. `baffles.py` became `baffles/core.py`; `baffles/__init__.py` re-exports `baffles_age`, `age_estimator` and `posterior`, so `import baffles` works exactly as before and the awkward `import baffles.baffles` is avoided.
+- Internal imports are absolute (`from baffles import fitting as my_fits`, `from baffles import li_constants as const`, ...) instead of bare top-level module names that polluted `sys.path` and only worked from the repo root.
+- `data/` and `grids/` moved inside the package and are shipped as package data. New `baffles/paths.py` exposes `DATA_DIR` and `GRID_DIR`; every hard-coded relative path (`join('data', ...)`, `'grids/...'`) now resolves against them, so the package works from any working directory. The `DEFAULT_MEDIAN_GRID` constants are built from `GRID_DIR`, and `age_estimator.set_default_grids` (used by `refresh.py`) edits the packaged constants file.
+- The command-line block from `baffles.py` became `baffles/cli.py` with a `main()`; installed as the `baffles` console script with the same flags (`baffles -bmv 0.65 -rhk -4.906 -plot`).
+- Paper and maintenance scripts moved to `scripts/` (`refresh.py`, `paper_plots_li.py`, `paper_plots_ca.py`, `make_baffles_table2.py`, `make_baffles_table3.py`); `usage_example.py` to `examples/`.
+- `pyproject.toml` (setuptools) replaces `requirements.txt`; `environment.yml` installs the package in editable mode. Version 1.1.0.
+- `tests/test_regression.py`: six pytest checks on reference posteriors (package data present, Sun from calcium, lithium detection, upper limit, `maxAge`, combined posterior).
+
+### Testing performed
+
+- Six reference `baffles_age` cases give byte-identical printed output to the pre-package code.
+- `pip install .` into a fresh virtual environment, then running the `baffles` command and `import baffles` from an unrelated directory: all 49 data files and 4 grids are shipped and found.
+- `examples/usage_example.py`, `pytest`, and `compileall` with warnings as errors all pass.
+- All fifteen manuscript plotting functions run from `scripts/`.
+- `scripts/refresh.py` regenerates grids into the package directory and rewrites the constants correctly.
+
+No numerical results changed.
+
 ## 2026-09-06: NumPy 2 / SciPy 1.14+ support, lithium residual fix, regenerated grids
 
 Pull request: https://github.com/adamstanfordmoore/BAFFLES/pull/3

@@ -5,23 +5,25 @@ from astropy.io import ascii
 import numpy as np
 np.seterr(divide = 'ignore')
 import pickle
-import fitting as my_fits
-import utils
+from baffles import fitting as my_fits
+from baffles import utils
 import copy
 import baffles
-import probability as prob
+from baffles import probability as prob
 import warnings
+from os.path import join
+from baffles.paths import DATA_DIR
 
 
 
 def abdor(annotate=False):
-    import li_constants as const
+    from baffles import li_constants as const
     abdor_c = []
     abdor_l = []
     abdor_bverr = []
     abdor_lerr = []
     B,V,Name,SPT,REF = [],[],[],[],[]
-    t = ascii.read('data/ab_dor_updated_err_bv_bib.csv',delimiter=',')
+    t = ascii.read(join(DATA_DIR,'ab_dor_updated_err_bv_bib.csv'),delimiter=',')
     for i,line in enumerate(t[1:]):
         if line[14] != '': continue 
         if not utils.isFloat(line[13]): 
@@ -42,19 +44,19 @@ def abdor(annotate=False):
             t[i+1,14] = 'OOR'
             
     if annotate:
-        np.savetxt("data/ab_dor_updated_err_bv_annotated.csv",t,delimiter=',',fmt='%s')
+        np.savetxt(join(DATA_DIR,"ab_dor_updated_err_bv_annotated.csv"),t,delimiter=',',fmt='%s')
     
     
     abdor_c,abdor_l = np.array(abdor_c),np.log10(np.array(abdor_l))
     return abdor_c, abdor_l,abdor_lerr,B,V,SPT,REF,Name
 
 def tuchor(annotate=False):
-    import li_constants as const
+    from baffles import li_constants as const
     tuchor_c = []
     tuchor_l = []
     tuchor_bverr,tuchor_lerr = [],[]
     B,V,Name,SPT,REF = [],[],[],[],[]
-    t = ascii.read('data/tuchor_updated_err_bv_bib.csv',delimiter=',')
+    t = ascii.read(join(DATA_DIR,'tuchor_updated_err_bv_bib.csv'),delimiter=',')
     for i,line in enumerate(t[1:]):
         if line[14] != '' : continue 
         if not utils.isFloat(line[13]): 
@@ -75,14 +77,14 @@ def tuchor(annotate=False):
             t[i+1,14] = 'OOR'
     
     if annotate:
-        np.savetxt("data/tuchor_updated_err_bv_annotated.csv",t,delimiter=',',fmt='%s')
+        np.savetxt(join(DATA_DIR,"tuchor_updated_err_bv_annotated.csv"),t,delimiter=',',fmt='%s')
     
     tuchor_c,tuchor_l = np.array(tuchor_c),np.log10(np.array(tuchor_l))
     return tuchor_c,tuchor_l,tuchor_lerr,B,V,SPT,REF,Name
     
 def schkolnik_betaPic(annotate=False):
-    import li_constants as li_const
-    t = np.genfromtxt("data/Shkolnik_2017_betaPic_bib.csv",delimiter=',',dtype=str)
+    from baffles import li_constants as li_const
+    t = np.genfromtxt(join(DATA_DIR,"Shkolnik_2017_betaPic_bib.csv"),delimiter=',',dtype=str)
     
     b,l,ul,names = [],[],[],[]
     B,V,SPT,REF,Name = [],[],[],[],[]
@@ -107,18 +109,18 @@ def schkolnik_betaPic(annotate=False):
         Name.append(row[15])
     
     if annotate:
-        np.savetxt("data/Shkolnik_2017_betaPic_annotated.csv",t,delimiter=',',fmt='%s')
+        np.savetxt(join(DATA_DIR,"Shkolnik_2017_betaPic_annotated.csv"),t,delimiter=',',fmt='%s')
     return b,l,ul,names,B,V,SPT,REF,Name
 
 def mentuch2008_betaPic(annotate=False):
-    import li_constants as li_const
+    from baffles import li_constants as li_const
     bp_c = []
     bp_l = []
     lim_bp = []
     names = []
     bp_err = []
     B,V,SPT,REF,Name = [],[],[],[],[]
-    t = np.genfromtxt('data/beta_pic_updated_err_2MASS_bib.txt', delimiter='\t',dtype=str,skip_header=2)
+    t = np.genfromtxt(join(DATA_DIR,'beta_pic_updated_err_2MASS_bib.txt'), delimiter='\t',dtype=str,skip_header=2)
     for i,line in enumerate(t):
         if line[11] != '': continue
         if in_bounds(float(line[4]),float(line[5]),li_const):
@@ -137,7 +139,7 @@ def mentuch2008_betaPic(annotate=False):
     bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
     
     if annotate:
-        np.savetxt("data/beta_pic_updated_err_2MASS_annotated.txt",t,delimiter='\t',fmt='%s')
+        np.savetxt(join(DATA_DIR,"beta_pic_updated_err_2MASS_annotated.txt"),t,delimiter='\t',fmt='%s')
     return bp_c,bp_l,lim_bp,bp_err,names,B,V,SPT,REF,Name
 
 def merged_betaPic():

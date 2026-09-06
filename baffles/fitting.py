@@ -18,11 +18,12 @@ import copy
 import bisect
 import pickle
 from astropy.io import ascii
-import probability as prob
-import utils
-import readData
-import plotting as my_plot
+from baffles import probability as prob
+from baffles import utils
+from baffles import readData
+from baffles import plotting as my_plot
 from os.path import join
+from baffles.paths import DATA_DIR, GRID_DIR
 
 BIN_SIZE = 10
 MIN_PER_BIN = 4
@@ -88,7 +89,7 @@ def constrained_poly_minimizer(params,x,y,scatter,lim):
 # returns function such that giving it a b-v value returns oldest age it could be.  
 def bldb_fit(fits,plot=False): 
     bv_at_zero_li,ages,cluster_names = [],[],[]
-    import li_constants as const
+    from baffles import li_constants as const
     
     BV = np.linspace(0.6,2.2,300) #picked to include M35
     for c in range(1,len(fits)): #omitting NGC2264
@@ -231,14 +232,14 @@ def fit_gaussian(x,y):
         return prob.gaussian(np.log10(x_coords),mu,sig)*A + c
     
     if not res.success:
-        import ca_constants as const
+        from baffles import ca_constants as const
         plt.semilogx(const.AGE,gauss_fit(np.log10(const.AGE)))
         plt.show()
     
     return gauss_fit
 
 def gaussian_scatter_minimizer(params,x,y):
-    import ca_constants as const
+    from baffles import ca_constants as const
     [mu,sig,A,c] = params
     fit = prob.gaussian(x,mu,sig)*A + c
     num_stars = np.array(const.CLUSTER_INDEX)[:,1] - np.array(const.CLUSTER_INDEX)[:,0]
@@ -364,7 +365,7 @@ def magic_table_convert(in_column,out_column):
         elif (out_column.lower() == "bv" or out_column.lower() == "b-v"):
             out_column = 6
     
-    t = ascii.read('data/mamajek_magic_table.txt')
+    t = ascii.read(join(DATA_DIR,'mamajek_magic_table.txt'))
     x,y = [],[] #x is input and y is output like a function
     for row in t:
         try:
@@ -378,7 +379,7 @@ def magic_table_convert(in_column,out_column):
     return interpolate.interp1d(x,y, fill_value='extrapolate') 
 
 def spt_bv():
-    t = ascii.read('data/mamajek_magic_table.txt')
+    t = ascii.read(join(DATA_DIR,'mamajek_magic_table.txt'))
     letters = ['O','B','A','F','G','K','M']
     spt = [row[0][:-1] for row in t[0:90]]
     sp = []
@@ -398,7 +399,7 @@ def spt_bv():
 # PRIMORDIAL_NLI = 3.2
 # returns an array
 def teff_to_primli(teff):
-    t = genfromtxt('data/NLi_to_LiEW.csv', delimiter=',')
+    t = genfromtxt(join(DATA_DIR,'NLi_to_LiEW.csv'), delimiter=',')
     logEW = [row[0] for row in t[1:]]
     arr = []
     for temp in teff:
@@ -414,8 +415,8 @@ def teff_to_primli(teff):
 #At every T,nli it uses the soderblom 1993 Pleiades table to find the log(EW)
 # returns an array
 def teff_nli_to_li(teff,NLI):
-    t = genfromtxt('data/NLi_to_LiEW.csv', delimiter=',')
-    t2 = genfromtxt('data/zapatero_osorio_teff_nli_ewli.txt')
+    t = genfromtxt(join(DATA_DIR,'NLi_to_LiEW.csv'), delimiter=',')
+    t2 = genfromtxt(join(DATA_DIR,'zapatero_osorio_teff_nli_ewli.txt'))
     t2[1:,1:] = np.log10(1000*t2[1:,1:]) #convert to logEW
     logEW = [row[0] for row in t[1:]]
     temp_axis = [row[0] for row in t2[1:]]
@@ -435,7 +436,7 @@ def teff_nli_to_li(teff,NLI):
     return np.array(arr)
 
 def VI_to_teff(in_column=2,out_column=6):
-    t = ascii.read('data/Teff_to_V-I.csv')
+    t = ascii.read(join(DATA_DIR,'Teff_to_V-I.csv'))
     x,y = [],[] #x is input and y is output like a function
     for row in t:
         try:
@@ -563,7 +564,7 @@ def fit_student_t(metal,residual_arr=None,fromFile=True,saveToFile=False):
             reading from file"
     popt = None
     if fromFile:
-        popt = np.load(join('grids/',metal + '_student_t_likelihood_params.npy'))
+        popt = np.load(join(GRID_DIR,metal + '_student_t_likelihood_params.npy'))
     else:
         buf = 0.1
         x = np.linspace(np.min(residual_arr)-buf,np.max(residual_arr)+buf,1000) #1000 for linear?
@@ -583,13 +584,13 @@ def fit_student_t(metal,residual_arr=None,fromFile=True,saveToFile=False):
         #return lorentz_cdf(input,*popt)
 
     if not fromFile and saveToFile:
-        np.save(join('grids', metal + '_student_t_likelihood_params'),popt)
+        np.save(join(GRID_DIR,metal + '_student_t_likelihood_params'),popt)
     return pdf_fit,cdf_fit
 
 
 def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     if fromFile:
-        [x,pdf,cdf] = np.load(join('grids',metal + '_likelihood_fit.npy'))
+        [x,pdf,cdf] = np.load(join(GRID_DIR,metal + '_likelihood_fit.npy'))
         return piecewise(x,pdf),piecewise(x,cdf)
     const = utils.init_constants(metal)
     
@@ -646,7 +647,7 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     cdf /= cdf[-1]
 
     if saveToFile:
-        np.save(join('grids',metal + '_likelihood_fit'),[x,pdf,cdf])
+        np.save(join(GRID_DIR,metal + '_likelihood_fit'),[x,pdf,cdf])
     return piecewise(x,pdf),piecewise(x,cdf)
 
 
@@ -740,15 +741,15 @@ def vs_age_fits(bv,cluster_ages,rhk,scatter,metal,omit_cluster=None):
 #return array of primordial Li for each B-V value in li_constants.BV
 def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     assert (ngc2264_fit or fromFile),"primordial_li must take in ngc2264 fit if not reading from a file"
-    import li_constants as const
+    from baffles import li_constants as const
     if (fromFile):
-       prim_li = pickle.load(open(join('data','mist_primordial_li.p'),'rb'))
+       prim_li = pickle.load(open(join(DATA_DIR,'mist_primordial_li.p'),'rb'))
        return interpolate.interp1d(const.BV,prim_li, fill_value='extrapolate')
     
     teff = magic_table_convert('bv','teff')(const.BV) #convert B-V to Teff
    
-    t1 = ascii.read(join('data','MIST_iso_1Myr.txt'))
-    t5 = ascii.read(join('data','MIST_iso_5Myr.txt'))
+    t1 = ascii.read(join(DATA_DIR,'MIST_iso_1Myr.txt'))
+    t5 = ascii.read(join(DATA_DIR,'MIST_iso_5Myr.txt'))
     
     star_mass5 = interpolate.interp1d(t5['log_Teff'][0:275],t5['initial_mass'][0:275],\
             fill_value='extrapolate')(np.log10(teff))
@@ -765,7 +766,7 @@ def MIST_primordial_li(ngc2264_fit=None,fromFile=True, saveToFile=False):
     final_li = ngc2264_fit(const.BV) + deltaEW
 
     if (saveToFile):
-        pickle.dump(final_li,open(join('data','mist_primordial_li.p'),'wb+'))
+        pickle.dump(final_li,open(join(DATA_DIR,'mist_primordial_li.p'),'wb+'))
     return interpolate.interp1d(const.BV,final_li, fill_value='extrapolate')
 
 
