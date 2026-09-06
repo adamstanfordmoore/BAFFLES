@@ -3,7 +3,7 @@
 This package computes age posteriors for field stars from measurements of R'HK calcium emission and/or B-V color and lithium equivalent width absorption (Li EW). For calcium emission our method is calibrated to stars with B-V between 0.45 and 0.9 (~ F6-K2) and
 log(R'HK) between -3.7 and -5. For lithium we have calibrated BAFFLES to stars with B-V between 0.35 and 1.9 (~F2-M5) and Li EW between 3.2 and 1500 mA. See the paper [Stanford-Moore et al. 2020](https://arxiv.org/abs/2006.04811).
 
-### Downloading (Size ~12MB)
+## Downloading (Size ~12MB)
 
 ```bash
 git clone --filter=blob:none https://github.com/adamstanfordmoore/BAFFLES.git
@@ -13,9 +13,9 @@ The `--filter=blob:none` option is recommended because the git history contains 
 
 Alternatively, download the zipped file from GitHub or [Zenodo](https://doi.org/10.5281/zenodo.3840244).
 
-### Installation
+## Installation
 
-#### Using Conda (Recommended)
+### Using Conda (Recommended)
 
 Create a conda environment with all dependencies:
 
@@ -24,13 +24,13 @@ conda env create -f environment.yml
 conda activate baffles
 ```
 
-#### Using pip
+### Using pip
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Requirements
+## Requirements
 
 - Python 3.9+ (3.12 recommended)
 - numpy >= 1.20 (NumPy 2.x supported)
@@ -42,8 +42,6 @@ Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree
 
 ## Changelog
 
-**To view the published paper version:** the code and grids used in [Stanford-Moore et al. 2020](https://arxiv.org/abs/2006.04811) are at commit `d2ce435` (also archived on [Zenodo](https://doi.org/10.5281/zenodo.3840244)). After cloning as described under Downloading, run `git checkout d2ce435`. That version requires `numpy<2.0` and `scipy<1.13`. Changes made since then are listed below, newest first.
-
 ### 2026-09-06: NumPy 2 / SciPy 1.14+ support and regenerated lithium grids
 
 **Code.** Replaced the removed `scipy.interpolate.interp2d` with a bilinear `RectBivariateSpline`, updated other removed NumPy/SciPy functions (`np.trapz`, `cumtrapz`, `np.float`), and dropped the `numpy<2.0` / `scipy<1.13` caps.
@@ -54,10 +52,12 @@ Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree
 
 | Input | Paper version (2020 grids) | Current |
 |---|---|---|
-| B-V 0.80, Li EW 100 mA | 246 Myr, 68% CI 148-389 | 239 Myr, 68% CI 156-317 |
-| B-V 0.45 +/- 0.02, Li EW 21 +/- 5 mA | 774 Myr, 68% CI 499-3060 | 709 Myr, 68% CI 512-2090 |
+| B-V 0.80, Li EW 100 mÅ | 246 Myr, 68% CI 148-389 | 239 Myr, 68% CI 156-317 |
+| B-V 0.45 ± 0.02, Li EW 21 ± 5 mÅ | 774 Myr, 68% CI 499-3060 | 709 Myr, 68% CI 512-2090 |
 
-**Reproducing the published paper results.** Check out commit `d2ce435` as described at the top of this changelog.
+### 2020-06-16: Published paper version
+
+The code and grids used in [Stanford-Moore et al. 2020](https://arxiv.org/abs/2006.04811) are at commit `d2ce435` (also archived on [Zenodo](https://doi.org/10.5281/zenodo.3840244)). After cloning as described under Downloading, run `git checkout d2ce435`. That version requires `numpy<2.0` and `scipy<1.13`.
 
 ## Authors
 
@@ -77,7 +77,7 @@ To save this probability density function in a csv file as 1000 lines of age,pro
 
 `python baffles.py -bmv 0.65 -rhk -4.906 -plot -s -filename suns_age`
 
-Now lets find the age of HR 2562 using B-V=.45 ± .02, log(R'HK) = -4.55 (Gray 2006), and lithium EW of 21 ± 5 (Mesa el al 2018). "-ul" would denote an upper limit. "-s" will save a csv file of the posterior. "-plot" will show a plot of the posterior. -maxAge 10000 will constrain the prior on age to be uniform out to 10 Gyr. "-li_err" allows input of uncertainty
+Now let's find the age of HR 2562 using B-V=.45 ± .02, log(R'HK) = -4.55 (Gray 2006), and lithium EW of 21 ± 5 (Mesa et al. 2018). "-ul" would denote an upper limit. "-s" will save a csv file of the posterior. "-plot" will show a plot of the posterior. -maxAge 10000 will constrain the prior on age to be uniform out to 10 Gyr. "-li_err" allows input of uncertainty
 on Li EW, and "-bv_err" uncertainty on B-V. The following command will determine the age using calcium and lithium separately and then find the combined posterior product.
 
 `python baffles.py -bmv 0.45 -bmv_err .02 -rhk -4.55 -li 21 -li_err 5 -plot`
@@ -98,7 +98,7 @@ To directly import baffles and use the module in a python script see "usage_exam
 
 **li_constants.py** : constants related to lithium
 
-**fitting.py** : various fitting functions used to compute grids in baffles.py, inlcuding for mean R'HK as a function of age and mean LiEW as a function of age and B-V
+**fitting.py** : various fitting functions used to compute grids in baffles.py, including for mean R'HK as a function of age and mean LiEW as a function of age and B-V
 
 **plotting.py** : plotting functions to display posteriors, data, and fits
 
@@ -108,7 +108,7 @@ To directly import baffles and use the module in a python script see "usage_exam
 
 **utils.py** : extra helper functions
 
-**paper_plots_li.py** : more advanced plotting examples for lithium used to create the plots in stanford_moore et al 2019.
+**paper_plots_li.py** : more advanced plotting examples for lithium used to create the plots in Stanford-Moore et al. 2020.
 
 **paper_plots_ca.py** : more advanced plotting for calcium
 
