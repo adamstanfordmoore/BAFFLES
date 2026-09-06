@@ -18,19 +18,20 @@ from astropy.utils.exceptions import AstropyWarning
 import warnings
 import numpy as np
 import pickle
-import fitting as my_fits
-import utils
+from baffles import fitting as my_fits
+from baffles import utils
 import copy
 from os.path import join
+from baffles.paths import DATA_DIR
 
 
 def abdor(annotate=False):
-    import li_constants as const
+    from baffles import li_constants as const
     abdor_c = []
     abdor_l = []
     abdor_bverr = []
     abdor_lerr = []
-    t = ascii.read(join('data','ab_dor_updated_err_bv_bib.csv'),delimiter=',')
+    t = ascii.read(join(DATA_DIR,'ab_dor_updated_err_bv_bib.csv'),delimiter=',')
     for i,line in enumerate(t[1:]):
         if line[14] != '': continue 
         if not utils.isFloat(line[13]): 
@@ -46,18 +47,18 @@ def abdor(annotate=False):
             t[i+1,14] = 'OOR'
             
     if annotate:
-        np.savetxt(join("data","ab_dor_updated_err_bv_annotated.csv"),t,delimiter=',',fmt='%s')
+        np.savetxt(join(DATA_DIR,"ab_dor_updated_err_bv_annotated.csv"),t,delimiter=',',fmt='%s')
     
     
     abdor_c,abdor_l = np.array(abdor_c),np.log10(np.array(abdor_l))
     return abdor_c, abdor_l,abdor_lerr
 
 def tuchor(annotate=False):
-    import li_constants as const
+    from baffles import li_constants as const
     tuchor_c = []
     tuchor_l = []
     tuchor_bverr,tuchor_lerr = [],[]
-    t = ascii.read(join('data','tuchor_updated_err_bv_bib.csv'),delimiter=',')
+    t = ascii.read(join(DATA_DIR,'tuchor_updated_err_bv_bib.csv'),delimiter=',')
     for i,line in enumerate(t[1:]):
         if line[14] != '' : continue 
         if not utils.isFloat(line[13]): 
@@ -73,7 +74,7 @@ def tuchor(annotate=False):
             t[i+1,14] = 'OOR'
     
     if annotate:
-        np.savetxt(join("data","tuchor_updated_err_bv_annotated.csv"),t,delimiter=',',fmt='%s')
+        np.savetxt(join(DATA_DIR,"tuchor_updated_err_bv_annotated.csv"),t,delimiter=',',fmt='%s')
     
     tuchor_c,tuchor_l = np.array(tuchor_c),np.log10(np.array(tuchor_l))
     return tuchor_c,tuchor_l,tuchor_lerr
@@ -82,12 +83,12 @@ def tuchor(annotate=False):
 #reads in data and generates fits
 def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
     if (fromFile):
-        bv_rhk = pickle.load(open(join('data','bv_rhk.p'),'rb'))
-        fits = pickle.load(open(join('data','ca_fits.p'),'rb'))
+        bv_rhk = pickle.load(open(join(DATA_DIR,'bv_rhk.p'),'rb'))
+        fits = pickle.load(open(join(DATA_DIR,'ca_fits.p'),'rb'))
         return bv_rhk,fits
-    import ca_constants as const
+    from baffles import ca_constants as const
     warnings.simplefilter('ignore', category=AstropyWarning)
-    t = Table.read(join('data','mamajek_table_5.fits'))
+    t = Table.read(join(DATA_DIR,'mamajek_table_5.fits'))
     fits = []
     bv_rhk = []
     cluster_index = const.CLUSTER_INDEX
@@ -136,12 +137,12 @@ def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
             sig_fit = np.poly1d(np.std(my_fits.residuals(c,r,rhk_fit)))
             fits.append([rhk_fit,sig_fit])
     if (saveToFile):
-        pickle.dump(bv_rhk,open(join('data','bv_rhk.p'),'wb'))
-        pickle.dump(fits,open(join('data','ca_fits.p'),'wb'))
+        pickle.dump(bv_rhk,open(join(DATA_DIR,'bv_rhk.p'),'wb'))
+        pickle.dump(fits,open(join(DATA_DIR,'ca_fits.p'),'wb'))
     return bv_rhk,fits
 
 def get_li_fits(bv_li,upper_lim_all):
-    import li_constants as const
+    from baffles import li_constants as const
     fits = []
     for i in range(len(bv_li)):
         fit = None
@@ -183,8 +184,8 @@ def undo_picklable(fits):
 
     
 def schkolnik_betaPic(annotate=False):
-    import li_constants as li_const
-    t = np.genfromtxt(join("data","Shkolnik_2017_betaPic_bib.csv"),delimiter=',',dtype=str)
+    from baffles import li_constants as li_const
+    t = np.genfromtxt(join(DATA_DIR,"Shkolnik_2017_betaPic_bib.csv"),delimiter=',',dtype=str)
     
     b,l,ul,names = [],[],[],[]
     for i,row in enumerate(t[1:]):
@@ -203,17 +204,17 @@ def schkolnik_betaPic(annotate=False):
         names.append(row[0])
     
     if annotate:
-        np.savetxt(join("data","Shkolnik_2017_betaPic_annotated.csv"),t,delimiter=',',fmt='%s')
+        np.savetxt(join(DATA_DIR,"Shkolnik_2017_betaPic_annotated.csv"),t,delimiter=',',fmt='%s')
     return b,l,ul,names
 
 def mentuch2008_betaPic(annotate=False):
-    import li_constants as li_const
+    from baffles import li_constants as li_const
     bp_c = []
     bp_l = []
     lim_bp = []
     names = []
     bp_err = []
-    t = np.genfromtxt(join('data','beta_pic_updated_err_2MASS_bib.txt'), delimiter='\t',dtype=str,skip_header=2)
+    t = np.genfromtxt(join(DATA_DIR,'beta_pic_updated_err_2MASS_bib.txt'), delimiter='\t',dtype=str,skip_header=2)
     for i,line in enumerate(t):
         if line[11] != '': continue
         if in_bounds(float(line[4]),float(line[5]),li_const):
@@ -227,7 +228,7 @@ def mentuch2008_betaPic(annotate=False):
     bp_c,bp_l = np.array(bp_c),np.log10(np.array(bp_l))
     
     if annotate:
-        np.savetxt(join("data","beta_pic_updated_err_2MASS_annotated.txt"),t,delimiter='\t',fmt='%s')
+        np.savetxt(join(DATA_DIR,"beta_pic_updated_err_2MASS_annotated.txt"),t,delimiter='\t',fmt='%s')
     return bp_c,bp_l,lim_bp,bp_err,names
 
 def merged_betaPic():
@@ -264,11 +265,11 @@ def merged_betaPic():
     return bp_c2,bp_l2,lim_bp2,combined_err,names2
 
 def alpha_per_lithium():
-    import li_constants as const
+    from baffles import li_constants as const
     c = []
     l = []
     teff_to_bv = my_fits.magic_table_convert('teff','bv')
-    t = np.genfromtxt(join("data","alpha_per_balachandra.csv"),delimiter=',',dtype=str)
+    t = np.genfromtxt(join(DATA_DIR,"alpha_per_balachandra.csv"),delimiter=',',dtype=str)
     for line in t:
         if line[11] != '': continue
         bv = teff_to_bv(float(line[1]))
@@ -281,19 +282,19 @@ def alpha_per_lithium():
 
 def read_lithium(fromFile=True,saveToFile=False):
     if (fromFile):
-        bv_li = pickle.load(open(join('data','bv_li_all.p'),'rb'))
-        upper_lim = pickle.load(open(join('data','upper_lim_all.p'),'rb'))
-        fits = pickle.load(open(join('data','li_fits_all.p'),'rb'))
+        bv_li = pickle.load(open(join(DATA_DIR,'bv_li_all.p'),'rb'))
+        upper_lim = pickle.load(open(join(DATA_DIR,'upper_lim_all.p'),'rb'))
+        fits = pickle.load(open(join(DATA_DIR,'li_fits_all.p'),'rb'))
         fits = undo_picklable(fits)
         return bv_li,upper_lim,fits
     
-    import li_constants as const
+    from baffles import li_constants as const
     warnings.simplefilter('ignore', category=AstropyWarning)
     bv_li = []
     upper_lim = []
  
 
-    t = ascii.read(join('data','ngc2264_lithium_bv.csv'),delimiter=';')
+    t = ascii.read(join(DATA_DIR,'ngc2264_lithium_bv.csv'),delimiter=';')
     ngc2264_c = []
     ngc2264_l = []
     for line in t[2:]:  
@@ -301,7 +302,7 @@ def read_lithium(fromFile=True,saveToFile=False):
             ngc2264_c.append(float(line[7]))
             ngc2264_l.append(1000*float(line[6]))
 
-    t = ascii.read(join('data','ngc2264_lithium2.txt'), delimiter=',')
+    t = ascii.read(join(DATA_DIR,'ngc2264_lithium2.txt'), delimiter=',')
     for line in t:
         if in_bounds(line[5],line[3],const):
             ngc2264_c.append(line[5])
@@ -321,7 +322,7 @@ def read_lithium(fromFile=True,saveToFile=False):
    
     ic2602_c = []
     ic2602_l = []
-    t = ascii.read(join('data','ic2602_lithium.txt'), delimiter=',')
+    t = ascii.read(join(DATA_DIR,'ic2602_lithium.txt'), delimiter=',')
     for line in t:
             if in_bounds(line[1],line[3],const):
                     ic2602_c.append(line[1])
@@ -338,7 +339,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     pleiades_c = []
     pleiades_l = []
     lim_p = []
-    t = ascii.read(join('data','pleiades_lithium.tsv'), delimiter=';')
+    t = ascii.read(join(DATA_DIR,'pleiades_lithium.tsv'), delimiter=';')
     for line in t[2:]:
         if in_bounds(float(line[3]),10*float(line[-7]),const):
             pleiades_c.append(float(line[3]))
@@ -354,7 +355,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     m35_c = []
     m35_l = []
     lim_m35 = []
-    t = ascii.read(join('data','M35_data.txt'))
+    t = ascii.read(join(DATA_DIR,'M35_data.txt'))
     for line in t:
         if in_bounds(float(line[1]),float(line[2]),const):
             m35_c.append(float(line[1]))
@@ -367,7 +368,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     m34_c = []
     m34_l = []
     lim_m34 = []
-    t = ascii.read(join('data','m34_lithium.txt'), delimiter=',')
+    t = ascii.read(join(DATA_DIR,'m34_lithium.txt'), delimiter=',')
     for line in t:
         if (float(line[3]) < 0):
             if (in_bounds(float(line[1]),-float(line[3]),const)):
@@ -385,7 +386,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     coma_c = []
     coma_l = []
     lim_coma = []
-    t = ascii.read(join('data','coma_berenices.txt'), delimiter=',')
+    t = ascii.read(join(DATA_DIR,'coma_berenices.txt'), delimiter=',')
     for line in t:
         if line[-1] != '': continue
         if in_bounds(float(line[2]),float(line[4]),const):
@@ -400,7 +401,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     hyades_c = []
     hyades_l = []
     lim_h = []
-    t = ascii.read(join('data','hyades_lithium.tsv'), delimiter=';')
+    t = ascii.read(join(DATA_DIR,'hyades_lithium.tsv'), delimiter=';')
     for line in t[2:]:
         if in_bounds(float(line[5]),float(line[10]),const):
             hyades_c.append(float(line[5]))
@@ -416,7 +417,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     m67_c = []
     m67_l = []
     lim_m67 = []
-    t = ascii.read(join('data','m67_lithium_eric_edits.txt'), delimiter=',')
+    t = ascii.read(join(DATA_DIR,'m67_lithium_eric_edits.txt'), delimiter=',')
     for line in t:
         # filter from Eric's notes
         if line[-1] != 'single member' and line[-1] != 'binary member':
@@ -442,7 +443,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     uma_c = []
     uma_l = []
     lim_uma = []
-    t = ascii.read(join('data','UMa.csv'), delimiter=',')
+    t = ascii.read(join(DATA_DIR,'UMa.csv'), delimiter=',')
     for line in t:
         if in_bounds(float(line[2]),float(line[3]),const):
             uma_c.append(float(line[2]))
@@ -455,7 +456,7 @@ def read_lithium(fromFile=True,saveToFile=False):
     ngc3680_c = []
     ngc3680_l = []
     lim_ngc3680 = []
-    t = ascii.read(join('data','ngc_3680.csv'),delimiter=',')
+    t = ascii.read(join(DATA_DIR,'ngc_3680.csv'),delimiter=',')
     for line in t[1:]:
         Te = float(line[2])
         c = 8575 - Te
@@ -477,9 +478,9 @@ def read_lithium(fromFile=True,saveToFile=False):
     fits = get_li_fits(bv_li,upper_lim)
 
     if (saveToFile):
-        pickle.dump(bv_li,open(join('data','bv_li_all.p'),'wb'))
-        pickle.dump(upper_lim,open(join('data','upper_lim_all.p'),'wb'))
-        pickle.dump(make_picklable(fits),open(join('data','li_fits_all.p'),'wb'))
+        pickle.dump(bv_li,open(join(DATA_DIR,'bv_li_all.p'),'wb'))
+        pickle.dump(upper_lim,open(join(DATA_DIR,'upper_lim_all.p'),'wb'))
+        pickle.dump(make_picklable(fits),open(join(DATA_DIR,'li_fits_all.p'),'wb'))
 
     return bv_li, upper_lim, fits
 

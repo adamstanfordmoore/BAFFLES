@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "baffles"
+version = "1.1.0"
+description = "BAFFLES: Bayesian Ages for Field LowEr-mass Stars from calcium R'HK and lithium equivalent width"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "Adam Stanford-Moore" },
+  { name = "Eric Nielsen" },
+  { name = "Rob De Rosa" },
+  { name = "Bruce Macintosh" },
+  { name = "Ian Czekala" },
+]
+keywords = ["astronomy", "stellar ages", "lithium", "calcium", "bayesian"]
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Astronomy",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "numpy>=1.20",
+  "scipy>=1.7",
+  "matplotlib>=3.3",
+  "astropy>=4.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/adamstanfordmoore/BAFFLES"
+Paper = "https://arxiv.org/abs/2006.04811"
+Archive = "https://doi.org/10.5281/zenodo.3840244"
+
+[project.scripts]
+baffles = "baffles.cli:main"
+
+[tool.setuptools]
+packages = ["baffles"]
+
+[tool.setuptools.package-data]
+baffles = ["data/*", "grids/*"]

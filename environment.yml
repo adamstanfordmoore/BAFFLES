@@ -10,4 +10,4 @@ dependencies:
   - astropy>=4.0
   - pip
   - pip:
-      - typing-extensions
+      - -e .

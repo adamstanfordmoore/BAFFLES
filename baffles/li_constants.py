@@ -1,5 +1,7 @@
 import numpy as np
-import probability as prob
+from os.path import join
+from baffles.paths import GRID_DIR
+from baffles import probability as prob
 METAL_NAME = 'lithium'
 CLUSTER_AGES = [5.5,24,43.7,85,130,200,240,600,700,4000]
 CLUSTER_NAMES = ['NGC2264',r'$\beta$ Pic','IC2602',r'$\alpha$ Per','Pleiades',\
@@ -41,7 +43,7 @@ NUM_BV_POINTS = 15 #Number of points to represent measurement gaussian in baffle
 MEASURE_ERR = 15 #mA
 
 #including new general piecewise li_vs_age 
-DEFAULT_MEDIAN_GRID = "grids/median_li_090626.npy"
+DEFAULT_MEDIAN_GRID = join(GRID_DIR, "median_li_090626.npy")
 
 ZERO_LI = 0.5 #in log scale
 PRIMORDIAL_LI_AGE = 1 #Myr

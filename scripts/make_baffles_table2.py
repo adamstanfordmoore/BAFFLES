@@ -5,12 +5,14 @@ from astropy.io import ascii
 import numpy as np
 np.seterr(divide = 'ignore')
 import pickle
-import fitting as my_fits
-import utils
+from baffles import fitting as my_fits
+from baffles import utils
 import copy
 import baffles
-import probability as prob
+from baffles import probability as prob
 import sys
+from os.path import join
+from baffles.paths import DATA_DIR
 
 #If machine-readable, then drop $$ and add more sig figs
 def printStats(stats, MR=False):
@@ -48,7 +50,7 @@ def make_table(MR = False):
     table = [] #[Object,RA,Dec,Sp Type,B-V,R'HK,Li EW,Source]
     #first read in all the 4 tables and create a single big table, which then I sort and merge
 
-    t = np.genfromtxt('data/nielsen_2010_table2.csv',delimiter=',',dtype=str,skip_header=1)
+    t = np.genfromtxt(join(DATA_DIR,'nielsen_2010_table2.csv'),delimiter=',',dtype=str,skip_header=1)
     for row in t:
         if not utils.isFloat(row[1]) or not (.45 <= float(row[1]) <= 1.9): continue
         arr = []
@@ -66,7 +68,7 @@ def make_table(MR = False):
         table.append(arr)
 
     bv_to_teff = my_fits.magic_table_convert('bv','teff')
-    t = np.genfromtxt('data/brandt_2014_table.csv',delimiter=',',dtype=str,skip_header=2)
+    t = np.genfromtxt(join(DATA_DIR,'brandt_2014_table.csv'),delimiter=',',dtype=str,skip_header=2)
     for row in t:
         bv = None
         if utils.isFloat(row[2]) and utils.isFloat(row[3]):
@@ -95,7 +97,7 @@ def make_table(MR = False):
         table.append(arr)
 
 
-    t = np.genfromtxt("data/nearbyStars_Boro_Saikia_2018.txt",delimiter='\t',dtype=str,skip_header=58)
+    t = np.genfromtxt(join(DATA_DIR,"nearbyStars_Boro_Saikia_2018.txt"),delimiter='\t',dtype=str,skip_header=58)
     for row in t:
         if not utils.isFloat(row[5]) or not (.45 <= float(row[5]) <= 1.9): continue
         arr = []
@@ -112,7 +114,7 @@ def make_table(MR = False):
             continue
         table.append(arr)
 
-    t = np.genfromtxt("data/guillot_2009_li_survey.txt",delimiter='\t',dtype=str,skip_header=77)
+    t = np.genfromtxt(join(DATA_DIR,"guillot_2009_li_survey.txt"),delimiter='\t',dtype=str,skip_header=77)
     for row in t:
         if not utils.isFloat(row[7]) or not (.45 <= float(row[7]) <= 1.9): continue
         arr = []
@@ -153,7 +155,7 @@ def make_table(MR = False):
     exit()
     """
 
-    final_table = np.load("data/merged_nielsen_brandt_saikia_guillot.npy")
+    final_table = np.load(join(DATA_DIR,"merged_nielsen_brandt_saikia_guillot.npy"))
 
 
     delimiterMR = ','

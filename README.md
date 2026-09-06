@@ -15,20 +15,22 @@ Alternatively, download the zipped file from GitHub or [Zenodo](https://doi.org/
 
 ## Installation
 
-### Using Conda (Recommended)
+BAFFLES is a Python package. Install it into your environment from the cloned directory:
 
-Create a conda environment with all dependencies:
+```bash
+pip install .
+```
+
+Use `pip install -e .` for an editable install if you plan to modify the code or regenerate grids. The calibration data and grids are shipped inside the package, so it works from any directory once installed.
+
+### Using Conda
 
 ```bash
 conda env create -f environment.yml
 conda activate baffles
 ```
 
-### Using pip
-
-```bash
-pip install -r requirements.txt
-```
+This creates the environment and installs BAFFLES into it in editable mode.
 
 ## Requirements
 
@@ -38,7 +40,7 @@ pip install -r requirements.txt
 - matplotlib >= 3.3
 - astropy >= 4.0
 
-Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree to machine precision across both stacks.
+Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree to machine precision across both stacks. Run the regression tests with `pip install pytest && pytest`.
 
 ## Changelog
 
@@ -54,49 +56,60 @@ See [CHANGELOG.md](CHANGELOG.md) for details of changes since publication, the t
 
 ## Command Line Usage Examples
 
-Quick usage from the command line. Let's find an age for the sun using B-V of 0.65 and logR'HK = -4.908 (Mamajek & Hillenbrand 2008).
+Installing the package provides a `baffles` command. Let's find an age for the sun using B-V of 0.65 and logR'HK = -4.906 (Mamajek & Hillenbrand 2008).
 
-`python baffles.py -bmv 0.65 -rhk -4.906 -plot`
+`baffles -bmv 0.65 -rhk -4.906 -plot`
 
 To save this probability density function in a csv file as 1000 lines of age,probability with optional filename (\_calcium.csv will be appended to name):
 
-`python baffles.py -bmv 0.65 -rhk -4.906 -plot -s -filename suns_age`
+`baffles -bmv 0.65 -rhk -4.906 -plot -s -filename suns_age`
 
 Now let's find the age of HR 2562 using B-V=.45 ± .02, log(R'HK) = -4.55 (Gray 2006), and lithium EW of 21 ± 5 (Mesa et al. 2018). "-ul" would denote an upper limit. "-s" will save a csv file of the posterior. "-plot" will show a plot of the posterior. -maxAge 10000 will constrain the prior on age to be uniform out to 10 Gyr. "-li_err" allows input of uncertainty
 on Li EW, and "-bv_err" uncertainty on B-V. The following command will determine the age using calcium and lithium separately and then find the combined posterior product.
 
-`python baffles.py -bmv 0.45 -bmv_err .02 -rhk -4.55 -li 21 -li_err 5 -plot`
+`baffles -bmv 0.45 -bmv_err .02 -rhk -4.55 -li 21 -li_err 5 -plot`
 
-Type `python baffles.py -help` into the command line to learn more.
+Type `baffles -help` into the command line to learn more.
 
-To directly import baffles and use the module in a python script see "usage_example.py"
+## Python Usage
 
-## Package Files
+```python
+import baffles
 
-**baffles.py** : main file that computes age posteriors. It makes and stores grids of mean indicator as functions of age and B-V
+# one line, like the command line
+posterior = baffles.baffles_age(bv=0.65, rhk=-4.906)
 
-**usage_example.py** : example script using the baffles package
+# or build a reusable estimator
+est = baffles.age_estimator('lithium')
+posterior = est.get_posterior(bv=0.8, metallicity=100)   # Li EW in mA
+posterior.array   # PDF on the age grid baffles.li_constants.AGE
+posterior.stats   # ages at CDF [.02, .16, .5, .84, .97]
+```
 
-**refresh.py** : updates any stored fits or grids (like mean R'HK as a function of age). Run `python refresh.py` whenever constants or data are changed.
+See `examples/usage_example.py` for posterior products and plotting. Lower-level functionality is in the submodules `baffles.fitting`, `baffles.plotting`, `baffles.probability`, `baffles.readData`, `baffles.utils`, `baffles.ca_constants` and `baffles.li_constants`.
 
-**ca_constants.py** : constants related to calcium
+## Repository Layout
 
-**li_constants.py** : constants related to lithium
+**baffles/** : the installable package
 
-**fitting.py** : various fitting functions used to compute grids in baffles.py, including for mean R'HK as a function of age and mean LiEW as a function of age and B-V
+- **core.py** : computes age posteriors (`baffles_age`, `age_estimator`, `posterior`); makes and stores grids of median indicator as functions of age and B-V
+- **cli.py** : the `baffles` command-line entry point
+- **ca_constants.py**, **li_constants.py** : constants related to calcium and lithium, including which grid files are the defaults
+- **fitting.py** : fitting functions used to compute grids, including mean R'HK as a function of age and mean Li EW as a function of age and B-V
+- **plotting.py** : plotting functions to display posteriors, data, and fits
+- **probability.py** : statistical helpers such as gaussian PDF/CDF
+- **readData.py** : reads the lithium and calcium calibration data and returns data and indicator vs B-V fits
+- **utils.py** : extra helper functions
+- **paths.py** : locations of the packaged `data/` and `grids/` directories
+- **data/** : calcium/lithium calibration data and .p pickle files with cached arrays of indicator vs B-V
+- **grids/** : saved grids of median indicator values as functions of age/B-V, and the fitted likelihood functions
 
-**plotting.py** : plotting functions to display posteriors, data, and fits
+**scripts/** : maintenance and paper scripts, run with `python scripts/<name>.py` after installing the package
 
-**probability.py** : assortment of statistical functions like finding gaussian PDF/CDF
+- **refresh.py** : regenerates all stored fits and grids inside the package. Run it whenever constants or data are changed.
+- **paper_plots_li.py**, **paper_plots_ca.py** : produce the figures in Stanford-Moore et al. 2020 (written to `plots/`)
+- **make_baffles_table2.py**, **make_baffles_table3.py** : produce the paper's LaTeX tables
 
-**readData.py** : reads in lithium and calcium data from data directory and returns data and indicator vs B-V fits
+**examples/usage_example.py** : example script using the package
 
-**utils.py** : extra helper functions
-
-**paper_plots_li.py** : more advanced plotting examples for lithium used to create the plots in Stanford-Moore et al. 2020.
-
-**paper_plots_ca.py** : more advanced plotting for calcium
-
-**data/** : directory contains files with calcium/lithium data and .p pickle files with saved arrays of indicator vs B-V
-
-**grids/** : directory contains saved grids of mean/sigma indicator values as functions of age/B-V. Refresh these grids with refresh.py
+**tests/** : pytest regression tests on reference posteriors

@@ -10,11 +10,11 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 from scipy import interpolate
 import bisect
-import ca_constants as const
-import probability as prob
-import fitting as my_fits
+from baffles import ca_constants as const
+from baffles import probability as prob
+from baffles import fitting as my_fits
 import baffles
-import utils
+from baffles import utils
 TITLE_SIZE = 16
 AXIS_LABEL_SIZE = 16
 
@@ -489,9 +489,9 @@ def set_ylabel(metal):
 
 def init_constants(metal):
     if (metal[0].lower() == 'c'):
-        import ca_constants as const
+        from baffles import ca_constants as const
     elif (metal[0].lower() == 'l'):
-        import li_constants as const
+        from baffles import li_constants as const
     else:
         raise RuntimeError("No metal specified. Please enter lithium or calcium")
     return const
@@ -562,7 +562,7 @@ def fit_histogram(bv_m,fits,metal,pdfPage=None,showPlots=False,title=None,
 
 
 def baffles_vs_mamajek(bv_rhk,fits,i,pdfPage=None,showPlots=False,title=None,mamaProduct=False):
-    import ca_constants as const
+    from baffles import ca_constants as const
     baf = baffles.age_estimator('calcium')
     #baf.make_grids(bv_rhk,fits,omit_cluster=i)
     my_ages = []
@@ -622,7 +622,7 @@ def baffles_vs_mamajek(bv_rhk,fits,i,pdfPage=None,showPlots=False,title=None,mam
         plt.close()
 
 def plot_mamajek(bv_rhk,fits):
-    import ca_constants as const
+    from baffles import ca_constants as const
     #plt.figure(figsize=(7,6))
     plt.xlabel(r'$(B-V)_0$',size=AXIS_LABEL_SIZE)
     #plt.ylabel(u'logR\'HK',size=AXIS_LABEL_SIZE)
