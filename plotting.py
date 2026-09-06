@@ -28,7 +28,7 @@ def posterior(age,y,stat,title=' ',pp=None,showPlot=False,starArray = [],\
     
     cmap,norm,sc = None,None,None
     if bv_arr is not None:
-        cmap = plt.cm.get_cmap('RdYlBu_r')
+        cmap = plt.get_cmap('RdYlBu_r')
         norm = mpl.colors.Normalize(vmin=const.BV_RANGE[0], vmax=const.BV_RANGE[1])
     for i,post in enumerate(starArray):
         color = '.5'

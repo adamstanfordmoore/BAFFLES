@@ -180,7 +180,7 @@ def combined_validation_subplots():
     baf_default = baffles.age_estimator(METAL)
 
     fig,ax = plt.subplots(3,2,figsize=(14,15))
-    cmap = plt.cm.get_cmap('RdYlBu_r')
+    cmap = plt.get_cmap('RdYlBu_r')
     norm = mpl.colors.Normalize(vmin=const.BV_RANGE[0], vmax=const.BV_RANGE[1])
     sc = plt.scatter([],[],c=[],norm=norm,cmap=cmap)
 
