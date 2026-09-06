@@ -3,15 +3,15 @@
 This package computes age posteriors for field stars from measurements of R'HK calcium emission and/or B-V color and lithium equivalent width absorption (Li EW). For calcium emission our method is calibrated to stars with B-V between 0.45 and 0.9 (~ F6-K2) and
 log(R'HK) between -3.7 and -5. For lithium we have calibrated BAFFLES to stars with B-V between 0.35 and 1.9 (~F2-M5) and Li EW between 3.2 and 1500 mA. See the paper [Stanford-Moore et al. 2020](https://arxiv.org/abs/2006.04811).
 
-### Downloading (Size ~8MB)
+### Downloading (Size ~12MB)
 
-Download the zipped file from GitHub or [Zenodo](https://doi.org/10.5281/zenodo.3840244).
+```bash
+git clone --filter=blob:none https://github.com/adamstanfordmoore/BAFFLES.git
+```
 
-Or
+The `--filter=blob:none` option is recommended because the git history contains large grid files (about 770MB) that were deleted long ago. A blobless clone downloads all current files and the full commit history, but skips old file contents unless you check out an old commit, so the download is only a few MB. A plain `git clone` also works but downloads the whole history.
 
-`git clone --depth=1 https://github.com/adamstanfordmoore/BAFFLES.git`
-
-Currently there are still some large files in the git history, so clone with depth 1 to avoid all 256MB of history.
+Alternatively, download the zipped file from GitHub or [Zenodo](https://doi.org/10.5281/zenodo.3840244).
 
 ### Installation
 
@@ -55,11 +55,9 @@ Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree
 | B-V 0.80, Li EW 100 mA | 246 Myr, 68% CI 148-389 | 239 Myr, 68% CI 156-317 |
 | B-V 0.45 +/- 0.02, Li EW 21 +/- 5 mA | 774 Myr, 68% CI 499-3060 | 709 Myr, 68% CI 512-2090 |
 
-**Reproducing the published paper results.** The grids and code used in Stanford-Moore et al. 2020 are at commit `d2ce435` (also archived on [Zenodo](https://doi.org/10.5281/zenodo.3840244)). A `--depth=1` clone does not include it, so clone the full history:
+**Reproducing the published paper results.** The grids and code used in Stanford-Moore et al. 2020 are at commit `d2ce435` (also archived on [Zenodo](https://doi.org/10.5281/zenodo.3840244)). After a blobless clone as described under Downloading, check it out with:
 
 ```bash
-git clone https://github.com/adamstanfordmoore/BAFFLES.git
-cd BAFFLES
 git checkout d2ce435
 ```
 
