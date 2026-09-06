@@ -42,22 +42,7 @@ Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree
 
 ## Changelog
 
-### 2026-09-06: NumPy 2 / SciPy 1.14+ support and regenerated lithium grids
-
-**Code.** Replaced the removed `scipy.interpolate.interp2d` with a bilinear `RectBivariateSpline`, updated other removed NumPy/SciPy functions (`np.trapz`, `cumtrapz`, `np.float`), and dropped the `numpy<2.0` / `scipy<1.13` caps.
-
-**Bug fix.** `interp2d` silently sorted its input coordinates. In `fitting.get_fit_residuals` the cluster B-V arrays are unsorted, so each lithium residual was paired with the wrong star's B-V, inflating the residual scatter used to build the lithium likelihood (std 0.28 dex; correctly aligned it is 0.20 dex). The posterior code path was unaffected because its B-V samples were already sorted. Calcium is unaffected.
-
-**Impact.** Grids in `grids/` were regenerated with `refresh.py` (now dated `090626`). Median indicator grids are unchanged to within 5e-6. Calcium ages are unchanged. Lithium ages shift modestly and their credible intervals narrow, e.g.:
-
-| Input | Paper version (2020 grids) | Current |
-|---|---|---|
-| B-V 0.80, Li EW 100 mÅ | 246 Myr, 68% CI 148-389 | 239 Myr, 68% CI 156-317 |
-| B-V 0.45 ± 0.02, Li EW 21 ± 5 mÅ | 774 Myr, 68% CI 499-3060 | 709 Myr, 68% CI 512-2090 |
-
-### 2020-06-16: Published paper version
-
-The code and grids used in [Stanford-Moore et al. 2020](https://arxiv.org/abs/2006.04811) are at commit `d2ce435` (also archived on [Zenodo](https://doi.org/10.5281/zenodo.3840244)). After cloning as described under Downloading, run `git checkout d2ce435`. That version requires `numpy<2.0` and `scipy<1.13`.
+See [CHANGELOG.md](CHANGELOG.md) for details of changes since publication, the testing performed, and their impact on derived ages. The code and grids used in the published paper are at commit `d2ce435`; after cloning as described above, run `git checkout d2ce435` to view them.
 
 ## Authors
 
