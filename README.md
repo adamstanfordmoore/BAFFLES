@@ -42,6 +42,8 @@ Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree
 
 ## Changelog
 
+**To view the published paper version:** the code and grids used in [Stanford-Moore et al. 2020](https://arxiv.org/abs/2006.04811) are at commit `d2ce435` (also archived on [Zenodo](https://doi.org/10.5281/zenodo.3840244)). After cloning as described under Downloading, run `git checkout d2ce435`. That version requires `numpy<2.0` and `scipy<1.13`. Changes made since then are listed below, newest first.
+
 ### 2026-09-06: NumPy 2 / SciPy 1.14+ support and regenerated lithium grids
 
 **Code.** Replaced the removed `scipy.interpolate.interp2d` with a bilinear `RectBivariateSpline`, updated other removed NumPy/SciPy functions (`np.trapz`, `cumtrapz`, `np.float`), and dropped the `numpy<2.0` / `scipy<1.13` caps.
@@ -55,13 +57,7 @@ Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree
 | B-V 0.80, Li EW 100 mA | 246 Myr, 68% CI 148-389 | 239 Myr, 68% CI 156-317 |
 | B-V 0.45 +/- 0.02, Li EW 21 +/- 5 mA | 774 Myr, 68% CI 499-3060 | 709 Myr, 68% CI 512-2090 |
 
-**Reproducing the published paper results.** The grids and code used in Stanford-Moore et al. 2020 are at commit `d2ce435` (also archived on [Zenodo](https://doi.org/10.5281/zenodo.3840244)). After a blobless clone as described under Downloading, check it out with:
-
-```bash
-git checkout d2ce435
-```
-
-That version requires `numpy<2.0` and `scipy<1.13`.
+**Reproducing the published paper results.** Check out commit `d2ce435` as described at the top of this changelog.
 
 ## Authors
 
