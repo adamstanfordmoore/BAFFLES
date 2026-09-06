@@ -483,13 +483,23 @@ def cluster_scatter_from_stars(bv_m,fits):
         fits[c][1] = piecewise(const.BV,arr[c])
     return fits
 
+def median_grid_interpolator(const,grid_median):
+    """Bilinear interpolator over a median-indicator grid indexed as (B-V, age).
+
+    grid_median has shape (len(const.BV_S), len(const.AGE)). Returns a
+    RectBivariateSpline; evaluate with spl(bv, age) for a bv x age grid, or
+    spl(bv, age, grid=False) for pointwise evaluation of equal-length arrays.
+    Replaces the removed scipy.interpolate.interp2d (linear kind).
+    """
+    return interpolate.RectBivariateSpline(const.BV_S,const.AGE,grid_median,kx=1,ky=1)
+
 def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=None,
                       linSpace=False,scale_by_std=False,vs_age_fit=True,zero_center=True):
     const = utils.init_constants(metal)
     allClusters = []
 
     grid_median = np.load(const.DEFAULT_MEDIAN_GRID)
-    mu_interp = interpolate.interp2d(const.AGE,const.BV_S,grid_median) if metal == 'lithium' else \
+    mu_interp = median_grid_interpolator(const,grid_median) if metal == 'lithium' else \
                       interpolate.interp1d(const.AGE,grid_median)
 
     for c in range(len(fits)):
@@ -502,7 +512,10 @@ def get_fit_residuals(bv_m,fits,metal,upper_limits=None,li_range=None,age_range=
         if vs_age_fit:
             resid = None
             if metal == 'lithium':
-                resid = np.array(bv_m[c][1]) - mu_interp(const.CLUSTER_AGES[c],bv_m[c][0]).flatten()
+                bv = np.asarray(bv_m[c][0],dtype=float)
+                # pointwise evaluation keeps each mu aligned with its star
+                mu = mu_interp(bv,np.full(bv.shape,const.CLUSTER_AGES[c],dtype=float),grid=False)
+                resid = np.array(bv_m[c][1]) - mu
             else:        
                 resid = np.array(bv_m[c][1]) - mu_interp(const.CLUSTER_AGES[c])
         elif linSpace:
@@ -629,7 +642,7 @@ def fit_histogram(metal,residual_arr=None,fromFile=True,saveToFile=False):
     pdf [:2] = [0,0]
     pdf[-2:] = [0,0]
     prob.normalize(x,pdf)    
-    cdf = integrate.cumtrapz(pdf, x=x, initial=0)
+    cdf = integrate.cumulative_trapezoid(pdf, x=x, initial=0)
     cdf /= cdf[-1]
 
     if saveToFile:

@@ -74,7 +74,7 @@ def desample(x,y,num):
 
 #normalizes in-place
 def normalize(x,y):
-    area = np.trapz(y,x) 
+    area = integrate.trapezoid(y,x)
     assert area > 0, "Invalid function to Normalize. Integral=%f" % area
     if area == 1: return y
     y[:] = y / area
@@ -87,7 +87,7 @@ def scale_to_height(y,height):
 
 #Cumulative Distribution Function 
 def cdf(x,y): #depends on spacing 1 between age
-    cum = integrate.cumtrapz(y,x,initial=0) 
+    cum = integrate.cumulative_trapezoid(y,x,initial=0) 
     return cum / cum[-1]
 def hist_cdf(vals):
     a,b = min(vals),max(vals)

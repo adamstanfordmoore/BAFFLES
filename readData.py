@@ -99,11 +99,11 @@ def read_calcium(fromFile=True,saveToFile=False,fit_degree=0):
                 c += list(t["__B-V_0"][cluster_index[i][j]:cluster_index[i][j+1]])
                 r += list(t["logR_HK"][cluster_index[i][j]:cluster_index[i][j+1]])
                 names = np.array(t["Name"][cluster_index[i][j]:cluster_index[i][j+1]])
-            c = np.array(c).astype(np.float)
-            r = np.array(r).astype(np.float)
+            c = np.array(c).astype(float)
+            r = np.array(r).astype(float)
         else:
-            c = np.array(t["__B-V_0"][cluster_index[i][0]:cluster_index[i][1]]).astype(np.float)
-            r = np.array(t["logR_HK"][cluster_index[i][0]:cluster_index[i][1]]).astype(np.float)
+            c = np.array(t["__B-V_0"][cluster_index[i][0]:cluster_index[i][1]]).astype(float)
+            r = np.array(t["logR_HK"][cluster_index[i][0]:cluster_index[i][1]]).astype(float)
             names = np.array(t["Name"][cluster_index[i][0]:cluster_index[i][1]])
         
         # omit stars out of bv/metal range

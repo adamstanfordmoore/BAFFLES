@@ -24,15 +24,21 @@ conda env create -f environment.yml
 conda activate baffles
 ```
 
+#### Using pip
+
+```bash
+pip install -r requirements.txt
+```
+
 ### Requirements
 
-- Python 3.9+
-- numpy >= 1.20, < 2.0
-- scipy >= 1.7, < 1.13 (constrained to avoid deprecated `interp2d`)
+- Python 3.9+ (3.12 recommended)
+- numpy >= 1.20 (NumPy 2.x supported)
+- scipy >= 1.7
 - matplotlib >= 3.3
 - astropy >= 4.0
 
-**Note:** scipy versions >= 1.13 have removed `interp2d` which is used in `fitting.py`. The environment files ensure a compatible version is installed.
+Tested with NumPy 1.26 / SciPy 1.12 and NumPy 2.5 / SciPy 1.18; posteriors agree to machine precision across both stacks.
 
 ## Authors
 

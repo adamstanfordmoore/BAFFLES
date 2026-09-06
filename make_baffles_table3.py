@@ -196,7 +196,7 @@ def handleRefs(REF):
     
     bib_arr = []
     for i,bib in enumerate(refs):
-        bib_arr.append('(%d) \citet{%s}' %(i+1,bib))
+        bib_arr.append('(%d) \\citet{%s}' %(i+1,bib))
     latex_refs = ', '.join(bib_arr)
     
     numbers = []
@@ -238,7 +238,7 @@ def main():
     
     f.write(' & '.join(headers) + " \\\\")
     f.write('\n')
-    f.write('\hline'+'\n')
+    f.write('\\hline'+'\n')
     
     for i in range(len(c)):
         arr = [Name[i],SPT[i],GROUP[i],str(c[i]),ref_numbers[i]]

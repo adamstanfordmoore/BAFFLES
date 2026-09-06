@@ -271,7 +271,7 @@ def posteriors():
 
 def nearest_stars_hist():
     t = np.genfromtxt(join("data","MH08_table13.txt"),delimiter=';',dtype=str,skip_header=75)
-    bv,rhk = t[:,6].astype(np.float),t[:,8].astype(np.float)
+    bv,rhk = t[:,6].astype(float),t[:,8].astype(float)
     #mask = (const.BV_RANGE[0] <= bv) & (bv <= const.BV_RANGE[1]) & \
     mask = (.8 <= bv) & (bv <= .9) & \
            (const.METAL_RANGE[0] <= rhk) & (rhk <= const.METAL_RANGE[1])
