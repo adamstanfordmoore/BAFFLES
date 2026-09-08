@@ -1,21 +1,27 @@
 """
 Adam Stanford-Moore
-8/30/19
-This file provides examples for how to use the baffles module.
-Uncomment each example before running it
+8/30/19 (updated 9/2026 for the installable package)
+This file provides examples for how to use the baffles package.
+Install the package first (pip install .), then run from any directory:
+    python examples/usage_example.py
+Uncomment each example before running it.
 """
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+
+import baffles                                  # baffles_age, age_estimator, posterior
 from baffles import ca_constants as ca_const
 from baffles import fitting as my_fits
-from baffles import probability as prob
-import baffles
 from baffles import plotting as my_plot
+from baffles import probability as prob
 from baffles import readData
 from baffles import utils
+
+
 def main():
-    # Example 1: Single line to find the age of the sun. very similar to command line usage
+    # Example 1: Single line to find the age of the sun. Same as the command line
+    #    baffles -bmv 0.65 -rhk -4.906 -plot
     # posterior is a struct with
     #    array : 1000 element PDF associated with ca_const.AGE
     #    stats : array of ages at CDF [.02,.16,.5,.84,.97],
@@ -47,7 +53,7 @@ def main():
 
 
 
-    # Exmple 4: Lets compute a posterior product and save it as a pdf
+    # Example 4: Let's compute a posterior product and save it as a pdf
     #tuchor_bmv, tuchor_li,tuchor_li_err = readData.tuchor()
     #baffles_li = baffles.age_estimator('lithium')
     #pp = PdfPages("tuchor_example_product.pdf")
